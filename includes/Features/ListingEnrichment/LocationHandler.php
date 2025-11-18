@@ -18,7 +18,8 @@ class LocationHandler {
 
     /**
      * Intercepts post save to generate SEO location data.
-     * * @param int|string $post_id The post ID (ACF sometimes passes string).
+     *
+     * @param int|string $post_id The post ID (ACF sometimes passes string).
      */
     public function enrichLocationData($post_id): void {
         // Cast to int for safety in checks
@@ -60,7 +61,9 @@ class LocationHandler {
 
     /**
      * Shortcode: [yardlii_listing_location]
-     * * @param mixed $atts Shortcode attributes.
+     *
+     * @param mixed $atts Shortcode attributes.
+     * @return string
      */
     public function renderLocationShortcode($atts): string {
         global $post;
