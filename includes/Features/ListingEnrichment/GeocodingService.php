@@ -10,11 +10,11 @@ class GeocodingService {
     private const API_URL_TEMPLATE = 'https://api.zippopotam.us/%s/%s';
 
     /**
-     * Lookup city and state/province from a zip code.
+     * Lookup city, state, and coordinates from a zip code.
      *
      * @param string $zip The raw zip/postal code.
      * @param string $countryCode default 'CA' (Canada).
-     * @return array{city: string, state: string}|null Returns array with specific keys or null.
+     * @return array{city: string, state: string, lat: string, lng: string}|null
      */
     public function lookup(string $zip, string $countryCode = 'CA'): ?array {
         $cleanZip = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $zip));
@@ -43,9 +43,13 @@ class GeocodingService {
             return null;
         }
 
+        $place = $data['places'][0];
+
         return [
-            'city'  => (string) ($data['places'][0]['place name'] ?? ''),
-            'state' => (string) ($data['places'][0]['state'] ?? ''),
+            'city'  => (string) ($place['place name'] ?? ''),
+            'state' => (string) ($place['state'] ?? ''),
+            'lat'   => (string) ($place['latitude'] ?? ''),
+            'lng'   => (string) ($place['longitude'] ?? ''),
         ];
     }
 }

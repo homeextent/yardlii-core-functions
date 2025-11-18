@@ -22,14 +22,12 @@ class LocationHandler {
      * @param int|string $post_id The post ID (ACF sometimes passes string).
      */
     public function enrichLocationData($post_id): void {
-        // Cast to int for safety in checks
         $id = (int) $post_id;
 
         if (get_post_type($id) !== 'listing') {
-             // If you use standard posts, remove this check.
+             // check for post type if needed
         }
 
-        // Use native WP function to avoid PHPStan 'function not found' error for ACF's get_field
         $rawLocation = get_post_meta($id, 'yardlii_listing_location', true);
 
         if (empty($rawLocation)) {
@@ -56,6 +54,10 @@ class LocationHandler {
             update_post_meta($id, 'yardlii_derived_city', $locationData['city']);
             update_post_meta($id, 'yardlii_derived_province', $locationData['state']);
             update_post_meta($id, 'yardlii_derived_full_string', $locationData['city'] . ', ' . $locationData['state']);
+            
+            // Save Coordinates for Maps
+            update_post_meta($id, 'yardlii_derived_lat', $locationData['lat']);
+            update_post_meta($id, 'yardlii_derived_lng', $locationData['lng']);
         }
     }
 
