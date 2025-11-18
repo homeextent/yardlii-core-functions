@@ -87,46 +87,6 @@ $dependencies = [
   <h2>🌍 Environment & Dependencies Check</h2>
   <p class="description">A quick check to ensure all required plugins and components are active.</p>
   <ul class="yardlii-diag-list" style="margin-top: 15px;">
-
-<?php
-      // --- Autoloader Deep Check ---
-      if (defined('YARDLII_CORE_PATH')) {
-          $autoload_path = YARDLII_CORE_PATH . 'vendor/autoload.php';
-          $as_function_file = YARDLII_CORE_PATH . 'vendor/woocommerce/action-scheduler/functions.php';
-          $as_class_file = YARDLII_CORE_PATH . 'vendor/woocommerce/action-scheduler/classes/abstracts/ActionScheduler_Store.php';
-
-          yardlii_diag_check(
-              'Autoloader File Readable?',
-              is_readable($autoload_path),
-              '✅ Yes, file is readable.',
-              '❌ NO, vendor/autoload.php IS MISSING or unreadable. Run composer install and upload.'
-          );
-          
-          yardlii_diag_check(
-              'Action Scheduler functions.php Readable?',
-              is_readable($as_function_file),
-              '✅ Yes, functions.php is readable.',
-              '❌ NO, vendor/woocommerce/action-scheduler/functions.php is missing or unreadable.'
-          );
-          
-          // This is the file you correctly located
-          yardlii_diag_check(
-              'Action Scheduler Store.php Readable?',
-              is_readable($as_class_file),
-              '✅ Yes, abstracts/ActionScheduler_Store.php is readable.',
-              '❌ NO, .../abstracts/ActionScheduler_Store.php is missing or unreadable. THIS IS THE PROBLEM.'
-          );
-          
-          // This check will only pass if the autoloader can successfully find and load the file
-          yardlii_diag_check(
-              'Action Scheduler Class Exists?',
-              class_exists('ActionScheduler_Store'),
-              '✅ Yes, class "ActionScheduler_Store" is loaded.',
-              '❌ NO, class "ActionScheduler_Store" is NOT loaded. This confirms the autoloader is failing.'
-          );
-      }
-      // --- End Autoloader Deep Check ---
-      ?>
       <?php
       foreach ($dependencies as $check) {
           yardlii_diag_check($check['name'], $check['active'], $check['ok'], $check['fail']);
