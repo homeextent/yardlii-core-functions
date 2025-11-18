@@ -13,16 +13,13 @@ class GeocodingService {
      * Lookup city and state/province from a zip code.
      *
      * @param string $zip The raw zip/postal code.
-     * @param string $countryCode default 'CA' (Canada) - logic can be expanded later.
-     * @return array|null Returns ['city' => string, 'state' => string] or null on failure.
+     * @param string $countryCode default 'CA' (Canada).
+     * @return array{city: string, state: string}|null Returns array with specific keys or null.
      */
     public function lookup(string $zip, string $countryCode = 'CA'): ?array {
-        // 1. Sanitize: Remove spaces, uppercase (e.g., "L2N 2E2" -> "L2N2E2")
-        // Note: Zippopotam requires the first 3 chars for CA, or 5 digits for US.
         $cleanZip = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $zip));
 
         if ($countryCode === 'CA') {
-            // Canada API expects only the FSA (first 3 chars)
             $cleanZip = substr($cleanZip, 0, 3);
         }
 
@@ -31,7 +28,7 @@ class GeocodingService {
         $response = wp_remote_get($url);
 
         if (is_wp_error($response)) {
-            return null; // Fail silently or log if debug is on
+            return null;
         }
 
         $code = wp_remote_retrieve_response_code($response);
@@ -47,8 +44,8 @@ class GeocodingService {
         }
 
         return [
-            'city'  => $data['places'][0]['place name'] ?? '',
-            'state' => $data['places'][0]['state'] ?? '', // 'state' maps to Province in CA
+            'city'  => (string) ($data['places'][0]['place name'] ?? ''),
+            'state' => (string) ($data['places'][0]['state'] ?? ''),
         ];
     }
 }
