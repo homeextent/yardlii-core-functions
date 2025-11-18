@@ -130,6 +130,10 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+### 3.11.1
+* **Fix:** Manually booted Action Scheduler library to resolve autoloader conflicts preventing "Resync All Users" from running.
+* **Chore:** Removed temporary verbose debugging checks from the Diagnostics panel.
+
 ### 3.11.0
 * **Feat:** Enabled selecting multiple forms for "Featured Image Automation" (previously only one).
 * **Feat:** Added a comprehensive "Diagnostics" panel to the "Advanced" tab for plugin health checks.
