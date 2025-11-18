@@ -81,6 +81,12 @@ final class Loader
             (new GoogleMapKey())->register();
         }
 
+	// === Listing Enrichment (SEO Location) ===
+        // Extract city/province from ZIP on save for SEO
+        if (class_exists(__NAMESPACE__ . '\\ListingEnrichment\\LocationHandler')) {
+            (new ListingEnrichment\LocationHandler())->register();
+        }
+
         // === Featured Image Automation ===
         if (class_exists(__NAMESPACE__ . '\\FeaturedImage')) {
             (new FeaturedImage())->register();
