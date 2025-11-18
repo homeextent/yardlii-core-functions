@@ -1,0 +1,80 @@
+/* Yardlii WPUF Card Layout System - Single Step Only */
+
+/* 1. Main Wrapper */
+.yardlii-form-cards-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+/* 2. The Card */
+.yardlii-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1; /* Slate 300 */
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+    overflow: hidden; /* Clips header to corners */
+    margin-bottom: 5px;
+}
+
+.yardlii-card:hover {
+    border-color: #64748b; /* Slate 500 */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* 3. Inner Content Padding */
+.yardlii-card ul.wpuf-form {
+    margin: 0 !important;
+    padding: 30px 40px !important; /* Spacious padding */
+    list-style: none !important;
+}
+
+/* 4. Header Styling (Section Breaks) */
+.yardlii-card li.section_break,
+.yardlii-card li[class*="section_break"] {
+    /* Negative margins pull header to edges of the padded UL */
+    margin: -30px -40px 30px -40px !important;
+    padding: 20px 40px !important;
+    background: #f1f5f9 !important; /* Slate 100 */
+    border-bottom: 1px solid #cbd5e1 !important;
+    list-style: none !important;
+}
+
+/* Header Title */
+.yardlii-card li.section_break .wpuf-section-title,
+.yardlii-card li[class*="section_break"] .wpuf-section-title {
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important; /* Dark Slate */
+    margin: 0 !important;
+    line-height: 1.4 !important;
+}
+
+/* Header Description */
+.yardlii-card li.section_break .wpuf-section-details,
+.yardlii-card li[class*="section_break"] .wpuf-section-details {
+    font-size: 14px !important;
+    color: #64748b !important;
+    margin-top: 5px !important;
+}
+
+/* Field Spacing */
+.yardlii-card li.wpuf-el {
+    margin-bottom: 24px !important;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 600px) {
+    .yardlii-card ul.wpuf-form {
+        padding: 20px 20px !important;
+    }
+
+    .yardlii-card li.section_break,
+    .yardlii-card li[class*="section_break"] {
+        margin: -20px -20px 20px -20px !important;
+        padding: 16px 20px !important;
+    }
+}
