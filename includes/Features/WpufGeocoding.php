@@ -23,12 +23,15 @@ class WpufGeocoding {
         // Diagnostic AJAX Test
         add_action('wp_ajax_yardlii_test_geocoding', [$this, 'ajax_test_geocoding']);
 
-        // [NEW] FacetWP Integration: Tell FacetWP to use OUR custom keys for proximity
+        // FacetWP Integration
         add_filter('facetwp_proximity_store_keys', [$this, 'map_facetwp_keys']);
     }
 
     /**
      * Map FacetWP's default latitude/longitude keys to our custom YARDLII fields.
+     *
+     * @param array<mixed> $keys Incoming keys from FacetWP.
+     * @return array<string, string> The modified key map.
      */
     public function map_facetwp_keys(array $keys): array {
         return [
@@ -55,14 +58,16 @@ class WpufGeocoding {
         // Resolve Key
         $server_key = get_option('yardlii_google_server_key');
         $map_key    = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
-        $api_key    = !empty($server_key) ? $server_key : $map_key;
+        
+        // Cast to string to satisfy strict types
+        $api_key = !empty($server_key) ? (string)$server_key : (string)$map_key;
 
         if (empty($api_key)) {
             wp_send_json_error(['message' => 'No API Key found in settings.']);
         }
 
         // Perform Request
-        $data = $this->fetch_coordinates($postal, (string)$api_key);
+        $data = $this->fetch_coordinates($postal, $api_key);
 
         if ($data) {
             wp_send_json_success([
@@ -76,6 +81,11 @@ class WpufGeocoding {
 
     /**
      * The Conversion Engine
+     *
+     * @param int          $post_id       The ID of the post being saved.
+     * @param int          $form_id       The ID of the WPUF form.
+     * @param array<mixed> $form_settings Form settings array.
+     * @param array<mixed> $form_vars     Form variables array.
      */
     public function handle_submission(int $post_id, int $form_id, array $form_settings, array $form_vars): void {
         // [DEBUG] Log entry
@@ -88,8 +98,7 @@ class WpufGeocoding {
         // 2. Check if this Form ID is monitored
         $fid_str = (string) $form_id;
         if (!isset($map[$fid_str])) {
-            // [DEBUG] Log skip
-            error_log("[YARDLII GEO] Skipped: Form ID $fid_str is NOT in the mapping config. Available keys: " . implode(', ', array_keys($map)));
+            error_log("[YARDLII GEO] Skipped: Form ID $fid_str is NOT in the mapping config.");
             return;
         }
 
@@ -99,17 +108,17 @@ class WpufGeocoding {
         $postal_code = get_post_meta($post_id, $input_meta_key, true);
 
         if (empty($postal_code) || !is_string($postal_code)) {
-            // [DEBUG] Log empty
-            error_log("[YARDLII GEO] Failed: Postal code empty or invalid for Post $post_id (Key: $input_meta_key).");
+            error_log("[YARDLII GEO] Failed: Postal code empty or invalid for Post $post_id.");
             return;
         }
 
         // 4. Get API Key (Prioritize Server Key)
         $server_key = get_option('yardlii_google_server_key');
         $map_key    = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
-        $api_key    = !empty($server_key) ? $server_key : $map_key;
+        
+        $api_key = !empty($server_key) ? (string)$server_key : (string)$map_key;
 
-        if (empty($api_key) || !is_string($api_key)) {
+        if (empty($api_key)) {
             error_log("[YARDLII GEO] Error: Google API Key is missing.");
             return;
         }
@@ -124,7 +133,6 @@ class WpufGeocoding {
             update_post_meta($post_id, 'yardlii_listing_longitude', $data['lng']);
             update_post_meta($post_id, 'yardlii_display_city_province', $data['address']);
             
-            // [DEBUG] Log success
             error_log("[YARDLII GEO] SUCCESS! Saved data for Post $post_id: " . print_r($data, true));
         } else {
             error_log("[YARDLII GEO] Failed: Google API returned no valid data.");
@@ -133,6 +141,9 @@ class WpufGeocoding {
 
     /**
      * Parses the text area config into a usable array.
+     *
+     * @param string $input The raw textarea string.
+     * @return array<string, string> Map of FormID => MetaKey.
      */
     private function parse_mapping_config(string $input): array {
         $lines = explode("\n", $input);
@@ -152,6 +163,10 @@ class WpufGeocoding {
 
     /**
      * Performs the API Request and extracts clean data.
+     *
+     * @param string $postal_code The postal code to geocode.
+     * @param string $key         The Google API key.
+     * @return array{lat: float, lng: float, address: string}|null
      */
     private function fetch_coordinates(string $postal_code, string $key): ?array {
         $url = "https://maps.googleapis.com/maps/api/geocode/json?address=" . urlencode($postal_code) . "&key=" . $key;
@@ -200,7 +215,7 @@ class WpufGeocoding {
     /**
      * Extracts only "City, Province" to preserve privacy.
      *
-     * @param array<array<string, mixed>> $components The address_components from Google API.
+     * @param array<mixed> $components The address_components from Google API.
      */
     private function format_privacy_address(array $components): string {
         $city = '';
@@ -210,10 +225,9 @@ class WpufGeocoding {
             if (!is_array($comp) || !isset($comp['types'])) {
                 continue;
             }
+            
+            /** @var array<mixed> $types */
             $types = $comp['types'];
-            if (!is_array($types)) {
-                continue;
-            }
 
             if (in_array('locality', $types, true)) {
                 $city = isset($comp['long_name']) ? (string) $comp['long_name'] : '';
