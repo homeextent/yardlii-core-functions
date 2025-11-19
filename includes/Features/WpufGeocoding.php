@@ -40,7 +40,7 @@ class WpufGeocoding
      * * @param array $input The raw input array from the form.
      * @return array The cleaned array.
      */
-    public function sanitize_config(array $input): array // FIX: Added array $input and : array
+    public function sanitize_config(array $input): array
     {
         $clean = [];
         if (is_array($input)) {
@@ -63,7 +63,7 @@ class WpufGeocoding
      * @param array $form_settings The WPUF form settings array.
      * @return void
      */
-    public function geocode_listing_data(int $post_id, array $form_settings): void // FIX: Added array $form_settings and : void
+    public function geocode_listing_data(int $post_id, array $form_settings): void
     {
         $form_id = absint($form_settings['id'] ?? 0);
         $config  = get_option(self::OPTION_CONFIG, []);
