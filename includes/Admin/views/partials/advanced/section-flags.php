@@ -98,6 +98,32 @@ if ($acf_sync_locked) {
         <?php endif; ?>
       </div>
 
+<div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
+    <?php
+        // Define variables for this scope
+        $geo_val = (bool) get_option('yardlii_enable_wpuf_geocoding', false);
+        $geo_locked = defined('YARDLII_ENABLE_WPUF_GEOCODING');
+        
+        if ($geo_locked) {
+             // FIX: Use constant() string access
+             $geo_val = (bool) constant('YARDLII_ENABLE_WPUF_GEOCODING');
+        }
+    ?>
+    <input type="hidden" name="yardlii_enable_wpuf_geocoding" value="0" />
+    <input
+        type="checkbox"
+        id="yardlii_enable_wpuf_geocoding"
+        name="yardlii_enable_wpuf_geocoding"
+        value="1"
+        <?php checked($geo_val); ?>
+        <?php disabled($geo_locked); ?>
+    />
+    <strong><?php esc_html_e('WPUF Privacy Geocoding', 'yardlii-core'); ?></strong>
+    <?php if ($geo_locked) : ?>
+        <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
+    <?php endif; ?>
+</div>
+
       
       <p style="margin-top:1rem;">
         <button class="button button-primary" type="submit">

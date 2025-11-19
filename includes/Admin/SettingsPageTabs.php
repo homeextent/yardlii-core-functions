@@ -220,6 +220,26 @@ final class SettingsPageTabs
             'sanitize_callback' => 'rest_sanitize_boolean',
             'default'           => false,
         ]);
+        // 1. Register the Mapping Config (General Group)
+        register_setting(
+            'yardlii_general_group',
+            'yardlii_wpuf_geo_mapping',
+            ['sanitize_callback' => 'sanitize_textarea_field']
+        );
+
+        // 2. Register Flag for General Group (so the WPUF page toggle works)
+        register_setting(
+            'yardlii_general_group', 
+            'yardlii_enable_wpuf_geocoding',
+            ['sanitize_callback' => static fn($v) => (bool)$v]
+        );
+
+        // 3. Register Flag for Feature Flags Group (so the Advanced page toggle works)
+        register_setting(
+            'yardlii_feature_flags_group', 
+            'yardlii_enable_wpuf_geocoding',
+            ['sanitize_callback' => static fn($v) => (bool)$v]
+        );
 
         // Role Control (main group)
         $this->register_role_control_settings();
