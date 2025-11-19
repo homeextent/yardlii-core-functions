@@ -77,8 +77,14 @@ class GeocodingService {
      * @return array{city: string, state: string, lat: string, lng: string}|null
      */
     private function queryGoogle(string $zip, string $country, string $apiKey): ?array {
-        // Add country for better precision (e.g., "L2N2E2, CA")
-        $address = $zip . ',' . $country;
+        // 1. Format for better Google accuracy (e.g. "T0A 0A0" instead of "T0A0A0")
+        $formattedZip = $zip;
+        if ($country === 'CA' && strlen($zip) === 6) {
+            $formattedZip = substr($zip, 0, 3) . ' ' . substr($zip, 3);
+        }
+        
+        // Add country for context
+        $address = $formattedZip . ',' . $country;
         
         $url = add_query_arg([
             'address' => $address,
@@ -101,10 +107,10 @@ class GeocodingService {
         $result = $body['results'][0];
         $comps  = $result['address_components'] ?? [];
         
-        // Google returns a complex array; we must filter for City/Province
         $city = '';
         $state = '';
 
+        // Google Address Component Parsing
         foreach ($comps as $c) {
             if (in_array('locality', $c['types'])) {
                 $city = $c['long_name'];
@@ -115,9 +121,23 @@ class GeocodingService {
             if (empty($city) && in_array('administrative_area_level_2', $c['types'])) {
                 $city = $c['long_name'];
             }
-             if (empty($city) && in_array('administrative_area_level_3', $c['types'])) {
+            if (empty($city) && in_array('administrative_area_level_3', $c['types'])) {
                 $city = $c['long_name'];
             }
+            // Fallback: Some rural areas just have 'postal_town'
+            if (empty($city) && in_array('postal_town', $c['types'])) {
+                $city = $c['long_name'];
+            }
+        }
+        
+        // --- RURAL FIX ---
+        // If we found a State/Province but NO City (common for rural T0A, K0G, etc.)
+        // We manually label it "Rural [Province]" or use the generic formatted address.
+        if (empty($city) && !empty($state)) {
+             // Try to extract the first part of the formatted address as a "City"
+             // Example: "T0A 0A0, Canada" -> City "T0A 0A0"? No, that's ugly.
+             // Better: "Rural Alberta"
+             $city = "Rural " . $state;
         }
 
         return [
@@ -170,8 +190,14 @@ class GeocodingService {
             'timeout' => 5
         ];
 
+        // Format Zip for OSM too (it prefers spaces for Canada)
+        $formattedZip = $zip;
+        if ($country === 'CA' && strlen($zip) === 6) {
+            $formattedZip = substr($zip, 0, 3) . ' ' . substr($zip, 3);
+        }
+
         $query = add_query_arg([
-            'postalcode' => $zip,
+            'postalcode' => $formattedZip,
             'country'    => ($country === 'CA' ? 'Canada' : 'USA'),
             'format'     => 'json',
             'addressdetails' => 1
