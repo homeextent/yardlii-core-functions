@@ -32,10 +32,6 @@ class GeocodingService {
             if ($googleData) {
                 return $googleData;
             }
-            // If Google fails (e.g., Geocoding API not enabled), log it and continue to fallbacks
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("Yardlii: Google Geocoding failed for $zip. Falling back to free providers.");
-            }
         }
 
         // --- PRIORITY 2: Zippopotam (Free, Urban) ---
@@ -91,13 +87,31 @@ class GeocodingService {
             'key'     => $apiKey
         ], self::GOOGLE_URL);
 
-        $response = wp_remote_get($url, ['timeout' => 5]);
+        // CRITICAL FIX: Add Referer Header to satisfy API Key restrictions
+        $args = [
+            'timeout' => 5,
+            'headers' => [
+                'Referer' => get_bloginfo('url')
+            ]
+        ];
 
-        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+        $response = wp_remote_get($url, $args);
+
+        if (is_wp_error($response)) {
+            $this->log("Google API Error: " . $response->get_error_message());
             return null;
         }
 
+        $code = wp_remote_retrieve_response_code($response);
         $body = json_decode(wp_remote_retrieve_body($response), true);
+
+        if ($code !== 200) {
+            // Log the specific rejection reason (e.g. REQUEST_DENIED)
+            $status = $body['status'] ?? 'UNKNOWN';
+            $msg    = $body['error_message'] ?? '';
+            $this->log("Google API Rejected ($status): $msg");
+            return null;
+        }
 
         // Check for valid results
         if (empty($body['results'][0])) {
@@ -130,13 +144,8 @@ class GeocodingService {
             }
         }
         
-        // --- RURAL FIX ---
-        // If we found a State/Province but NO City (common for rural T0A, K0G, etc.)
-        // We manually label it "Rural [Province]" or use the generic formatted address.
+        // Rural Fallback: If we found a State/Province but NO City
         if (empty($city) && !empty($state)) {
-             // Try to extract the first part of the formatted address as a "City"
-             // Example: "T0A 0A0, Canada" -> City "T0A 0A0"? No, that's ugly.
-             // Better: "Rural Alberta"
              $city = "Rural " . $state;
         }
 
@@ -225,5 +234,14 @@ class GeocodingService {
             'lat'   => (string) ($place['lat'] ?? ''),
             'lng'   => (string) ($place['lon'] ?? ''),
         ];
+    }
+
+    /**
+     * Simple logger to help debug API failures
+     */
+    private function log(string $msg): void {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[Yardlii Geocoding] ' . $msg);
+        }
     }
 }
