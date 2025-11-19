@@ -40,7 +40,7 @@ class WpufGeocoding
      * * @param array $input The raw input array from the form.
      * @return array The cleaned array.
      */
-    public function sanitize_config(array $input): array
+    public function sanitize_config(array $input): array // FIX: Added array $input and : array
     {
         $clean = [];
         if (is_array($input)) {
@@ -63,13 +63,12 @@ class WpufGeocoding
      * @param array $form_settings The WPUF form settings array.
      * @return void
      */
-    public function geocode_listing_data(int $post_id, array $form_settings): void
+    public function geocode_listing_data(int $post_id, array $form_settings): void // FIX: Added array $form_settings and : void
     {
         $form_id = absint($form_settings['id'] ?? 0);
         $config  = get_option(self::OPTION_CONFIG, []);
         $field_name = null;
         
-        // 1. Find the required postal code field key for this specific form ID
         foreach ($config as $row) {
             if (absint($row['form_id']) === $form_id) {
                 $field_name = $row['postal_code_key'];
@@ -77,21 +76,17 @@ class WpufGeocoding
             }
         }
         
-        // Skip if form is not configured
         if (empty($field_name)) return;
 
-        // 2. Retrieve the Raw Postal Code using the dynamic field name from $_POST
         $postal_code = sanitize_text_field($_POST[$field_name] ?? '');
         if (empty($postal_code)) return;
 
-        // 3. Retrieve the Google API Key (reusing existing feature)
         $api_key = get_option(GoogleMapKey::OPTION_KEY); 
         if (empty($api_key)) {
             if (function_exists('yardlii_log')) yardlii_log('WPUF Geocoding failed: Google Map Key is missing.');
             return;
         }
 
-        // 4. Execute the Geocoding API Call
         $api_url = add_query_arg([
             'address' => urlencode($postal_code),
             'key'     => $api_key
@@ -111,7 +106,6 @@ class WpufGeocoding
         $result = $data['results'][0];
         $location = $result['geometry']['location'];
         
-        // Extract City and Province for the display meta field
         $city = $province = '';
         foreach ($result['address_components'] as $component) {
             if (in_array('locality', $component['types'], true)) $city = $component['long_name'];
@@ -119,7 +113,6 @@ class WpufGeocoding
         }
         $display_name = trim("{$city}, {$province}", ', ');
         
-        // 5. Save data to the new, required yardlii_ prefixed meta keys
         update_post_meta($post_id, self::META_POSTAL_CODE, $postal_code);
         update_post_meta($post_id, self::META_LATITUDE, $location['lat']);
         update_post_meta($post_id, self::META_LONGITUDE, $location['lng']);
