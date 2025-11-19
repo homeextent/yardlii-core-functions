@@ -80,7 +80,8 @@ class GeocodingService {
 
     /**
      * Query Google Geocoding API
-     * * @return array{city: string, state: string, lat: string, lng: string}|null
+     *
+     * @return array{city: string, state: string, lat: string, lng: string}|null
      */
     private function queryGoogle(string $zip, string $country, string $apiKey): ?array {
         // Format: "L2N 2E2"
@@ -153,7 +154,8 @@ class GeocodingService {
 
     /**
      * Query Zippopotam API
-     * * @return array{city: string, state: string, lat: string, lng: string}|null
+     *
+     * @return array{city: string, state: string, lat: string, lng: string}|null
      */
     private function queryZippopotam(string $zip, string $country): ?array {
         $url = sprintf(self::ZIPPO_URL, strtolower($country), $zip);
@@ -177,7 +179,8 @@ class GeocodingService {
 
     /**
      * Query Nominatim API
-     * * @return array{city: string, state: string, lat: string, lng: string}|null
+     *
+     * @return array{city: string, state: string, lat: string, lng: string}|null
      */
     private function queryNominatim(string $zip, string $country): ?array {
         $formattedZip = $zip;
