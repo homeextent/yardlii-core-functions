@@ -22,6 +22,19 @@ class WpufGeocoding {
 
         // Diagnostic AJAX Test
         add_action('wp_ajax_yardlii_test_geocoding', [$this, 'ajax_test_geocoding']);
+
+        // [NEW] FacetWP Integration: Tell FacetWP to use OUR custom keys for proximity
+        add_filter('facetwp_proximity_store_keys', [$this, 'map_facetwp_keys']);
+    }
+
+    /**
+     * Map FacetWP's default latitude/longitude keys to our custom YARDLII fields.
+     */
+    public function map_facetwp_keys(array $keys): array {
+        return [
+            'latitude'  => 'yardlii_listing_latitude',
+            'longitude' => 'yardlii_listing_longitude',
+        ];
     }
 
     /**
@@ -57,18 +70,12 @@ class WpufGeocoding {
                 'data'    => $data
             ]);
         } else {
-            // Check logs logic is inside fetch_coordinates, but we return generic error here
-            wp_send_json_error(['message' => '❌ Failed. Check debug.log for "REQUEST_DENIED" or invalid postal code.']);
+            wp_send_json_error(['message' => '❌ Failed. Check debug.log for details.']);
         }
     }
 
     /**
      * The Conversion Engine
-     *
-     * @param int          $post_id       The ID of the post being saved.
-     * @param int          $form_id       The ID of the WPUF form.
-     * @param array<mixed> $form_settings Form settings array.
-     * @param array<mixed> $form_vars     Form variables array.
      */
     public function handle_submission(int $post_id, int $form_id, array $form_settings, array $form_vars): void {
         // [DEBUG] Log entry
@@ -126,9 +133,6 @@ class WpufGeocoding {
 
     /**
      * Parses the text area config into a usable array.
-     *
-     * @param string $input The raw textarea string.
-     * @return array<string, string> Map of FormID => MetaKey.
      */
     private function parse_mapping_config(string $input): array {
         $lines = explode("\n", $input);
@@ -148,10 +152,6 @@ class WpufGeocoding {
 
     /**
      * Performs the API Request and extracts clean data.
-     *
-     * @param string $postal_code The postal code to geocode.
-     * @param string $key         The Google API key.
-     * @return array{lat: float, lng: float, address: string}|null
      */
     private function fetch_coordinates(string $postal_code, string $key): ?array {
         $url = "https://maps.googleapis.com/maps/api/geocode/json?address=" . urlencode($postal_code) . "&key=" . $key;
@@ -172,7 +172,6 @@ class WpufGeocoding {
         if (is_array($body) && isset($body['status']) && $body['status'] === 'OK') {
             $result = $body['results'][0];
             
-            // Ensure result parts exist and are arrays before passing
             $geometry = $result['geometry'] ?? [];
             $location = is_array($geometry) ? ($geometry['location'] ?? []) : [];
             $components = $result['address_components'] ?? [];
@@ -208,12 +207,9 @@ class WpufGeocoding {
         $province = '';
 
         foreach ($components as $comp) {
-            // Ensure array structure
             if (!is_array($comp) || !isset($comp['types'])) {
                 continue;
             }
-            
-            // Strict type checking for 'types'
             $types = $comp['types'];
             if (!is_array($types)) {
                 continue;
@@ -227,12 +223,10 @@ class WpufGeocoding {
             }
         }
 
-        // Fallbacks
         if ($city === '') {
             $city = 'Unknown City';
         }
         
-        // Build string
         $parts = [];
         $parts[] = $city;
         if ($province !== '') {
