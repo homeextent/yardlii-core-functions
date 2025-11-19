@@ -506,46 +506,4 @@ $hs_diag = [
       echo '<p>Trust & Verification CPT class not found.</p>';
   }
   ?>
-
-<?php
-// ... (keep existing content) ...
-
-// --- 5. Listing Enrichment (Geocoding) Diagnostics ---
-echo '<hr class="yardlii-diag-divider">';
-echo '<h2>Listing Enrichment (SEO & Maps)</h2>';
-echo '<ul class="yardlii-diag-list">';
-
-// Check 1: Is the Handler Class loaded?
-$handler_loaded = class_exists('\Yardlii\Core\Features\ListingEnrichment\LocationHandler');
-yardlii_diag_check('Feature Module Loaded', $handler_loaded, 'Yes', 'No (Class not found)');
-
-// Check 2: Live API Test (Zippopotam.us)
-// We perform a real HTTP request to ensure the server can reach the API.
-$api_test_zip = 'L2N'; // CORRECTED: Canada API only accepts the first 3 chars (FSA)
-$api_url = "https://api.zippopotam.us/ca/$api_test_zip";
-$api_response = wp_remote_get($api_url, ['timeout' => 5]); // 5s timeout
-
-if (is_wp_error($api_response)) {
-    yardlii_diag_check('API Connection', false, '', 'Failed: ' . $api_response->get_error_message());
-} else {
-    $api_code = wp_remote_retrieve_response_code($api_response);
-    $api_body = wp_remote_retrieve_body($api_response);
-    $api_data = json_decode($api_body, true);
-    
-    // Check if we got valid JSON and the city matches
-    $api_ok = ($api_code === 200 && !empty($api_data['places'][0]['place name']));
-    $api_msg = $api_ok ? "Connected (HTTP $api_code)" : "Error (HTTP $api_code)";
-    
-    yardlii_diag_check('Zippopotam.us API', $api_ok, $api_msg, $api_msg);
-    
-    if ($api_ok) {
-         $city = $api_data['places'][0]['place name'] ?? 'Unknown';
-         $lat  = $api_data['places'][0]['latitude'] ?? '0';
-         $lng  = $api_data['places'][0]['longitude'] ?? '0';
-         echo "<li class='status-info'>ℹ️ <em>Test Data for {$api_test_zip}:</em> <strong>{$city}</strong> (Lat: {$lat}, Lng: {$lng})</li>";
-    }
-}
-
-echo '</ul>';
-?>
 </div>
