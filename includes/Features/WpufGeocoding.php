@@ -19,6 +19,47 @@ class WpufGeocoding {
         // Hooks for creation and updates
         add_action('wpuf_add_post_after_insert', [$this, 'handle_submission'], 10, 4);
         add_action('wpuf_update_post_after_submit', [$this, 'handle_submission'], 10, 4);
+
+        // Diagnostic AJAX Test
+        add_action('wp_ajax_yardlii_test_geocoding', [$this, 'ajax_test_geocoding']);
+    }
+
+    /**
+     * AJAX Handler: Diagnostics Test Tool
+     */
+    public function ajax_test_geocoding(): void {
+        check_ajax_referer('yardlii_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Unauthorized']);
+        }
+
+        $postal = isset($_POST['postal_code']) ? sanitize_text_field($_POST['postal_code']) : '';
+        if (empty($postal)) {
+            wp_send_json_error(['message' => 'Please enter a postal code.']);
+        }
+
+        // Resolve Key
+        $server_key = get_option('yardlii_google_server_key');
+        $map_key    = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
+        $api_key    = !empty($server_key) ? $server_key : $map_key;
+
+        if (empty($api_key)) {
+            wp_send_json_error(['message' => 'No API Key found in settings.']);
+        }
+
+        // Perform Request
+        $data = $this->fetch_coordinates($postal, (string)$api_key);
+
+        if ($data) {
+            wp_send_json_success([
+                'message' => '✅ Success! API is working.',
+                'data'    => $data
+            ]);
+        } else {
+            // Check logs logic is inside fetch_coordinates, but we return generic error here
+            wp_send_json_error(['message' => '❌ Failed. Check debug.log for "REQUEST_DENIED" or invalid postal code.']);
+        }
     }
 
     /**
@@ -52,19 +93,17 @@ class WpufGeocoding {
 
         if (empty($postal_code) || !is_string($postal_code)) {
             // [DEBUG] Log empty
-            error_log("[YARDLII GEO] Failed: Postal code empty or invalid for Post $post_id (Key: $input_meta_key). Value found: " . print_r($postal_code, true));
+            error_log("[YARDLII GEO] Failed: Postal code empty or invalid for Post $post_id (Key: $input_meta_key).");
             return;
         }
 
-        // 4. Get API Key (Prioritize Server Key, fallback to Map Key)
+        // 4. Get API Key (Prioritize Server Key)
         $server_key = get_option('yardlii_google_server_key');
         $map_key    = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
-        
-        // Use server key if available, otherwise try map key (though it might fail if restricted)
-        $api_key = !empty($server_key) ? $server_key : $map_key;
+        $api_key    = !empty($server_key) ? $server_key : $map_key;
 
         if (empty($api_key) || !is_string($api_key)) {
-            error_log("[YARDLII GEO] Error: No valid Google API Key found (checked Server and Map keys).");
+            error_log("[YARDLII GEO] Error: Google API Key is missing.");
             return;
         }
 
@@ -196,7 +235,6 @@ class WpufGeocoding {
         // Build string
         $parts = [];
         $parts[] = $city;
-        
         if ($province !== '') {
             $parts[] = $province;
         }
