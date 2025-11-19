@@ -2,17 +2,21 @@
 /**
  * YARDLII: Advanced -> Diagnostics Panel
  *
- * This partial now contains four sections:
+ * This partial now contains five primary sections:
  * 1. Environment & Dependencies Check
  * 2. Feature Flag Status
  * 3. Role Control & Badges Diagnostics
- * 4. Trust & Verification Diagnostics
+ * 4. Homepage Search Diagnostics
+ * 5. Trust & Verification Diagnostics
+ * 6. Listing Enrichment (SEO & Maps)
  */
 defined('ABSPATH') || exit;
 
-// --- 1. Environment & Dependencies Check ---
+// ====================================================================
+// === HELPER FUNCTIONS & SETUP =======================================
+// ====================================================================
 
-// Helper function for this template
+// Helper function for rendering a single diagnostic line.
 if (!function_exists('yardlii_diag_check')) {
     /**
      * Renders a single diagnostic line.
@@ -30,12 +34,66 @@ if (!function_exists('yardlii_diag_check')) {
     }
 }
 
+// Helper function for rendering a single row in the feature flag status table.
+if (!function_exists('yardlii_diag_flag_status_row')) {
+    /**
+     * Renders a single row for the feature flag status table.
+     *
+     * @param string $label            The user-friendly name of the feature.
+     * @param string $option_key       The wp_options key for the flag.
+     * @param string $constant_name    The name of the constant that can override it.
+     * @param bool   $master_depends   (Optional) If this feature depends on a master flag.
+     * @param bool   $master_effective (Optional) The effective status of the master flag.
+     */
+    function yardlii_diag_flag_status_row(
+        string $label,
+        string $option_key,
+        string $constant_name = '',
+        bool $master_depends = false,
+        bool $master_effective = true
+    ): void {
+        $option_val = (bool) get_option($option_key, false);
+        $const_defined = ($constant_name !== '') && defined($constant_name);
+        
+        $option_status = $option_val ? '<code>true</code>' : '<code>false</code>';
+        $const_status = '<em>Not Set</em>';
+        $effective_status = $option_val;
+
+        if ($const_defined) {
+            $const_val = (bool) constant($constant_name);
+            $const_status = 'Set to <code>' . ($const_val ? 'true' : 'false') . '</code>';
+            $effective_status = $const_val; // Constant overrides option
+        }
+
+        // Check master dependency
+        if ($master_depends && !$master_effective) {
+            $effective_status = false; // Overridden by master
+            $final_status = '<span style="color:#999;font-style:italic;">Disabled (Master Off)</span>';
+        } else {
+            $final_status = $effective_status
+                ? '<span style="color:#00a32a;"><strong>Running</strong></span>'
+                : '<span style="color:#d63638;"><strong>Disabled</strong></span>';
+        }
+
+        echo '<tr>';
+        echo '<td>' . esc_html($label) . '</td>';
+        echo '<td>' . $option_status . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo '<td>' . $const_status . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo '<td>' . $final_status . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo '</tr>';
+    }
+}
+
 // Ensure is_plugin_active() is available
 if (!function_exists('is_plugin_active')) {
     include_once(ABSPATH . 'wp-admin/includes/plugin.php');
 }
 
-// Define our dependencies
+// ====================================================================
+// === SECTION 1: ENVIRONMENT & DEPENDENCIES CHECK ====================
+// ====================================================================
+
+// Define dependencies for Section 1
 $dependencies = [
     'acf_pro' => [
         'name' => 'ACF Pro',
@@ -99,64 +157,15 @@ $dependencies = [
 
 
 <?php
-// --- 2. Feature Flag Status Check ---
-
-// Helper function for this template
-if (!function_exists('yardlii_diag_flag_status_row')) {
-    /**
-     * Renders a single row for the feature flag status table.
-     *
-     * @param string $label            The user-friendly name of the feature.
-     * @param string $option_key       The wp_options key for the flag.
-     * @param string $constant_name    The name of the constant that can override it.
-     * @param bool   $master_depends   (Optional) If this feature depends on a master flag.
-     * @param bool   $master_effective (Optional) The effective status of the master flag.
-     */
-    function yardlii_diag_flag_status_row(
-        string $label,
-        string $option_key,
-        string $constant_name = '',
-        bool $master_depends = false,
-        bool $master_effective = true
-    ): void {
-        $option_val = (bool) get_option($option_key, false);
-        $const_defined = ($constant_name !== '') && defined($constant_name);
-        
-        $option_status = $option_val ? '<code>true</code>' : '<code>false</code>';
-        $const_status = '<em>Not Set</em>';
-        $effective_status = $option_val;
-
-        if ($const_defined) {
-            $const_val = (bool) constant($constant_name);
-            $const_status = 'Set to <code>' . ($const_val ? 'true' : 'false') . '</code>';
-            $effective_status = $const_val; // Constant overrides option
-        }
-
-        // Check master dependency
-        if ($master_depends && !$master_effective) {
-            $effective_status = false; // Overridden by master
-            $final_status = '<span style="color:#999;font-style:italic;">Disabled (Master Off)</span>';
-        } else {
-            $final_status = $effective_status
-                ? '<span style="color:#00a32a;"><strong>Running</strong></span>'
-                : '<span style="color:#d63638;"><strong>Disabled</strong></span>';
-        }
-
-        echo '<tr>';
-        echo '<td>' . esc_html($label) . '</td>';
-        echo '<td>' . $option_status . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo '<td>' . $const_status . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo '<td>' . $final_status . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo '</tr>';
-    }
-}
+// ====================================================================
+// === SECTION 2: FEATURE FLAG STATUS CHECK ===========================
+// ====================================================================
 
 // Get the effective status of the Role Control master flag
 $rc_master_effective = (bool) get_option('yardlii_enable_role_control', false);
 if (defined('YARDLII_ENABLE_ROLE_CONTROL')) {
     $rc_master_effective = (bool) YARDLII_ENABLE_ROLE_CONTROL;
 }
-
 ?>
 
 <div class="form-config-block">
@@ -233,7 +242,9 @@ if (defined('YARDLII_ENABLE_ROLE_CONTROL')) {
 
 
 <?php
-// --- 3. Role Control & Badges Diagnostics ---
+// ====================================================================
+// === SECTION 3: ROLE CONTROL & BADGES DIAGNOSTICS ===================
+// ====================================================================
 
 $rc_diag = [
     'acf_options' => [
@@ -301,6 +312,166 @@ if ($rc_diag['action_scheduler']['active']) {
   <pre id="yardlii-diag-badge-output" style="margin-top:1rem;max-height:100px;overflow:auto;background:#f6f7f7;padding:10px;border:1px solid #dcdcde;display:none;"></pre>
 </div>
 
+<?php // --- End Section 3 --- ?>
+
+
+<?php
+// ====================================================================
+// === SECTION 4: HOMEPAGE SEARCH DIAGNOSTICS =========================
+// ====================================================================
+
+$hs_diag = [
+    'facetwp' => [
+        'name' => 'FacetWP',
+        'active' => function_exists('FWP'),
+        'ok' => 'Active',
+        'fail' => 'NOT FOUND. Required for Homepage Search.'
+    ],
+];
+?>
+<div class="form-config-block">
+  <h2>🔍 Homepage Search Diagnostics</h2>
+  <ul class="yardlii-diag-list" style="margin-top: 15px;">
+      <?php
+      foreach ($hs_diag as $check) {
+          yardlii_diag_check($check['name'], $check['active'], $check['ok'], $check['fail']);
+      }
+      ?>
+  </ul>
+
+  <hr style="margin: 15px 0;">
+  
+  <h3>Test Term Cache</h3>
+  <p class="description">Force-deletes the cached taxonomy term lists (transients) used by the homepage search dropdowns.</p>
+  <button type="button" class="button" id="yardlii-diag-search-cache-test" style="margin-left:1rem;">
+      <?php esc_html_e('Clear Homepage Term Cache', 'yardlii-core'); ?>
+  </button>
+  <pre id="yardlii-diag-search-cache-output" style="margin-top:1rem;max-height:100px;overflow:auto;background:#f6f7f7;padding:10px;border:1px solid #dcdcde;display:none;"></pre>
+</div>
+
+<?php // --- End Section 4 --- ?>
+
+
+<?php
+// ====================================================================
+// === SECTION 5: TRUST & VERIFICATION DIAGNOSTICS ====================
+// ====================================================================
+?>
+<div class="form-config-block">
+  <h2>🔑 Trust & Verification: Diagnostics</h2>
+
+  <div class="yardlii-tv-diagnostics">
+    <p class="description">
+      <?php esc_html_e('Quickly test the REST endpoint to check a user’s verification status.', 'yardlii-core'); ?>
+    </p>
+
+    <label>
+      <span><?php esc_html_e('User ID', 'yardlii-core'); ?></span>
+      <input type="number" id="yardlii-tv-api-user" min="1" step="1" class="small-text" placeholder="e.g., 123" />
+    </label>
+
+    <button type="button" class="button" id="yardlii-tv-api-test" style="margin-left:1rem;">
+      <?php esc_html_e('Test API', 'yardlii-core'); ?>
+    </button>
+
+    <pre id="yardlii-tv-api-output" style="margin-top:1rem;max-height:220px;overflow:auto;background:#f6f7f7;padding:10px;border:1px solid #dcdcde;"></pre>
+  </div>
+
+  <?php
+  if (class_exists('\Yardlii\Core\Features\TrustVerification\Requests\CPT')) {
+      $cpt_slug = \Yardlii\Core\Features\TrustVerification\Requests\CPT::POST_TYPE;
+
+      echo '<h3>Debug: CPT & Statuses</h3><ul style="margin-top:.5rem;">';
+      echo '<li>CPT exists: <code>' . esc_html($cpt_slug) . '</code> = ' . ( post_type_exists($cpt_slug) ? 'yes' : 'NO' ) . '</li>';
+      foreach (['vp_pending','vp_approved','vp_rejected'] as $st) {
+          $obj = get_post_status_object($st);
+          echo '<li>Status <code>' . esc_html($st) . '</code>: ' . ($obj ? 'registered' : 'NOT registered') . '</li>';
+      }
+      echo '</ul>';
+
+      $debug = new WP_Query([
+          'post_type'      => $cpt_slug,
+          'post_status'    => 'any',
+          'posts_per_page' => 5,
+          'orderby'        => 'date',
+          'order'          => 'DESC',
+          'fields'         => 'ids',
+      ]);
+
+      echo '<h3>Last 5 verification_request posts (any status)</h3>';
+      if ($debug->have_posts()) {
+          echo '<ol>';
+          foreach ($debug->posts as $pid) {
+              $st = get_post_status($pid);
+              $uid = (int) get_post_meta($pid, '_vp_user_id', true);
+              $fid = (string) get_post_meta($pid, '_vp_form_id', true);
+              echo '<li>#' . (int)$pid . ' — status: <code>' . esc_html($st) . '</code> — user_id: ' . (int)$uid . ' — form_id: ' . esc_html($fid) . '</li>';
+          }
+          echo '</ol>';
+      } else {
+          echo '<p>No posts found.</p>';
+      }
+  } else {
+      echo '<p>Trust & Verification CPT class not found.</p>';
+  }
+  ?>
+</div>
+
+<?php // --- End Section 5 --- ?>
+
+
+<?php
+// ====================================================================
+// === SECTION 6: LISTING ENRICHMENT (SEO & MAPS) DIAGNOSTICS =========
+// ====================================================================
+
+echo '<hr class="yardlii-diag-divider">';
+echo '<h2>📍 Listing Enrichment (SEO & Maps)</h2>';
+echo '<ul class="yardlii-diag-list">';
+
+// Check 1: Is the Handler Class loaded?
+$handler_loaded = class_exists('\Yardlii\Core\Features\ListingEnrichment\LocationHandler');
+yardlii_diag_check('Feature Module Loaded', $handler_loaded, 'Yes', 'No (Class not found)');
+
+// Check 2: Live API Test (Zippopotam.us)
+// We perform a real HTTP request to ensure the server can reach the API.
+$api_test_zip = 'L2C'; // Canada API only accepts the first 3 chars (FSA)
+$api_url = "https://api.zippopotam.us/ca/$api_test_zip";
+$api_response = wp_remote_get($api_url, ['timeout' => 5]); // 5s timeout
+
+if (is_wp_error($api_response)) {
+    yardlii_diag_check('API Connection', false, '', 'Failed: ' . $api_response->get_error_message());
+} else {
+    $api_code = wp_remote_retrieve_response_code($api_response);
+    $api_body = wp_remote_retrieve_body($api_response);
+    $api_data = json_decode($api_body, true);
+    
+    // Check if we got valid JSON and the city matches
+    $api_ok = ($api_code === 200 && !empty($api_data['places'][0]['place name']));
+    $api_msg = $api_ok ? "Connected (HTTP $api_code)" : "Error (HTTP $api_code)";
+    
+    yardlii_diag_check('Zippopotam.us API', $api_ok, $api_msg, $api_msg);
+    
+    if ($api_ok) {
+         $city = $api_data['places'][0]['place name'] ?? 'Unknown';
+         $lat  = $api_data['places'][0]['latitude'] ?? '0';
+         $lng  = $api_data['places'][0]['longitude'] ?? '0';
+         echo "<li class='status-info'>ℹ️ <em>Test Data for {$api_test_zip}:</em> <strong>{$city}</strong> (Lat: {$lat}, Lng: {$lng})</li>";
+    }
+}
+
+echo '</ul>';
+?>
+</div>
+
+<?php // --- End Section 6 --- ?>
+
+
+<?php
+// ====================================================================
+// === JAVASCRIPT FOR DYNAMIC TESTS ===================================
+// ====================================================================
+?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Badge Sync Test
@@ -342,6 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
    // Search Cache Test
     var searchBtn = document.getElementById('yardlii-diag-search-cache-test');
     var searchOut = document.getElementById('yardlii-diag-search-cache-output');
@@ -373,10 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // TV API Test (from original file)
-// ... (rest of the script) ...
-
-    // TV API Test (from original file)
+    // TV API Test
     var tvApiBtn = document.getElementById('yardlii-tv-api-test');
     var tvApiOut = document.getElementById('yardlii-tv-api-output');
     
@@ -405,145 +574,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
-<?php // --- End Section 3 --- ?>
-
-
-<?php
-// --- 4. NEW: Homepage Search Diagnostics ---
-
-$hs_diag = [
-    'facetwp' => [
-        'name' => 'FacetWP',
-        'active' => function_exists('FWP'),
-        'ok' => 'Active',
-        'fail' => 'NOT FOUND. Required for Homepage Search.'
-    ],
-];
-?>
-<div class="form-config-block">
-  <h2>🔍 Homepage Search Diagnostics</h2>
-  <ul class="yardlii-diag-list" style="margin-top: 15px;">
-      <?php
-      foreach ($hs_diag as $check) {
-          yardlii_diag_check($check['name'], $check['active'], $check['ok'], $check['fail']);
-      }
-      ?>
-  </ul>
-
-  <hr style="margin: 15px 0;">
-  
-  <h3>Test Term Cache</h3>
-  <p class="description">Force-deletes the cached taxonomy term lists (transients) used by the homepage search dropdowns.</p>
-  <button type="button" class="button" id="yardlii-diag-search-cache-test" style="margin-left:1rem;">
-      <?php esc_html_e('Clear Homepage Term Cache', 'yardlii-core'); ?>
-  </button>
-  <pre id="yardlii-diag-search-cache-output" style="margin-top:1rem;max-height:100px;overflow:auto;background:#f6f7f7;padding:10px;border:1px solid #dcdcde;display:none;"></pre>
-</div>
-
-<?php // --- End Section 4 --- ?>
-
-
-<div class="form-config-block">
-  <h2><?php esc_html_e('Trust & Verification: Diagnostics', 'yardlii-core'); ?></h2>
-
-  <div class="yardlii-tv-diagnostics">
-    <p class="description">
-      <?php esc_html_e('Quickly test the REST endpoint to check a user’s verification status.', 'yardlii-core'); ?>
-    </p>
-
-    <label>
-      <span><?php esc_html_e('User ID', 'yardlii-core'); ?></span>
-      <input type="number" id="yardlii-tv-api-user" min="1" step="1" class="small-text" placeholder="e.g., 123" />
-    </label>
-
-    <button type="button" class="button" id="yardlii-tv-api-test" style="margin-left:1rem;">
-      <?php esc_html_e('Test API', 'yardlii-core'); ?>
-    </button>
-
-    <pre id="yardlii-tv-api-output" style="margin-top:1rem;max-height:220px;overflow:auto;background:#f6f7f7;padding:10px;border:1px solid #dcdcde;"></pre>
-  </div>
-
-  <?php
-  // This script tag is now moved inside the new DOMContentLoaded listener above
-  ?>
-
-  <?php
-  if (class_exists('\Yardlii\Core\Features\TrustVerification\Requests\CPT')) {
-      $cpt_slug = \Yardlii\Core\Features\TrustVerification\Requests\CPT::POST_TYPE;
-
-      echo '<h3>Debug: CPT & Statuses</h3><ul style="margin-top:.5rem;">';
-      echo '<li>CPT exists: <code>' . esc_html($cpt_slug) . '</code> = ' . ( post_type_exists($cpt_slug) ? 'yes' : 'NO' ) . '</li>';
-      foreach (['vp_pending','vp_approved','vp_rejected'] as $st) {
-          $obj = get_post_status_object($st);
-          echo '<li>Status <code>' . esc_html($st) . '</code>: ' . ($obj ? 'registered' : 'NOT registered') . '</li>';
-      }
-      echo '</ul>';
-
-      $debug = new WP_Query([
-          'post_type'      => $cpt_slug,
-          'post_status'    => 'any',
-          'posts_per_page' => 5,
-          'orderby'        => 'date',
-          'order'          => 'DESC',
-          'fields'         => 'ids',
-      ]);
-
-      echo '<h3>Last 5 verification_request posts (any status)</h3>';
-      if ($debug->have_posts()) {
-          echo '<ol>';
-          foreach ($debug->posts as $pid) {
-              $st = get_post_status($pid);
-              $uid = (int) get_post_meta($pid, '_vp_user_id', true);
-              $fid = (string) get_post_meta($pid, '_vp_form_id', true);
-              echo '<li>#' . (int)$pid . ' — status: <code>' . esc_html($st) . '</code> — user_id: ' . (int)$uid . ' — form_id: ' . esc_html($fid) . '</li>';
-          }
-          echo '</ol>';
-      } else {
-          echo '<p>No posts found.</p>';
-      }
-  } else {
-      echo '<p>Trust & Verification CPT class not found.</p>';
-  }
-  ?>
-
-<?php
-// --- 5. Listing Enrichment (Geocoding) Diagnostics ---
-echo '<hr class="yardlii-diag-divider">';
-echo '<h2>Listing Enrichment (SEO & Maps)</h2>';
-echo '<ul class="yardlii-diag-list">';
-
-// Check 1: Is the Handler Class loaded?
-$handler_loaded = class_exists('\Yardlii\Core\Features\ListingEnrichment\LocationHandler');
-yardlii_diag_check('Feature Module Loaded', $handler_loaded, 'Yes', 'No (Class not found)');
-
-// Check 2: Live API Test (Zippopotam.us)
-// We perform a real HTTP request to ensure the server can reach the API.
-$api_test_zip = 'L2N2E2'; // St. Catharines
-$api_url = "https://api.zippopotam.us/ca/$api_test_zip";
-$api_response = wp_remote_get($api_url, ['timeout' => 5]); // 5s timeout
-
-if (is_wp_error($api_response)) {
-    yardlii_diag_check('API Connection', false, '', 'Failed: ' . $api_response->get_error_message());
-} else {
-    $api_code = wp_remote_retrieve_response_code($api_response);
-    $api_body = wp_remote_retrieve_body($api_response);
-    $api_data = json_decode($api_body, true);
-    
-    // Check if we got valid JSON and the city matches
-    $api_ok = ($api_code === 200 && !empty($api_data['places'][0]['place name']));
-    $api_msg = $api_ok ? "Connected (HTTP $api_code)" : "Error (HTTP $api_code)";
-    
-    yardlii_diag_check('Zippopotam.us API', $api_ok, $api_msg, $api_msg);
-    
-    if ($api_ok) {
-         $city = $api_data['places'][0]['place name'] ?? 'Unknown';
-         $lat  = $api_data['places'][0]['latitude'] ?? '0';
-         $lng  = $api_data['places'][0]['longitude'] ?? '0';
-         echo "<li class='status-info'>ℹ️ <em>Test Data for {$api_test_zip}:</em> <strong>{$city}</strong> (Lat: {$lat}, Lng: {$lng})</li>";
-    }
-}
-
-echo '</ul>';
-?>
-</div>
