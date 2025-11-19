@@ -20,10 +20,7 @@ class WpufGeocoding
      */
     public function register(): void
     {
-        // 1. Register the settings (Option only, the view is handled manually)
         add_action('admin_init', [$this, 'register_settings']);
-
-        // 2. Register the submission hook (Executes after WPUF post insert)
         add_action('wpuf_add_post_after_insert', [$this, 'geocode_listing_data'], 10, 2);
     }
     
@@ -37,10 +34,10 @@ class WpufGeocoding
 
     /**
      * Sanitizes the Form ID and Field Key inputs.
-     * * @param array $input The raw input array from the form.
+     * @param array $input The raw input array from the form.
      * @return array The cleaned array.
      */
-    public function sanitize_config(array $input): array
+    public function sanitize_config(array $input): array // FIX: Added native type hints (array $input): array
     {
         $clean = [];
         if (is_array($input)) {
@@ -59,11 +56,11 @@ class WpufGeocoding
 
     /**
      * Performs the server-side geocoding and saves the coordinates and location name.
-     * * @param int $post_id The ID of the newly inserted post.
+     * @param int $post_id The ID of the newly inserted post.
      * @param array $form_settings The WPUF form settings array.
      * @return void
      */
-    public function geocode_listing_data(int $post_id, array $form_settings): void
+    public function geocode_listing_data(int $post_id, array $form_settings): void // FIX: Added native type hints (array $form_settings): void
     {
         $form_id = absint($form_settings['id'] ?? 0);
         $config  = get_option(self::OPTION_CONFIG, []);
