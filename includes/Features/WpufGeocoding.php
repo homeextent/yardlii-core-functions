@@ -30,14 +30,18 @@ class WpufGeocoding {
      * @param array<mixed> $form_vars     Form variables array.
      */
     public function handle_submission(int $post_id, int $form_id, array $form_settings, array $form_vars): void {
+        // [DEBUG] Log entry
+        error_log("[YARDLII GEO] Processing submission for Post ID: $post_id, Form ID: $form_id");
+
         // 1. Load the Mapping Config
         $raw_mapping = (string) get_option(self::OPTION_MAPPING, '');
         $map = $this->parse_mapping_config($raw_mapping);
 
         // 2. Check if this Form ID is monitored
-        // Convert form_id to string for array key comparison
         $fid_str = (string) $form_id;
         if (!isset($map[$fid_str])) {
+            // [DEBUG] Log skip
+            error_log("[YARDLII GEO] Skipped: Form ID $fid_str is NOT in the mapping config. Available keys: " . implode(', ', array_keys($map)));
             return;
         }
 
@@ -47,16 +51,25 @@ class WpufGeocoding {
         $postal_code = get_post_meta($post_id, $input_meta_key, true);
 
         if (empty($postal_code) || !is_string($postal_code)) {
+            // [DEBUG] Log empty
+            error_log("[YARDLII GEO] Failed: Postal code empty or invalid for Post $post_id (Key: $input_meta_key). Value found: " . print_r($postal_code, true));
             return;
         }
 
-        // 4. Get API Key
-        $api_key = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
+        // 4. Get API Key (Prioritize Server Key, fallback to Map Key)
+        $server_key = get_option('yardlii_google_server_key');
+        $map_key    = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
+        
+        // Use server key if available, otherwise try map key (though it might fail if restricted)
+        $api_key = !empty($server_key) ? $server_key : $map_key;
+
         if (empty($api_key) || !is_string($api_key)) {
+            error_log("[YARDLII GEO] Error: No valid Google API Key found (checked Server and Map keys).");
             return;
         }
 
         // 5. Call Google Geocoding API
+        error_log("[YARDLII GEO] Calling Google API for postal code: $postal_code");
         $data = $this->fetch_coordinates($postal_code, $api_key);
 
         // 6. Save Derived Data
@@ -64,6 +77,11 @@ class WpufGeocoding {
             update_post_meta($post_id, 'yardlii_listing_latitude', $data['lat']);
             update_post_meta($post_id, 'yardlii_listing_longitude', $data['lng']);
             update_post_meta($post_id, 'yardlii_display_city_province', $data['address']);
+            
+            // [DEBUG] Log success
+            error_log("[YARDLII GEO] SUCCESS! Saved data for Post $post_id: " . print_r($data, true));
+        } else {
+            error_log("[YARDLII GEO] Failed: Google API returned no valid data.");
         }
     }
 
@@ -101,6 +119,7 @@ class WpufGeocoding {
         $response = wp_remote_get($url);
         
         if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            error_log("[YARDLII GEO] HTTP Error: " . print_r($response, true));
             return null;
         }
 
@@ -130,6 +149,11 @@ class WpufGeocoding {
                     'address' => $this->format_privacy_address($components)
                 ];
             }
+        } elseif (is_array($body) && isset($body['status'])) {
+             error_log("[YARDLII GEO] API Error Status: " . $body['status']);
+             if (isset($body['error_message'])) {
+                 error_log("[YARDLII GEO] API Message: " . $body['error_message']);
+             }
         }
 
         return null;
