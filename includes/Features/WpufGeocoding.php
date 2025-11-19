@@ -22,6 +22,22 @@ class WpufGeocoding {
 
         // Diagnostic AJAX Test
         add_action('wp_ajax_yardlii_test_geocoding', [$this, 'ajax_test_geocoding']);
+
+        // FacetWP Integration
+        add_filter('facetwp_proximity_store_keys', [$this, 'map_facetwp_keys']);
+    }
+
+    /**
+     * Map FacetWP's default latitude/longitude keys to our custom YARDLII fields.
+     *
+     * @param array<mixed> $keys Incoming keys from FacetWP.
+     * @return array<string, string> The modified key map.
+     */
+    public function map_facetwp_keys(array $keys): array {
+        return [
+            'latitude'  => 'yardlii_listing_latitude',
+            'longitude' => 'yardlii_listing_longitude',
+        ];
     }
 
     /**
@@ -42,14 +58,16 @@ class WpufGeocoding {
         // Resolve Key
         $server_key = get_option('yardlii_google_server_key');
         $map_key    = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
-        $api_key    = !empty($server_key) ? $server_key : $map_key;
+        
+        // Cast to string to satisfy strict types
+        $api_key = !empty($server_key) ? (string)$server_key : (string)$map_key;
 
         if (empty($api_key)) {
             wp_send_json_error(['message' => 'No API Key found in settings.']);
         }
 
         // Perform Request
-        $data = $this->fetch_coordinates($postal, (string)$api_key);
+        $data = $this->fetch_coordinates($postal, $api_key);
 
         if ($data) {
             wp_send_json_success([
@@ -57,8 +75,7 @@ class WpufGeocoding {
                 'data'    => $data
             ]);
         } else {
-            // Check logs logic is inside fetch_coordinates, but we return generic error here
-            wp_send_json_error(['message' => '❌ Failed. Check debug.log for "REQUEST_DENIED" or invalid postal code.']);
+            wp_send_json_error(['message' => '❌ Failed. Check debug.log for details.']);
         }
     }
 
@@ -81,8 +98,7 @@ class WpufGeocoding {
         // 2. Check if this Form ID is monitored
         $fid_str = (string) $form_id;
         if (!isset($map[$fid_str])) {
-            // [DEBUG] Log skip
-            error_log("[YARDLII GEO] Skipped: Form ID $fid_str is NOT in the mapping config. Available keys: " . implode(', ', array_keys($map)));
+            error_log("[YARDLII GEO] Skipped: Form ID $fid_str is NOT in the mapping config.");
             return;
         }
 
@@ -92,17 +108,17 @@ class WpufGeocoding {
         $postal_code = get_post_meta($post_id, $input_meta_key, true);
 
         if (empty($postal_code) || !is_string($postal_code)) {
-            // [DEBUG] Log empty
-            error_log("[YARDLII GEO] Failed: Postal code empty or invalid for Post $post_id (Key: $input_meta_key).");
+            error_log("[YARDLII GEO] Failed: Postal code empty or invalid for Post $post_id.");
             return;
         }
 
         // 4. Get API Key (Prioritize Server Key)
         $server_key = get_option('yardlii_google_server_key');
         $map_key    = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
-        $api_key    = !empty($server_key) ? $server_key : $map_key;
+        
+        $api_key = !empty($server_key) ? (string)$server_key : (string)$map_key;
 
-        if (empty($api_key) || !is_string($api_key)) {
+        if (empty($api_key)) {
             error_log("[YARDLII GEO] Error: Google API Key is missing.");
             return;
         }
@@ -117,7 +133,6 @@ class WpufGeocoding {
             update_post_meta($post_id, 'yardlii_listing_longitude', $data['lng']);
             update_post_meta($post_id, 'yardlii_display_city_province', $data['address']);
             
-            // [DEBUG] Log success
             error_log("[YARDLII GEO] SUCCESS! Saved data for Post $post_id: " . print_r($data, true));
         } else {
             error_log("[YARDLII GEO] Failed: Google API returned no valid data.");
@@ -172,7 +187,6 @@ class WpufGeocoding {
         if (is_array($body) && isset($body['status']) && $body['status'] === 'OK') {
             $result = $body['results'][0];
             
-            // Ensure result parts exist and are arrays before passing
             $geometry = $result['geometry'] ?? [];
             $location = is_array($geometry) ? ($geometry['location'] ?? []) : [];
             $components = $result['address_components'] ?? [];
@@ -201,23 +215,19 @@ class WpufGeocoding {
     /**
      * Extracts only "City, Province" to preserve privacy.
      *
-     * @param array<array<string, mixed>> $components The address_components from Google API.
+     * @param array<mixed> $components The address_components from Google API.
      */
     private function format_privacy_address(array $components): string {
         $city = '';
         $province = '';
 
         foreach ($components as $comp) {
-            // Ensure array structure
             if (!is_array($comp) || !isset($comp['types'])) {
                 continue;
             }
             
-            // Strict type checking for 'types'
+            /** @var array<mixed> $types */
             $types = $comp['types'];
-            if (!is_array($types)) {
-                continue;
-            }
 
             if (in_array('locality', $types, true)) {
                 $city = isset($comp['long_name']) ? (string) $comp['long_name'] : '';
@@ -227,12 +237,10 @@ class WpufGeocoding {
             }
         }
 
-        // Fallbacks
         if ($city === '') {
             $city = 'Unknown City';
         }
         
-        // Build string
         $parts = [];
         $parts[] = $city;
         if ($province !== '') {
