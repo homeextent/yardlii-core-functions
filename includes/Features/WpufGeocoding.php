@@ -30,6 +30,9 @@ class WpufGeocoding {
      * @param array<mixed> $form_vars     Form variables array.
      */
     public function handle_submission(int $post_id, int $form_id, array $form_settings, array $form_vars): void {
+        // [DEBUG] Log entry
+        error_log("[YARDLII GEO] Processing submission for Post ID: $post_id, Form ID: $form_id");
+
         // 1. Load the Mapping Config
         $raw_mapping = (string) get_option(self::OPTION_MAPPING, '');
         $map = $this->parse_mapping_config($raw_mapping);
@@ -37,10 +40,8 @@ class WpufGeocoding {
         // 2. Check if this Form ID is monitored
         $fid_str = (string) $form_id;
         if (!isset($map[$fid_str])) {
-            // Debug log: Helpful to know why it didn't run
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("[YARDLII GEO] Skipped: Form ID $fid_str is not in the mapping config.");
-            }
+            // [DEBUG] Log skip
+            error_log("[YARDLII GEO] Skipped: Form ID $fid_str is NOT in the mapping config. Available keys: " . implode(', ', array_keys($map)));
             return;
         }
 
@@ -50,9 +51,8 @@ class WpufGeocoding {
         $postal_code = get_post_meta($post_id, $input_meta_key, true);
 
         if (empty($postal_code) || !is_string($postal_code)) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("[YARDLII GEO] Failed: Postal code empty or invalid for Post $post_id (Key: $input_meta_key).");
-            }
+            // [DEBUG] Log empty
+            error_log("[YARDLII GEO] Failed: Postal code empty or invalid for Post $post_id (Key: $input_meta_key). Value found: " . print_r($postal_code, true));
             return;
         }
 
@@ -64,6 +64,7 @@ class WpufGeocoding {
         }
 
         // 5. Call Google Geocoding API
+        error_log("[YARDLII GEO] Calling Google API for postal code: $postal_code");
         $data = $this->fetch_coordinates($postal_code, $api_key);
 
         // 6. Save Derived Data
@@ -72,11 +73,10 @@ class WpufGeocoding {
             update_post_meta($post_id, 'yardlii_listing_longitude', $data['lng']);
             update_post_meta($post_id, 'yardlii_display_city_province', $data['address']);
             
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("[YARDLII GEO] Success! Geocoded Post $post_id. Loc: {$data['address']} ({$data['lat']}, {$data['lng']})");
-            }
+            // [DEBUG] Log success
+            error_log("[YARDLII GEO] SUCCESS! Saved data for Post $post_id: " . print_r($data, true));
         } else {
-            error_log("[YARDLII GEO] Failed: Google API returned no results for postal code '$postal_code'.");
+            error_log("[YARDLII GEO] Failed: Google API returned no valid data.");
         }
     }
 
