@@ -28,8 +28,7 @@ class WpufGeocoding
     }
     
     /**
-     * Registers the configuration option under the existing 'yardlii_general_group' 
-     * so it saves when the WPUF Customisations form is submitted.
+     * Registers the configuration option under the existing 'yardlii_general_group'.
      */
     public function register_settings(): void
     {
@@ -38,8 +37,10 @@ class WpufGeocoding
 
     /**
      * Sanitizes the Form ID and Field Key inputs.
+     * * @param array $input The raw input array from the form.
+     * @return array The cleaned array.
      */
-    public function sanitize_config($input): array
+    public function sanitize_config(array $input): array
     {
         $clean = [];
         if (is_array($input)) {
@@ -58,6 +59,9 @@ class WpufGeocoding
 
     /**
      * Performs the server-side geocoding and saves the coordinates and location name.
+     * * @param int $post_id The ID of the newly inserted post.
+     * @param array $form_settings The WPUF form settings array.
+     * @return void
      */
     public function geocode_listing_data(int $post_id, array $form_settings): void
     {
