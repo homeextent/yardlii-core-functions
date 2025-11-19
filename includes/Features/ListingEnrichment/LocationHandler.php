@@ -48,16 +48,23 @@ class LocationHandler {
             return;
         }
 
+        // Perform Lookup
         $locationData = $this->geocoder->lookup($zip, 'CA');
 
         if ($locationData) {
+            // Save Main Data
             update_post_meta($id, 'yardlii_derived_city', $locationData['city']);
             update_post_meta($id, 'yardlii_derived_province', $locationData['state']);
             update_post_meta($id, 'yardlii_derived_full_string', $locationData['city'] . ', ' . $locationData['state']);
-            
-            // Save Coordinates for Maps
             update_post_meta($id, 'yardlii_derived_lat', $locationData['lat']);
             update_post_meta($id, 'yardlii_derived_lng', $locationData['lng']);
+            
+            // Save Debug/Diagnostic Data (So we know what happened)
+            $source = $locationData['source'] ?? 'Unknown';
+            $error  = $locationData['error'] ?? '';
+            
+            update_post_meta($id, '_yardlii_geo_source', $source);
+            update_post_meta($id, '_yardlii_geo_error', $error);
         }
     }
 
