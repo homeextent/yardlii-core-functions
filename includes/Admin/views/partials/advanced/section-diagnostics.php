@@ -508,6 +508,8 @@ $hs_diag = [
   ?>
 
 <?php
+// ... (keep existing content) ...
+
 // --- 5. Listing Enrichment (Geocoding) Diagnostics ---
 echo '<hr class="yardlii-diag-divider">';
 echo '<h2>Listing Enrichment (SEO & Maps)</h2>';
@@ -519,7 +521,7 @@ yardlii_diag_check('Feature Module Loaded', $handler_loaded, 'Yes', 'No (Class n
 
 // Check 2: Live API Test (Zippopotam.us)
 // We perform a real HTTP request to ensure the server can reach the API.
-$api_test_zip = 'L2N2E2'; // St. Catharines
+$api_test_zip = 'L2N'; // CORRECTED: Canada API only accepts the first 3 chars (FSA)
 $api_url = "https://api.zippopotam.us/ca/$api_test_zip";
 $api_response = wp_remote_get($api_url, ['timeout' => 5]); // 5s timeout
 
