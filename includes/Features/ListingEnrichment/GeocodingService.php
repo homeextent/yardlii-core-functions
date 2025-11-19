@@ -35,9 +35,11 @@ class GeocodingService {
         if (!empty($googleKey)) {
             $googleData = $this->queryGoogle($cleanZip, $countryCode, $googleKey);
             if ($googleData) {
-                $googleData['source'] = 'Google Maps API';
-                $googleData['error'] = '';
-                return $googleData;
+                // We perform the array union here to match the return shape
+                return array_merge($googleData, [
+                    'source' => 'Google Maps API',
+                    'error'  => ''
+                ]);
             }
             // Log failure but continue to fallback
             $this->log("Google Failed for $zip. Error: " . $this->lastError);
@@ -50,17 +52,19 @@ class GeocodingService {
         $data = $this->queryZippopotam($zippoZip, $countryCode);
         
         if ($data) {
-            $data['source'] = 'Zippopotam';
-            $data['error']  = 'Google Fallback: ' . $this->lastError;
-            return $data;
+            return array_merge($data, [
+                'source' => 'Zippopotam',
+                'error'  => 'Google Fallback: ' . $this->lastError
+            ]);
         }
 
         // --- PRIORITY 3: OpenStreetMap (Free, Rural Fallback) ---
         $osmData = $this->queryNominatim($cleanZip, $countryCode);
         if ($osmData) {
-            $osmData['source'] = 'OpenStreetMap';
-            $osmData['error']  = 'Google/Zippo Fallback: ' . $this->lastError;
-            return $osmData;
+            return array_merge($osmData, [
+                'source' => 'OpenStreetMap',
+                'error'  => 'Google/Zippo Fallback: ' . $this->lastError
+            ]);
         }
         
         return null;
@@ -74,6 +78,10 @@ class GeocodingService {
         return (string) $key;
     }
 
+    /**
+     * Query Google Geocoding API
+     * * @return array{city: string, state: string, lat: string, lng: string}|null
+     */
     private function queryGoogle(string $zip, string $country, string $apiKey): ?array {
         // Format: "L2N 2E2"
         $formattedZip = $zip;
@@ -123,12 +131,12 @@ class GeocodingService {
         $state = '';
 
         foreach ($comps as $c) {
-            if (in_array('locality', $c['types'])) $city = $c['long_name'];
-            elseif (in_array('administrative_area_level_1', $c['types'])) $state = $c['long_name'];
+            if (in_array('locality', $c['types'])) $city = (string) $c['long_name'];
+            elseif (in_array('administrative_area_level_1', $c['types'])) $state = (string) $c['long_name'];
             
-            if (empty($city) && in_array('administrative_area_level_2', $c['types'])) $city = $c['long_name'];
-            if (empty($city) && in_array('administrative_area_level_3', $c['types'])) $city = $c['long_name'];
-            if (empty($city) && in_array('postal_town', $c['types'])) $city = $c['long_name'];
+            if (empty($city) && in_array('administrative_area_level_2', $c['types'])) $city = (string) $c['long_name'];
+            if (empty($city) && in_array('administrative_area_level_3', $c['types'])) $city = (string) $c['long_name'];
+            if (empty($city) && in_array('postal_town', $c['types'])) $city = (string) $c['long_name'];
         }
         
         if (empty($city) && !empty($state)) {
@@ -143,6 +151,10 @@ class GeocodingService {
         ];
     }
 
+    /**
+     * Query Zippopotam API
+     * * @return array{city: string, state: string, lat: string, lng: string}|null
+     */
     private function queryZippopotam(string $zip, string $country): ?array {
         $url = sprintf(self::ZIPPO_URL, strtolower($country), $zip);
         $response = wp_remote_get($url, ['timeout' => 3]);
@@ -163,6 +175,10 @@ class GeocodingService {
         ];
     }
 
+    /**
+     * Query Nominatim API
+     * * @return array{city: string, state: string, lat: string, lng: string}|null
+     */
     private function queryNominatim(string $zip, string $country): ?array {
         $formattedZip = $zip;
         if ($country === 'CA' && strlen($zip) === 6) {

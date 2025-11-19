@@ -59,9 +59,10 @@ class LocationHandler {
             update_post_meta($id, 'yardlii_derived_lat', $locationData['lat']);
             update_post_meta($id, 'yardlii_derived_lng', $locationData['lng']);
             
-            // Save Debug/Diagnostic Data (So we know what happened)
-            $source = $locationData['source'] ?? 'Unknown';
-            $error  = $locationData['error'] ?? '';
+            // Save Debug/Diagnostic Data
+            // PHPStan knows these keys exist based on the @return array{...} in GeocodingService
+            $source = $locationData['source'];
+            $error  = $locationData['error'];
             
             update_post_meta($id, '_yardlii_geo_source', $source);
             update_post_meta($id, '_yardlii_geo_error', $error);
