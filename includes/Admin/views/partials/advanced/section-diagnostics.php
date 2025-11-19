@@ -224,6 +224,11 @@ if (defined('YARDLII_ENABLE_ROLE_CONTROL')) {
           'yardlii_wpuf_modern_uploader',
           ''
       );
+      yardlii_diag_flag_status_row(
+          'WPUF: Privacy Geocoding',
+          'yardlii_enable_wpuf_geocoding',
+          'YARDLII_ENABLE_WPUF_GEOCODING'
+      );
       ?>
     </tbody>
   </table>
