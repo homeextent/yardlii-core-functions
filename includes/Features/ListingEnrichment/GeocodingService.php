@@ -70,6 +70,11 @@ class GeocodingService {
 
     /**
      * Query Google Geocoding API
+     *
+     * @param string $zip
+     * @param string $country
+     * @param string $apiKey
+     * @return array{city: string, state: string, lat: string, lng: string}|null
      */
     private function queryGoogle(string $zip, string $country, string $apiKey): ?array {
         // Add country for better precision (e.g., "L2N2E2, CA")
@@ -123,6 +128,13 @@ class GeocodingService {
         ];
     }
 
+    /**
+     * Query Zippopotam API
+     *
+     * @param string $zip
+     * @param string $country
+     * @return array{city: string, state: string, lat: string, lng: string}|null
+     */
     private function queryZippopotam(string $zip, string $country): ?array {
         $url = sprintf(self::ZIPPO_URL, strtolower($country), $zip);
         $response = wp_remote_get($url, ['timeout' => 3]);
@@ -145,6 +157,13 @@ class GeocodingService {
         ];
     }
 
+    /**
+     * Query OpenStreetMap Nominatim
+     *
+     * @param string $zip
+     * @param string $country
+     * @return array{city: string, state: string, lat: string, lng: string}|null
+     */
     private function queryNominatim(string $zip, string $country): ?array {
         $args = [
             'headers' => ['User-Agent' => 'YardliiPlugin/1.0 (' . get_bloginfo('url') . ')'],
@@ -171,6 +190,7 @@ class GeocodingService {
 
         $place = $data[0];
         $addr  = $place['address'] ?? [];
+        // OSM Logic: Try city, then town, then village, then municipality
         $city = $addr['city'] ?? $addr['town'] ?? $addr['village'] ?? $addr['hamlet'] ?? $addr['municipality'] ?? '';
         
         return [
