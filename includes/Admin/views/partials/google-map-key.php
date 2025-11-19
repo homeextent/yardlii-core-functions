@@ -21,11 +21,20 @@
     <div style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
         <label style="font-weight:600; display:block; margin-bottom:5px;">Backend Geocoding Key (Server):</label>
         <input type="text" name="yardlii_google_server_key" value="<?php echo esc_attr($server_key); ?>" placeholder="AIza..." class="regular-text code">
-        <p class="description">
-            [cite_start]Used by the WPUF Geocoding engine[cite: 318].<br>
-            <strong>Important:</strong> This key MUST NOT have "HTTP Referrer" restrictions. 
-            Restrict it by <strong>IP Address</strong> (<?php echo $_SERVER['SERVER_ADDR'] ?? 'your server IP'; ?>) or leave unrestricted.
-        </p>
+        
+        <div class="description" style="margin-top:8px; line-height:1.5;">
+            Used by the WPUF Geocoding engine.<br>
+            <strong>Security Configuration:</strong>
+            <ol style="list-style:decimal; margin-left:20px; margin-top:5px;">
+                <li>
+                    <strong>Option A (Strict):</strong> Restrict by IP Address. Your server's <em>Incoming</em> IP is <code><?php echo $_SERVER['SERVER_ADDR'] ?? 'Unknown'; ?></code>.<br>
+                    <em>Note:</em> On shared hosting (SiteGround), the <strong>Outgoing IP</strong> often differs. Check <code>debug.log</code> if requests fail to find the correct IP.
+                </li>
+                <li>
+                    <strong>Option B (Recommended Fallback):</strong> Leave IP restrictions <strong>Blank (None)</strong> and enable a <strong>Quota Limit</strong> (e.g., 1,000/day) in Google Console to prevent overage costs.
+                </li>
+            </ol>
+        </div>
     </div>
 
     <?php submit_button('Save API Keys'); ?>

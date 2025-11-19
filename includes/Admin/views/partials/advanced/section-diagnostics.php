@@ -469,9 +469,6 @@ $hs_diag = [
     <pre id="yardlii-tv-api-output" style="margin-top:1rem;max-height:220px;overflow:auto;background:#f6f7f7;padding:10px;border:1px solid #dcdcde;"></pre>
   </div>
 
-  <?php
-  // This script tag is now moved inside the new DOMContentLoaded listener above
-  ?>
 
   <?php
   if (class_exists('\Yardlii\Core\Features\TrustVerification\Requests\CPT')) {
@@ -511,4 +508,64 @@ $hs_diag = [
       echo '<p>Trust & Verification CPT class not found.</p>';
   }
   ?>
+</div>
+// --- 5. NEW: Geocoding Diagnostics ---
+?>
+<div class="form-config-block">
+  <h2>📍 Geocoding Diagnostics</h2>
+  
+  <div style="background:#fff; border-left:4px solid #00a32a; padding:10px 15px; margin-bottom:15px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+      <strong>🔔 Future Maintenance Reminder:</strong><br>
+      Ensure your <strong>Backend API Key</strong> has a <strong>Quota Limit</strong> (e.g., 1,000 requests/day) set in Google Cloud Console.<br>
+      <em>Why?</em> If IP restrictions fail due to rotating host IPs, this quota protects you from unexpected billing while keeping the key unrestricted.
+  </div>
+
+  <label>
+      <span><?php esc_html_e('Test Postal Code', 'yardlii-core'); ?></span>
+      <input type="text" id="yardlii-geo-test-input" class="small-text" placeholder="e.g. L2N 6P9" value="L2N 6P9" />
+  </label>
+  <button type="button" class="button" id="yardlii-geo-test-btn" style="margin-left:1rem;">
+      <?php esc_html_e('Test Geocoding API', 'yardlii-core'); ?>
+  </button>
+
+  <pre id="yardlii-geo-test-output" style="margin-top:1rem;max-height:150px;overflow:auto;background:#f6f7f7;padding:10px;border:1px solid #dcdcde;display:none;"></pre>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+      var btn = document.getElementById('yardlii-geo-test-btn');
+      var out = document.getElementById('yardlii-geo-test-output');
+      
+      if(btn && out && window.YARDLII_ADMIN) {
+          btn.addEventListener('click', function() {
+              var postal = document.getElementById('yardlii-geo-test-input').value;
+              out.textContent = 'Testing...';
+              out.style.display = 'block';
+              out.style.color = '#555';
+
+              fetch(YARDLII_ADMIN.ajaxurl, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: new URLSearchParams({
+                    'action': 'yardlii_test_geocoding',
+                    'nonce': YARDLII_ADMIN.nonce, // Uses the global admin nonce from Assets.php
+                    'postal_code': postal
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                var msg = data.data && data.data.message ? data.data.message : (data.message || JSON.stringify(data));
+                if(data.success && data.data.data) {
+                    msg += '\n\nResult:\n' + JSON.stringify(data.data.data, null, 2);
+                }
+                out.textContent = msg;
+                out.style.color = data.success ? '#0073aa' : '#d63638';
+            })
+            .catch(err => {
+                out.textContent = 'AJAX request failed: ' + err;
+                out.style.color = '#d63638';
+            });
+          });
+      }
+  });
+  </script>
 </div>
