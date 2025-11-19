@@ -94,4 +94,89 @@ class WpufGeocoding {
      *
      * @param string $postal_code The postal code to geocode.
      * @param string $key         The Google API key.
-     * @return array{lat: float,
+     * @return array{lat: float, lng: float, address: string}|null
+     */
+    private function fetch_coordinates(string $postal_code, string $key): ?array {
+        $url = "https://maps.googleapis.com/maps/api/geocode/json?address=" . urlencode($postal_code) . "&key=" . $key;
+        $response = wp_remote_get($url);
+        
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            return null;
+        }
+
+        $body_json = wp_remote_retrieve_body($response);
+        if (!is_string($body_json)) {
+            return null;
+        }
+
+        $body = json_decode($body_json, true);
+
+        if (is_array($body) && isset($body['status']) && $body['status'] === 'OK') {
+            $result = $body['results'][0];
+            
+            // Ensure result parts exist and are arrays before passing
+            $geometry = $result['geometry'] ?? [];
+            $location = is_array($geometry) ? ($geometry['location'] ?? []) : [];
+            $components = $result['address_components'] ?? [];
+
+            if (
+                is_array($location)
+                && isset($location['lat'], $location['lng'])
+                && is_array($components)
+            ) {
+                return [
+                    'lat'     => (float) $location['lat'],
+                    'lng'     => (float) $location['lng'],
+                    'address' => $this->format_privacy_address($components)
+                ];
+            }
+        }
+
+        return null;
+    }
+    
+    /**
+     * Extracts only "City, Province" to preserve privacy.
+     *
+     * @param array<array<string, mixed>> $components The address_components from Google API.
+     */
+    private function format_privacy_address(array $components): string {
+        $city = '';
+        $province = '';
+
+        foreach ($components as $comp) {
+            // Ensure array structure
+            if (!is_array($comp) || !isset($comp['types'])) {
+                continue;
+            }
+            
+            // Strict type checking for 'types'
+            $types = $comp['types'];
+            if (!is_array($types)) {
+                continue;
+            }
+
+            if (in_array('locality', $types, true)) {
+                $city = isset($comp['long_name']) ? (string) $comp['long_name'] : '';
+            }
+            if (in_array('administrative_area_level_1', $types, true)) {
+                $province = isset($comp['short_name']) ? (string) $comp['short_name'] : '';
+            }
+        }
+
+        // Fallbacks
+        if ($city === '') {
+            $city = 'Unknown City';
+        }
+        
+        // Build string
+        $parts = [];
+        $parts[] = $city;
+        
+        if ($province !== '') {
+            $parts[] = $province;
+        }
+
+        return implode(', ', $parts);
+    }
+}
