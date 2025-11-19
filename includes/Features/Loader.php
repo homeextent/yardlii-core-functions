@@ -109,7 +109,8 @@ final class Loader
         // WPUF Geocoding (Privacy Focused)
     $geo_enabled = (bool) get_option('yardlii_enable_wpuf_geocoding', false);
     if (defined('YARDLII_ENABLE_WPUF_GEOCODING')) {
-        $geo_enabled = (bool) YARDLII_ENABLE_WPUF_GEOCODING;
+        // FIX: Use constant() string access
+        $geo_enabled = (bool) constant('YARDLII_ENABLE_WPUF_GEOCODING');
     }
 
     if ($geo_enabled && class_exists(__NAMESPACE__ . '\\WpufGeocoding')) {
