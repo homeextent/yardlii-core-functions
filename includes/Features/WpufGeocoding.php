@@ -35,9 +35,12 @@ class WpufGeocoding {
         $map = $this->parse_mapping_config($raw_mapping);
 
         // 2. Check if this Form ID is monitored
-        // Convert form_id to string for array key comparison
         $fid_str = (string) $form_id;
         if (!isset($map[$fid_str])) {
+            // Debug log: Helpful to know why it didn't run
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("[YARDLII GEO] Skipped: Form ID $fid_str is not in the mapping config.");
+            }
             return;
         }
 
@@ -47,12 +50,16 @@ class WpufGeocoding {
         $postal_code = get_post_meta($post_id, $input_meta_key, true);
 
         if (empty($postal_code) || !is_string($postal_code)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("[YARDLII GEO] Failed: Postal code empty or invalid for Post $post_id (Key: $input_meta_key).");
+            }
             return;
         }
 
         // 4. Get API Key
         $api_key = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
         if (empty($api_key) || !is_string($api_key)) {
+            error_log("[YARDLII GEO] Error: Google API Key is missing in Core Settings.");
             return;
         }
 
@@ -64,6 +71,12 @@ class WpufGeocoding {
             update_post_meta($post_id, 'yardlii_listing_latitude', $data['lat']);
             update_post_meta($post_id, 'yardlii_listing_longitude', $data['lng']);
             update_post_meta($post_id, 'yardlii_display_city_province', $data['address']);
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("[YARDLII GEO] Success! Geocoded Post $post_id. Loc: {$data['address']} ({$data['lat']}, {$data['lng']})");
+            }
+        } else {
+            error_log("[YARDLII GEO] Failed: Google API returned no results for postal code '$postal_code'.");
         }
     }
 
@@ -101,6 +114,7 @@ class WpufGeocoding {
         $response = wp_remote_get($url);
         
         if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            error_log("[YARDLII GEO] HTTP Error: " . print_r($response, true));
             return null;
         }
 
@@ -130,6 +144,11 @@ class WpufGeocoding {
                     'address' => $this->format_privacy_address($components)
                 ];
             }
+        } elseif (is_array($body) && isset($body['status'])) {
+             error_log("[YARDLII GEO] API Error Status: " . $body['status']);
+             if (isset($body['error_message'])) {
+                 error_log("[YARDLII GEO] API Message: " . $body['error_message']);
+             }
         }
 
         return null;
