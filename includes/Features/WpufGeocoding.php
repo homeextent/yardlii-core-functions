@@ -34,14 +34,19 @@ class WpufGeocoding
 
     /**
      * Sanitizes the Form ID and Field Key inputs.
-     * @param array $input The raw input array from the form.
-     * @return array The cleaned array.
+     *
+     * @param array<mixed> $input The raw input array from the form.
+     * @return array<int, array{form_id: int, postal_code_key: string}> The cleaned array.
      */
-    public function sanitize_config(array $input): array // FIX: Added native type hints (array $input): array
+    public function sanitize_config(array $input): array // FIX: Contains necessary native type hints
     {
         $clean = [];
+        // Ensure input is iterable
         if (is_array($input)) {
             foreach ($input as $row) {
+                // Explicitly cast to array to satisfy PHPStan if $row is mixed
+                $row = (array) $row; 
+                
                 // Only save rows that have both a form ID and a postal code key
                 if (!empty($row['form_id']) && !empty($row['postal_code_key'])) {
                     $clean[] = [
@@ -56,19 +61,30 @@ class WpufGeocoding
 
     /**
      * Performs the server-side geocoding and saves the coordinates and location name.
+     *
      * @param int $post_id The ID of the newly inserted post.
-     * @param array $form_settings The WPUF form settings array.
+     * @param array<string, mixed> $form_settings The WPUF form settings array.
      * @return void
      */
-    public function geocode_listing_data(int $post_id, array $form_settings): void // FIX: Added native type hints (array $form_settings): void
+    public function geocode_listing_data(int $post_id, array $form_settings): void // FIX: Contains necessary native type hints
     {
         $form_id = absint($form_settings['id'] ?? 0);
+        
+        /** @var array<int, array{form_id: int, postal_code_key: string}> $config */
         $config  = get_option(self::OPTION_CONFIG, []);
+        
         $field_name = null;
         
+        // Ensure $config is iterable
+        if (!is_array($config)) {
+            return;
+        }
+
         foreach ($config as $row) {
-            if (absint($row['form_id']) === $form_id) {
-                $field_name = $row['postal_code_key'];
+            // Ensure $row is an array before accessing offsets
+            $row = (array) $row;
+            if (isset($row['form_id']) && absint($row['form_id']) === $form_id) {
+                $field_name = $row['postal_code_key'] ?? null;
                 break;
             }
         }
@@ -96,18 +112,22 @@ class WpufGeocoding
             return;
         }
         
-        $data = json_decode(wp_remote_retrieve_body($response), true);
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
 
-        if (empty($data['results']) || strtolower($data['status']) !== 'ok') return;
+        if (empty($data['results']) || !isset($data['status']) || strtolower($data['status']) !== 'ok') return;
         
         $result = $data['results'][0];
         $location = $result['geometry']['location'];
         
         $city = $province = '';
-        foreach ($result['address_components'] as $component) {
-            if (in_array('locality', $component['types'], true)) $city = $component['long_name'];
-            if (in_array('administrative_area_level_1', $component['types'], true)) $province = $component['short_name'];
+        if (isset($result['address_components']) && is_array($result['address_components'])) {
+            foreach ($result['address_components'] as $component) {
+                if (in_array('locality', $component['types'], true)) $city = $component['long_name'];
+                if (in_array('administrative_area_level_1', $component['types'], true)) $province = $component['short_name'];
+            }
         }
+        
         $display_name = trim("{$city}, {$province}", ', ');
         
         update_post_meta($post_id, self::META_POSTAL_CODE, $postal_code);
