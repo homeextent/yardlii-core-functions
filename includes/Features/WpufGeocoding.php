@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Yardlii\Core\Features;
 
 /**
@@ -21,50 +23,55 @@ class WpufGeocoding {
 
     /**
      * The Conversion Engine
+     *
+     * @param int   $post_id       The ID of the post being saved.
+     * @param int   $form_id       The ID of the WPUF form.
+     * @param array $form_settings Form settings array.
+     * @param array $form_vars     Form variables array.
      */
-    public function handle_submission($post_id, $form_id, $form_settings, $form_vars): void {
+    public function handle_submission(int $post_id, int $form_id, array $form_settings, array $form_vars): void {
         // 1. Load the Mapping Config
-        // Format is "FormID:MetaKey" (one per line)
-        $raw_mapping = get_option(self::OPTION_MAPPING, '');
+        $raw_mapping = (string) get_option(self::OPTION_MAPPING, '');
         $map = $this->parse_mapping_config($raw_mapping);
 
         // 2. Check if this Form ID is monitored
-        if (!isset($map[$form_id])) {
+        // Convert form_id to string for array key comparison
+        $fid_str = (string) $form_id;
+        if (!isset($map[$fid_str])) {
             return;
         }
 
-        $input_meta_key = $map[$form_id]; // e.g., 'yardlii_listing_postal_code'
+        $input_meta_key = $map[$fid_str];
 
         // 3. Retrieve the user's submitted Postal Code
         $postal_code = get_post_meta($post_id, $input_meta_key, true);
 
-        if (empty($postal_code)) {
+        if (empty($postal_code) || !is_string($postal_code)) {
             return;
         }
 
-        // 4. Get API Key (Reusing existing Core architecture)
+        // 4. Get API Key
         $api_key = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
-        if (empty($api_key)) {
-            // Optional: Log error here if Logger exists
+        if (empty($api_key) || !is_string($api_key)) {
             return;
         }
 
         // 5. Call Google Geocoding API
         $data = $this->fetch_coordinates($postal_code, $api_key);
 
-        // 6. Save Derived Data (Privacy & Search)
+        // 6. Save Derived Data
         if ($data) {
-            // For FacetWP Search
             update_post_meta($post_id, 'yardlii_listing_latitude', $data['lat']);
             update_post_meta($post_id, 'yardlii_listing_longitude', $data['lng']);
-            
-            // For Privacy Display (Elementor)
             update_post_meta($post_id, 'yardlii_display_city_province', $data['address']);
         }
     }
 
     /**
-     * Parses the text area config into a usable array [FormID => MetaKey]
+     * Parses the text area config into a usable array.
+     *
+     * @param string $input The raw textarea string.
+     * @return array<string, string> Map of FormID => MetaKey.
      */
     private function parse_mapping_config(string $input): array {
         $lines = explode("\n", $input);
@@ -83,9 +90,13 @@ class WpufGeocoding {
     }
 
     /**
-     * Performs the API Request and extracts clean data
+     * Performs the API Request and extracts clean data.
+     *
+     * @param string $postal_code The postal code to geocode.
+     * @param string $key         The Google API key.
+     * @return array{lat: float, lng: float, address: string}|null
      */
-    private function fetch_coordinates($postal_code, $key): ?array {
+    private function fetch_coordinates(string $postal_code, string $key): ?array {
         $url = "https://maps.googleapis.com/maps/api/geocode/json?address=" . urlencode($postal_code) . "&key=" . $key;
         $response = wp_remote_get($url);
         
@@ -93,15 +104,20 @@ class WpufGeocoding {
             return null;
         }
 
-        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $body_json = wp_remote_retrieve_body($response);
+        if (!is_string($body_json)) {
+            return null;
+        }
 
-        if (isset($body['status']) && $body['status'] === 'OK') {
+        $body = json_decode($body_json, true);
+
+        if (is_array($body) && isset($body['status']) && $body['status'] === 'OK') {
             $result = $body['results'][0];
             
             return [
-                'lat' => $result['geometry']['location']['lat'],
-                'lng' => $result['geometry']['location']['lng'],
-                'address' => $this->format_privacy_address($result['address_components'])
+                'lat'     => (float) $result['geometry']['location']['lat'],
+                'lng'     => (float) $result['geometry']['location']['lng'],
+                'address' => $this->format_privacy_address((array) $result['address_components'])
             ];
         }
 
@@ -109,25 +125,35 @@ class WpufGeocoding {
     }
     
     /**
-     * Extracts only "City, Province" to preserve privacy
+     * Extracts only "City, Province" to preserve privacy.
+     *
+     * @param array $components The address_components from Google API.
      */
-    private function format_privacy_address($components): string {
+    private function format_privacy_address(array $components): string {
         $city = '';
         $province = '';
 
         foreach ($components as $comp) {
-            if (in_array('locality', $comp['types'])) {
-                $city = $comp['long_name'];
+            if (!is_array($comp) || !isset($comp['types'])) {
+                continue;
             }
-            if (in_array('administrative_area_level_1', $comp['types'])) {
-                $province = $comp['short_name']; // Use short name (e.g., ON, NY)
+            
+            if (in_array('locality', $comp['types'], true)) {
+                $city = $comp['long_name'] ?? '';
+            }
+            if (in_array('administrative_area_level_1', $comp['types'], true)) {
+                $province = $comp['short_name'] ?? '';
             }
         }
 
         // Fallbacks
         if (!$city) $city = 'Unknown City';
-        if (!$province) $province = '';
+        
+        // Build string
+        $parts = [];
+        if (!empty($city)) $parts[] = $city;
+        if (!empty($province)) $parts[] = $province;
 
-        return trim("$city, $province", ", "); 
+        return implode(', ', $parts);
     }
 }
