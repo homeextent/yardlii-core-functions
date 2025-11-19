@@ -19,6 +19,13 @@ class GeocodingService {
     private string $lastError = '';
 
     /**
+     * Get the last recorded error message.
+     */
+    public function getLastError(): string {
+        return $this->lastError;
+    }
+
+    /**
      * Lookup city, state, and coordinates.
      *
      * @param string $zip The raw zip/postal code.
@@ -35,7 +42,6 @@ class GeocodingService {
         if (!empty($googleKey)) {
             $googleData = $this->queryGoogle($cleanZip, $countryCode, $googleKey);
             if ($googleData) {
-                // We perform the array union here to match the return shape
                 return array_merge($googleData, [
                     'source' => 'Google Maps API',
                     'error'  => ''
@@ -106,7 +112,7 @@ class GeocodingService {
         $response = wp_remote_get($url, $args);
 
         if (is_wp_error($response)) {
-            $this->lastError = $response->get_error_message();
+            $this->lastError = "HTTP Error: " . $response->get_error_message();
             return null;
         }
 
@@ -114,14 +120,13 @@ class GeocodingService {
         $status = $body['status'] ?? 'UNKNOWN';
 
         if ($status !== 'OK') {
-            // Capture the specific reason (e.g. REQUEST_DENIED)
             $errMsg = $body['error_message'] ?? 'Unknown API Error';
-            $this->lastError = "$status - $errMsg";
+            $this->lastError = "Google API Error [$status]: $errMsg";
             return null;
         }
 
         if (empty($body['results'][0])) {
-            $this->lastError = 'ZERO_RESULTS';
+            $this->lastError = 'Google API: ZERO_RESULTS returned';
             return null;
         }
 

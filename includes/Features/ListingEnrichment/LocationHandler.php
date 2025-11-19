@@ -52,20 +52,27 @@ class LocationHandler {
         $locationData = $this->geocoder->lookup($zip, 'CA');
 
         if ($locationData) {
-            // Save Main Data
+            // Success Case
             update_post_meta($id, 'yardlii_derived_city', $locationData['city']);
             update_post_meta($id, 'yardlii_derived_province', $locationData['state']);
             update_post_meta($id, 'yardlii_derived_full_string', $locationData['city'] . ', ' . $locationData['state']);
             update_post_meta($id, 'yardlii_derived_lat', $locationData['lat']);
             update_post_meta($id, 'yardlii_derived_lng', $locationData['lng']);
             
-            // Save Debug/Diagnostic Data
-            // PHPStan knows these keys exist based on the @return array{...} in GeocodingService
-            $source = $locationData['source'];
-            $error  = $locationData['error'];
+            // Save Debug Info
+            update_post_meta($id, '_yardlii_geo_source', $locationData['source']);
+            update_post_meta($id, '_yardlii_geo_error', $locationData['error']);
+        } else {
+            // Failure Case: Save the error so we know WHY it failed
+            $errorMsg = $this->geocoder->getLastError();
+            if (empty($errorMsg)) {
+                $errorMsg = "Unknown failure (All providers returned null)";
+            }
+            update_post_meta($id, '_yardlii_geo_source', 'FAILED');
+            update_post_meta($id, '_yardlii_geo_error', $errorMsg);
             
-            update_post_meta($id, '_yardlii_geo_source', $source);
-            update_post_meta($id, '_yardlii_geo_error', $error);
+            // Clear old data to prevent stale location info
+            delete_post_meta($id, 'yardlii_derived_full_string');
         }
     }
 
