@@ -111,11 +111,88 @@
                     Synchronizes "Featured" status between ACF, WPUF, and WordPress Sticky posts.<br>
                     Enables the <code>[yardlii_featured_badge]</code> shortcode and Admin Filters.
                 </p>
+
+
+
             </div>
         </div>
       </td>
     </tr>
+<tr><td colspan="2"><hr style="border: 0; border-top: 1px solid #ddd;"></td></tr>
 
+    <tr valign="top">
+      <th scope="row">
+        <h3>🗺️ Geocoding Configuration</h3>
+        <p class="description">
+          Maps WPUF forms to the postal code field key for Lat/Lng conversion.
+        </p>
+      </th>
+      <td>
+        <?php 
+          // CRITICAL: Use the fully qualified class name for option retrieval (requires WpufGeocoding.php class to be loaded)
+          $geocoding_class = '\\Yardlii\\Core\\Features\\WpufGeocoding';
+          
+          if (class_exists($geocoding_class)) {
+            $config_option_key = $geocoding_class::OPTION_CONFIG;
+            $geocoding_config = get_option($config_option_key, []); 
+            
+            // Fallback to ensure at least one row is available for input
+            if (empty($geocoding_config)) {
+              $geocoding_config[] = ['form_id' => '', 'postal_code_key' => ''];
+            }
+          } else {
+             // Safe fallback if the feature class is not loaded 
+            $config_option_key = 'yardlii_wpuf_geocoding_forms'; // Hardcode fallback key
+            $geocoding_config = [['form_id' => '', 'postal_code_key' => '']];
+          }
+        ?>
+
+        <table class="widefat fixed" cellspacing="0" style="width: 100%; max-width: 600px; margin-bottom: 15px;">
+          <thead>
+            <tr>
+              <th class="manage-column" style="width: 30%;">WPUF Form ID</th>
+              <th class="manage-column">Postal Code Field Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php 
+            // Loop through existing configurations
+            foreach ($geocoding_config as $index => $row) : 
+            ?>
+              <tr class="<?php echo ($index % 2 == 0) ? 'alternate' : ''; ?>">
+                <td>
+                  <input 
+                    type="number" 
+                    name="<?php echo esc_attr("{$config_option_key}[{$index}][form_id]"); ?>" 
+                    value="<?php echo esc_attr($row['form_id']); ?>" 
+                    placeholder="e.g., 345" 
+                    style="width: 90px;"
+                    min="1"
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="text" 
+                    name="<?php echo esc_attr("{$config_option_key}[{$index}][postal_code_key]"); ?>" 
+                    value="<?php echo esc_attr($row['postal_code_key']); ?>" 
+                    placeholder="e.g., listing_postal_code" 
+                    class="regular-text"
+                  />
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+        <p class="description">
+          Add one row for each WPUF form that requires geocoding. The **Postal Code Field Name** must match the WPUF key (e.g., <code>listing_postal_code</code> or <code>wpuf_field_5</code>).
+        </p>
+        <p class="description">
+          The resulting Lat/Lng data is saved to the following post meta keys: 
+          <code>yardlii_listing_latitude</code>, <code>yardlii_listing_longitude</code>, 
+          <code>yardlii_display_city_province</code>.
+        </p>
+      </td>
+    </tr>
   </table>
 
   <?php submit_button('Save WPUF Settings'); ?>

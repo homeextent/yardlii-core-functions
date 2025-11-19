@@ -179,6 +179,11 @@ if (defined('YARDLII_ENABLE_ROLE_CONTROL')) {
           'YARDLII_ENABLE_TRUST_VERIFICATION'
       );
       yardlii_diag_flag_status_row(
+          'WPUF: Geocoding Conversion',
+          'yardlii_enable_wpuf_geocoding',
+          'YARDLII_ENABLE_WPUF_GEOCODING'
+      );
+      yardlii_diag_flag_status_row(
           'Role Control (Master)',
           'yardlii_enable_role_control',
           'YARDLII_ENABLE_ROLE_CONTROL'
