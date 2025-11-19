@@ -24,10 +24,10 @@ class WpufGeocoding {
     /**
      * The Conversion Engine
      *
-     * @param int   $post_id       The ID of the post being saved.
-     * @param int   $form_id       The ID of the WPUF form.
-     * @param array $form_settings Form settings array.
-     * @param array $form_vars     Form variables array.
+     * @param int          $post_id       The ID of the post being saved.
+     * @param int          $form_id       The ID of the WPUF form.
+     * @param array<mixed> $form_settings Form settings array.
+     * @param array<mixed> $form_vars     Form variables array.
      */
     public function handle_submission(int $post_id, int $form_id, array $form_settings, array $form_vars): void {
         // 1. Load the Mapping Config
@@ -94,66 +94,4 @@ class WpufGeocoding {
      *
      * @param string $postal_code The postal code to geocode.
      * @param string $key         The Google API key.
-     * @return array{lat: float, lng: float, address: string}|null
-     */
-    private function fetch_coordinates(string $postal_code, string $key): ?array {
-        $url = "https://maps.googleapis.com/maps/api/geocode/json?address=" . urlencode($postal_code) . "&key=" . $key;
-        $response = wp_remote_get($url);
-        
-        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
-            return null;
-        }
-
-        $body_json = wp_remote_retrieve_body($response);
-        if (!is_string($body_json)) {
-            return null;
-        }
-
-        $body = json_decode($body_json, true);
-
-        if (is_array($body) && isset($body['status']) && $body['status'] === 'OK') {
-            $result = $body['results'][0];
-            
-            return [
-                'lat'     => (float) $result['geometry']['location']['lat'],
-                'lng'     => (float) $result['geometry']['location']['lng'],
-                'address' => $this->format_privacy_address((array) $result['address_components'])
-            ];
-        }
-
-        return null;
-    }
-    
-    /**
-     * Extracts only "City, Province" to preserve privacy.
-     *
-     * @param array $components The address_components from Google API.
-     */
-    private function format_privacy_address(array $components): string {
-        $city = '';
-        $province = '';
-
-        foreach ($components as $comp) {
-            if (!is_array($comp) || !isset($comp['types'])) {
-                continue;
-            }
-            
-            if (in_array('locality', $comp['types'], true)) {
-                $city = $comp['long_name'] ?? '';
-            }
-            if (in_array('administrative_area_level_1', $comp['types'], true)) {
-                $province = $comp['short_name'] ?? '';
-            }
-        }
-
-        // Fallbacks
-        if (!$city) $city = 'Unknown City';
-        
-        // Build string
-        $parts = [];
-        if (!empty($city)) $parts[] = $city;
-        if (!empty($province)) $parts[] = $province;
-
-        return implode(', ', $parts);
-    }
-}
+     * @return array{lat: float,
