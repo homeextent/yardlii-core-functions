@@ -56,10 +56,15 @@ class WpufGeocoding {
             return;
         }
 
-        // 4. Get API Key
-        $api_key = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
+        // 4. Get API Key (Prioritize Server Key, fallback to Map Key)
+        $server_key = get_option('yardlii_google_server_key');
+        $map_key    = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
+        
+        // Use server key if available, otherwise try map key (though it might fail if restricted)
+        $api_key = !empty($server_key) ? $server_key : $map_key;
+
         if (empty($api_key) || !is_string($api_key)) {
-            error_log("[YARDLII GEO] Error: Google API Key is missing in Core Settings.");
+            error_log("[YARDLII GEO] Error: No valid Google API Key found (checked Server and Map keys).");
             return;
         }
 

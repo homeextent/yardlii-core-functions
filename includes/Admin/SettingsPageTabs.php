@@ -301,6 +301,8 @@ final class SettingsPageTabs
     {
         $N = self::success_notifier(self::GROUP_GOOGLE_MAP);
         register_setting(self::GROUP_GOOGLE_MAP, 'yardlii_google_map_key', ['sanitize_callback' => $N]);
+        // [NEW] Server-side key for Geocoding
+        register_setting(self::GROUP_GOOGLE_MAP, 'yardlii_google_server_key', ['sanitize_callback' => $N]); 
         register_setting(self::GROUP_GOOGLE_MAP, 'yardlii_map_controls',   ['sanitize_callback' => $N]);
     }
 
