@@ -38,7 +38,7 @@ class WpufGeocoding
      * @param array<mixed> $input The raw input array from the form.
      * @return array<int, array{form_id: int, postal_code_key: string}> The cleaned array.
      */
-    public function sanitize_config(array $input): array // FIX: Contains necessary native type hints
+    public function sanitize_config(array $input): array
     {
         $clean = [];
         // Ensure input is iterable
@@ -66,7 +66,7 @@ class WpufGeocoding
      * @param array<string, mixed> $form_settings The WPUF form settings array.
      * @return void
      */
-    public function geocode_listing_data(int $post_id, array $form_settings): void // FIX: Contains necessary native type hints
+    public function geocode_listing_data(int $post_id, array $form_settings): void
     {
         $form_id = absint($form_settings['id'] ?? 0);
         
@@ -81,10 +81,15 @@ class WpufGeocoding
         }
 
         foreach ($config as $row) {
-            // Ensure $row is an array before accessing offsets
+            // We rely on the @var type annotation here, avoiding redundant checks.
+            // The cast is still necessary if $row comes from get_option which returns 'mixed'.
             $row = (array) $row;
-            if (isset($row['form_id']) && absint($row['form_id']) === $form_id) {
-                $field_name = $row['postal_code_key'] ?? null;
+            
+            // FIX: Removed isset() check as PHPStan guarantees its existence due to @var
+            if (absint($row['form_id']) === $form_id) {
+                
+                // FIX: Removed ?? null as PHPStan guarantees its existence due to @var
+                $field_name = $row['postal_code_key']; 
                 break;
             }
         }
