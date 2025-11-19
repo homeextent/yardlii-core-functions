@@ -509,6 +509,7 @@ $hs_diag = [
   }
   ?>
 </div>
+<?php
 // --- 5. NEW: Geocoding Diagnostics ---
 ?>
 <div class="form-config-block">
@@ -568,4 +569,46 @@ $hs_diag = [
       }
   });
   </script>
+
+<?php
+// --- 6. NEW: FacetWP Index Inspector ---
+?>
+<div class="form-config-block">
+  <h2>💎 FacetWP Index Inspector</h2>
+  <p class="description">Check if FacetWP has successfully indexed your Latitude/Longitude data.</p>
+  
+  <?php
+  global $wpdb;
+  // Check if table exists first
+  $table_name = $wpdb->prefix . 'facetwp_index';
+  if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+      echo '<p style="color:red;"><strong>Error:</strong> FacetWP index table not found.</p>';
+  } else {
+      // Query the last 10 indexed items for the 'location' facet
+      $results = $wpdb->get_results(
+          "SELECT post_id, facet_value, facet_display_value, facet_name 
+           FROM {$table_name} 
+           WHERE facet_name = 'location' 
+           LIMIT 10"
+      );
+
+      if (empty($results)) {
+           echo '<p style="color:#d63638;"><strong>No data found for facet "location".</strong><br>Please go to Settings -> FacetWP and click "Re-index".</p>';
+      } else {
+           echo '<table class="wp-list-table widefat striped" style="margin-top:10px;">';
+           echo '<thead><tr><th>Post ID</th><th>Latitude (facet_value)</th><th>Longitude (facet_display_value)</th></tr></thead>';
+           echo '<tbody>';
+           foreach ($results as $row) {
+               echo '<tr>';
+               echo '<td>' . esc_html($row->post_id) . ' (' . get_the_title($row->post_id) . ')</td>';
+               echo '<td>' . esc_html($row->facet_value) . '</td>';
+               echo '<td>' . esc_html($row->facet_display_value) . '</td>';
+               echo '</tr>';
+           }
+           echo '</tbody></table>';
+           echo '<p class="description" style="margin-top:5px;"><em>Note: If Lat/Lng are 0 or empty, the indexer isn\'t finding your ACF fields.</em></p>';
+      }
+  }
+  ?>
+</div>
 </div>
