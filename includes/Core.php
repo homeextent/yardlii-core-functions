@@ -49,16 +49,7 @@ class Core
             $this->log_init('Error initializing Loader: ' . $e->getMessage());
         }
 
-        // [NEW] Force FacetWP to use our keys (Global override)
-        add_filter('facetwp_proximity_store_keys', function($keys) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[YARDLII FACET] Mapping keys for Proximity Search.');
-            }
-            return [
-                'latitude'  => 'yardlii_listing_latitude',
-                'longitude' => 'yardlii_listing_longitude',
-            ];
-        });
+        
 
         $this->log_init('Core::init() completed.');
     }
