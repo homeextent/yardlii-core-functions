@@ -108,7 +108,14 @@ final class EmployerVouchService
         }
 
         $generatedAt = (int) get_post_meta($requestId, self::META_TIMESTAMP, true);
-        if (time() - $generatedAt > self::EXPIRY_SECONDS) {
+        
+        // [Fix] Use Dynamic Global Setting
+        $days = (int) get_option(\Yardlii\Core\Features\TrustVerification\Settings\GlobalSettings::OPT_EXPIRY_DAYS, 5);
+        if ($days < 1) $days = 5;
+        
+        $allowed_seconds = $days * DAY_IN_SECONDS;
+
+        if (time() - $generatedAt > $allowed_seconds) {
             return 'expired';
         }
 

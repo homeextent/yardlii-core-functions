@@ -8,8 +8,8 @@ final class GlobalSettings
     public const OPT_GROUP          = 'yardlii_tv_global_group';
     public const OPT_EMAILS         = 'yardlii_tv_admin_emails';
     public const OPT_VERIFIED_ROLES = 'yardlii_tv_verified_roles';
-
-   
+    // [Fix 1] Define the missing constant
+    public const OPT_EXPIRY_DAYS    = 'yardlii_tv_expiry_days'; 
 
     public function registerSettings(): void
     {
@@ -23,31 +23,17 @@ final class GlobalSettings
             'default'           => [],    
             'sanitize_callback' => [$this, 'sanitizeRoleArray'],
         ]);
+      
+        // [Fix 2] Register Expiry Days
+        register_setting(self::OPT_GROUP, self::OPT_EXPIRY_DAYS, [
+            'type'              => 'integer',
+            'default'           => 5,
+            'sanitize_callback' => 'absint',
+        ]);
 
-        register_setting('yardlii_tv_global_group', 'yardlii_tv_global', [
-  'sanitize_callback' => function($value) {
-    // … validate …
-    if ($some_error) {
-      add_settings_error(
-        'yardlii_tv_global_group',   // <— matches settings_errors() above
-        'invalid_global',
-        __('Please select a valid Approved Role.', 'yardlii-core'),
-        'error'
-      );
-      // return the old value to prevent save on error:
-      return get_option('yardlii_tv_global', []);
-    }
-    add_settings_error('yardlii_tv_global_group', 'updated_global',
-      __('Settings saved.', 'yardlii-core'), 'updated');
-    return $value;
-  },
-]);
-
-       
-
+        // [Fix 3] Removed the "junk" block that was here (referencing $some_error)
     }
 
-    /** "a@b.com, c@d.com" -> normalized comma list of valid emails */
     public function sanitizeEmails($raw): string
     {
         $parts = array_map('trim', explode(',', (string) $raw));
@@ -55,7 +41,6 @@ final class GlobalSettings
         return implode(', ', array_unique($valid));
     }
 
-    /** keep only real WP role slugs */
     public function sanitizeRoleArray($input): array
     {
         if (!is_array($input)) return [];
