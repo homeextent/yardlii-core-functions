@@ -5,7 +5,7 @@ use Yardlii\Core\Features\TrustVerification\Settings\GlobalSettings;
 defined('ABSPATH') || exit;
 
 /** ---------------------------------------
- *  Gather options & role data
+ * Gather options & role data
  * ------------------------------------- */
 $wp_roles        = wp_roles();
 $roles_map       = is_object($wp_roles) ? ($wp_roles->role_names ?? []) : [];
@@ -39,19 +39,30 @@ $tv_ref = add_query_arg(
       <?php settings_fields(GlobalSettings::OPT_GROUP); ?>
       <input type="hidden" name="_wp_http_referer" value="<?php echo esc_url($tv_ref); ?>" />
 
-     
-
       <table class="form-table" role="presentation">
+        
+        <!-- 1. Admin Notification Emails -->
         <tr>
           <th scope="row">
             <label for="yardlii_tv_admin_emails"><?php esc_html_e('Admin Notification Emails', 'yardlii-core'); ?></label>
           </th>
           <td>
-            <!-- ... email input code ... -->
+            <input
+              type="text"
+              id="yardlii_tv_admin_emails"
+              name="<?php echo esc_attr(GlobalSettings::OPT_EMAILS); ?>"
+              value="<?php echo esc_attr($admin_emails); ?>"
+              class="regular-text"
+              placeholder="admin@example.com, manager@example.com"
+              aria-describedby="yardlii_tv_admin_emails_help"
+            />
+            <p id="yardlii_tv_admin_emails_help" class="description">
+              <?php esc_html_e('Comma-separated list. New requests send an alert here.', 'yardlii-core'); ?>
+            </p>
           </td>
         </tr>
 
-        <!-- [START] NEW INPUT FIELD HERE -->
+        <!-- 2. [NEW] Request Expiration (Days) -->
         <tr>
           <th scope="row">
             <label for="yardlii_tv_expiry_days"><?php esc_html_e('Request Expiration (Days)', 'yardlii-core'); ?></label>
@@ -71,14 +82,29 @@ $tv_ref = add_query_arg(
             </p>
           </td>
         </tr>
-        <!-- [END] NEW INPUT FIELD HERE -->
 
+        <!-- 3. Verified Roles (Override) -->
         <tr>
           <th scope="row">
             <label for="yardlii_tv_verified_roles"><?php esc_html_e('Verified Roles (override)', 'yardlii-core'); ?></label>
           </th>
           <td>
-             <!-- ... roles dropdown code ... -->
+            <select
+              id="yardlii_tv_verified_roles"
+              name="<?php echo esc_attr(GlobalSettings::OPT_VERIFIED_ROLES); ?>[]"
+            >
+              <option value="">
+                <?php esc_html_e('— Use per-form Approved roles (no override) —', 'yardlii-core'); ?>
+              </option>
+              <?php foreach ($all_roles as $slug => $role) : ?>
+                <option value="<?php echo esc_attr($slug); ?>" <?php selected($override_first, $slug); ?>>
+                  <?php echo esc_html(sprintf('%s (%s)', $role['name'], $slug)); ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+            <p class="description">
+              <?php esc_html_e('Optional. If empty, the REST “is_verified” uses Approved Roles from Per-Form Configs.', 'yardlii-core'); ?>
+            </p>
           </td>
         </tr>
       </table>
