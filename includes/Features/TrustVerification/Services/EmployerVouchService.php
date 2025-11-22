@@ -14,8 +14,7 @@ final class EmployerVouchService
     private const ACTION_VERIFY = 'yardlii_tv_employer_verify';
     private const ACTION_REJECT = 'yardlii_tv_employer_reject';
 
-    // 5 Days in seconds
-    private const EXPIRY_SECONDS = 432000; 
+    // [FIX] Removed unused EXPIRY_SECONDS constant here
 
     public function __construct(private Mailer $mailer) {}
 
