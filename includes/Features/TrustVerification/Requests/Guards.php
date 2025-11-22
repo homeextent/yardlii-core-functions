@@ -84,8 +84,7 @@ final class Guards
             $prev_status = (string) get_post_status($request_id);
 
             update_post_meta($request_id, '_vp_form_id', $form_id);
-            update_post_meta($request_id, '_vp_old_roles', (array) $user->roles);
-            update_post_meta($request_id, '_vp_old_role',  implode(',', (array) $user->roles));
+            // Note: We do NOT overwrite _vp_old_roles here blindly, handled in grantProvisionalAccess
             delete_post_meta($request_id, '_vp_processed_by');
             delete_post_meta($request_id, '_vp_processed_date');
 
@@ -105,6 +104,9 @@ final class Guards
                 'provider'    => (string)($context['provider'] ?? ''),
                 'event'       => (string)($context['event'] ?? ''),
             ]);
+
+            // [FIX] Ensure provisional access is granted on re-submission/upgrade too
+            self::grantProvisionalAccess($user_id, $request_id);
 
             // CHANGE: Capture result and conditionally notify
             $vouched = self::handleVouching($request_id, $context);
@@ -128,8 +130,7 @@ final class Guards
         update_post_meta($request_id, '_vp_user_id',  $user_id);
         update_post_meta($request_id, '_vp_form_id',  $form_id);
         update_post_meta($request_id, '_vp_action_logs', []);
-        update_post_meta($request_id, '_vp_old_roles', (array) $user->roles);
-        update_post_meta($request_id, '_vp_old_role',  implode(',', (array) $user->roles));
+        // Note: _vp_old_roles is handled in grantProvisionalAccess now
 
         Meta::appendLog($request_id, 'created', get_current_user_id(), [
             'form_id'  => $form_id,
@@ -142,27 +143,8 @@ final class Guards
             'post_title' => sprintf('Request #%d — %s', $request_id, $user->display_name ?: $user->user_login),
         ]);
 
-        // [NEW] PROVISIONAL ACCESS LOGIC
-        $currentUser = get_userdata($user_id);
-        if ($currentUser) {
-            // Check if eligible (Subscriber or Basic Member)
-            $roles = (array) $currentUser->roles;
-            if (in_array('subscriber', $roles, true) || in_array('basic_member', $roles, true)) {
-                
-                // 1. Store old roles for reversion (if not already stored)
-                if (!get_post_meta($request_id, '_vp_old_roles', true)) {
-                    update_post_meta($request_id, '_vp_old_roles', $roles);
-                }
-
-                // 2. Set Provisional Role
-                $currentUser->set_role('pending_verification');
-
-                // 3. Log it
-                Meta::appendLog($request_id, 'provisional_access_granted', 0, [
-                    'role' => 'pending_verification'
-                ]);
-            }
-        }
+        // [NEW] Grant provisional access on creation
+        self::grantProvisionalAccess($user_id, (int)$request_id);
 
         // CHANGE: Capture result and conditionally notify
         $vouched = self::handleVouching((int)$request_id, $context);
@@ -171,6 +153,47 @@ final class Guards
             self::notifyAdmins($request_id, $user_id, $form_id);
         }
         return (int) $request_id;
+    }
+
+    /**
+     * Helper: Grant 'pending_verification' role if applicable.
+     * Safely stores the previous role for reversion.
+     */
+    private static function grantProvisionalAccess(int $user_id, int $request_id): void
+    {
+        $user = get_userdata($user_id);
+        if (!$user) return;
+
+        // 1. Eligibility Check
+        // Only grant to basic/subscriber levels. Don't demote admins/editors.
+        // Also skip if they are ALREADY 'pending_verification' (idempotency).
+        $roles = (array) $user->roles;
+        if (in_array('pending_verification', $roles, true)) {
+            return; // Already has it
+        }
+
+        $eligible = in_array('subscriber', $roles, true) || in_array('basic_member', $roles, true);
+        
+        // If user has no roles at all, treat as eligible (edge case)
+        if (empty($roles)) $eligible = true;
+
+        if ($eligible) {
+            // 2. Snapshot Old Roles (Critical for Reversion)
+            // Only save if we haven't saved them before, OR if the user is currently NOT pending.
+            // Since we checked they aren't pending above, we can safely overwrite the snapshot
+            // with their *current* valid state (e.g. 'basic_member').
+            update_post_meta($request_id, '_vp_old_roles', $roles);
+            update_post_meta($request_id, '_vp_old_role', implode(',', $roles));
+
+            // 3. Apply Role
+            $user->set_role('pending_verification');
+
+            // 4. Log
+            Meta::appendLog($request_id, 'provisional_access_granted', 0, [
+                'role' => 'pending_verification',
+                'prev' => implode(',', $roles)
+            ]);
+        }
     }
 
     /**
