@@ -82,6 +82,9 @@ final class Module
         // --- User update guards ---
         $this->safeRegister(\Yardlii\Core\Features\TrustVerification\Support\UserDataGuards::class);
 
+        // [NEW] Auto-publish listings on approval
+        $this->safeRegister(\Yardlii\Core\Features\TrustVerification\Support\AutoPublisher::class);
+
         // --- NEW: Boot Providers via Registry ---
         // This replaces the old bootProviders() method
         if (class_exists(TvProviderRegistry::class)) {
