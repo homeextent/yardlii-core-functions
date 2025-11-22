@@ -130,6 +130,14 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+= 3.12.0 =
+* **NEW:** Added "Privacy Geocoding Engine" for WPUF forms. Automatically converts submitted Postal Codes into latitude/longitude (for search) and "City, Province" (for display) to protect user privacy.
+* **NEW:** Added "Backend Geocoding Key" setting in Google Map options. Allows separating Frontend keys (HTTP restrictions) from Backend keys (IP restrictions) to prevent API errors.
+* **NEW:** Added "Geocoding Diagnostics" panel. Includes a live API tester, quota reminders, and a "FacetWP Index Inspector" to verify database integrity.
+* **ENHANCEMENT:** Updated WPUF Customisations tab with a new configuration UI for mapping Form IDs to Postal Code meta keys.
+* **DEV:** Implemented strict typing (PHPStan level) across all new Geocoding classes.
+* **FIX:** Resolved conflict between Google Maps "Advanced Markers" and FacetWP by documenting the need for "Legacy" marker settings.
+
 ### 3.11.1
 * **Fix:** Manually booted Action Scheduler library to resolve autoloader conflicts preventing "Resync All Users" from running.
 * **Chore:** Removed temporary verbose debugging checks from the Diagnostics panel.
