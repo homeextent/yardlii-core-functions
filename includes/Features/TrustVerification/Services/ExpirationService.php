@@ -37,8 +37,11 @@ final class ExpirationService
      */
     public function process_stale_requests(): void
     {
-        // 1. Define "Stale" (5 Days)
-        $expiry_limit = 5 * DAY_IN_SECONDS;
+        // [NEW] Get dynamic days, default to 5
+        $days = (int) get_option(\Yardlii\Core\Features\TrustVerification\Settings\GlobalSettings::OPT_EXPIRY_DAYS, 5);
+        if ($days < 1) $days = 5; // Safety fallback
+
+        $expiry_limit = $days * DAY_IN_SECONDS;
         $date_cutoff  = gmdate('Y-m-d H:i:s', time() - $expiry_limit);
 
         // 2. Find Stale Pending Requests
