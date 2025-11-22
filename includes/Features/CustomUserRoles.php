@@ -12,6 +12,23 @@ class CustomUserRoles
     public function register(): void
     {
         add_action('init', [$this, 'sync_roles'], 20);
+        // [NEW] Ensure our system role exists
+        add_action('init', [$this, 'ensure_system_roles'], 20); 
+    }
+
+    public function ensure_system_roles(): void
+    {
+        // Register 'pending_verification' if missing
+        if (!get_role('pending_verification')) {
+            add_role(
+                'pending_verification',
+                __('Pending Verification', 'yardlii-core'),
+                [
+                    'read'         => true,
+                    'upload_files' => true, // often needed for proofs
+                ]
+            );
+        }
     }
 
 

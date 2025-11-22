@@ -134,6 +134,20 @@ final class TvDecisionService
     {
         if ($status !== 'vp_pending') return false;
 
+        // [NEW] Reversion Logic
+        // If the user is currently 'pending_verification', we MUST restore their old role.
+        if ($user && in_array('pending_verification', (array)$user->roles, true)) {
+            $old_roles = (array) get_post_meta($request_id, '_vp_old_roles', true);
+            
+            // Restore:
+            Roles::restoreRoles($user->ID, $old_roles);
+            
+            // Log the reversion
+            Meta::appendLog($request_id, 'provisional_access_revoked', $by, [
+                'restored_roles' => implode(',', $old_roles)
+            ]);
+        }
+
         $role = sanitize_key($cfg['rejected_role'] ?? '');
         Meta::appendLog($request_id, 'reject_begin', $by, []);
 
