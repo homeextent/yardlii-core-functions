@@ -130,6 +130,11 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+= 3.14.0 =
+* **NEW:** Automated Expiration Service. Pending verification requests older than 5 days are now automatically rejected to prevent stalled accounts.
+* **NEW:** Cleanup Protocol. When a user is rejected (manually or via expiration), their pending/draft listings are automatically moved to Trash.
+* **LOGIC:** Added `listings_trashed` and `auto_expired` events to the verification history log.
+
 = 3.13.0 =
 * **NEW:** Auto-Publisher module for Trust & Verification. Automatically publishes any 'pending' listings owned by a user immediately after they are approved/verified.
 * **NEW:** Added `auto_publish` event to the Verification Request history log for audit trails.
