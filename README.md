@@ -130,6 +130,14 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+= 3.15.0 =
+
+NEW: Added "Request Expiration Days" setting to Trust & Verification global configuration. Admins can now customize the expiration window (default: 5 days).
+
+ENHANCEMENT: Synchronized the "Employer Vouch" link validity with the global expiration setting. Links now remain valid for the same duration as the request lifespan.
+
+DEV: Refactored EmployerVouchService to remove hardcoded constants and utilize the new dynamic setting.
+
 = 3.14.0 =
 * **NEW:** Automated Expiration Service. Pending verification requests older than 5 days are now automatically rejected to prevent stalled accounts.
 * **NEW:** Cleanup Protocol. When a user is rejected (manually or via expiration), their pending/draft listings are automatically moved to Trash.
