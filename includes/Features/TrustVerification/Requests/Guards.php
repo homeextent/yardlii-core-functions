@@ -142,6 +142,28 @@ final class Guards
             'post_title' => sprintf('Request #%d — %s', $request_id, $user->display_name ?: $user->user_login),
         ]);
 
+        // [NEW] PROVISIONAL ACCESS LOGIC
+        $currentUser = get_userdata($user_id);
+        if ($currentUser) {
+            // Check if eligible (Subscriber or Basic Member)
+            $roles = (array) $currentUser->roles;
+            if (in_array('subscriber', $roles, true) || in_array('basic_member', $roles, true)) {
+                
+                // 1. Store old roles for reversion (if not already stored)
+                if (!get_post_meta($request_id, '_vp_old_roles', true)) {
+                    update_post_meta($request_id, '_vp_old_roles', $roles);
+                }
+
+                // 2. Set Provisional Role
+                $currentUser->set_role('pending_verification');
+
+                // 3. Log it
+                Meta::appendLog($request_id, 'provisional_access_granted', 0, [
+                    'role' => 'pending_verification'
+                ]);
+            }
+        }
+
         // CHANGE: Capture result and conditionally notify
         $vouched = self::handleVouching((int)$request_id, $context);
 
