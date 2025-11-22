@@ -130,6 +130,10 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+= 3.13.0 =
+* **NEW:** Auto-Publisher module for Trust & Verification. Automatically publishes any 'pending' listings owned by a user immediately after they are approved/verified.
+* **NEW:** Added `auto_publish` event to the Verification Request history log for audit trails.
+
 = 3.12.0 =
 * **NEW:** Added "Privacy Geocoding Engine" for WPUF forms. Automatically converts submitted Postal Codes into latitude/longitude (for search) and "City, Province" (for display) to protect user privacy.
 * **NEW:** Added "Backend Geocoding Key" setting in Google Map options. Allows separating Frontend keys (HTTP restrictions) from Backend keys (IP restrictions) to prevent API errors.
