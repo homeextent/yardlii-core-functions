@@ -84,6 +84,12 @@ final class Module
 
         // [NEW] Auto-publish listings on approval
         $this->safeRegister(\Yardlii\Core\Features\TrustVerification\Support\AutoPublisher::class);
+     
+        // [NEW] Auto-cleanup listings on rejection
+        $this->safeRegister(\Yardlii\Core\Features\TrustVerification\Support\ListingCleanup::class);
+
+        // [NEW] Automated Expiration Service
+        $this->safeRegister(\Yardlii\Core\Features\TrustVerification\Services\ExpirationService::class);
 
         // --- NEW: Boot Providers via Registry ---
         // This replaces the old bootProviders() method
