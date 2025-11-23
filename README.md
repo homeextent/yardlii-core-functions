@@ -130,6 +130,14 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## [3.16.0] - 2025-11-23
+### Added
+- **Automated Media Cleanup:** New module to prevent server bloat.
+    - **Listing Deletion:** Automatically deletes all attached images when a listing is permanently deleted.
+    - **Smart "Edit" Logic:** Detects when an image is removed from a WPUF gallery during an edit and deletes the orphaned file.
+    - **Ghost File Janitor:** Daily Cron job to sweep up abandoned uploads (files >24h old with no parent listing).
+    - **PixRefiner Compatibility:** Explicitly calculates and removes unregistered optimization variants (e.g., `-400.webp`, `-768.webp`) and `.orig` backups.
+
 = 3.15.0 =
 
 NEW: Added "Request Expiration Days" setting to Trust & Verification global configuration. Admins can now customize the expiration window (default: 5 days).
