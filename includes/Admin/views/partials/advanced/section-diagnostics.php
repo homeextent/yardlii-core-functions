@@ -569,6 +569,7 @@ $hs_diag = [
       }
   });
   </script>
+</div>
 <?php
 // --- 6. NEW: Media Cleanup Diagnostics ---
 ?>
@@ -658,5 +659,4 @@ $hs_diag = [
       }
   }
   ?>
-</div>
 </div>
