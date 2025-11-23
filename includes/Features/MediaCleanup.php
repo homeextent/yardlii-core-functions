@@ -71,6 +71,7 @@ class MediaCleanup {
         }
 
         foreach ($attachments as $att_id) {
+            // Cast to int for strict type safety
             $this->process_attachment_deletion((int) $att_id);
         }
 
@@ -181,12 +182,14 @@ class MediaCleanup {
 
     /**
      * Explicitly deletes files that match PixRefiner's custom width patterns.
-     * * @param string $main_file_path The full path to the main image (e.g. /uploads/2025/11/image.webp)
+     * @param string $main_file_path The full path to the main image (e.g. /uploads/2025/11/image.webp)
      */
     private function cleanup_pixrefiner_variants(string $main_file_path): void {
         $path_info = pathinfo($main_file_path);
         
-        if (!isset($path_info['dirname'], $path_info['filename'], $path_info['extension'])) {
+        // PHPStan Fix: 'filename' always exists in pathinfo array.
+        // We only need to ensure 'dirname' and 'extension' are present.
+        if (!isset($path_info['dirname'], $path_info['extension'])) {
             return;
         }
 
