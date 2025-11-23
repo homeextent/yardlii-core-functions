@@ -86,6 +86,16 @@ final class Loader
             (new FeaturedImage())->register();
         }
 
+	// Feature: Automated Media Cleanup
+$media_cleanup_enabled = (bool) get_option('yardlii_enable_media_cleanup', false);
+if (defined('YARDLII_ENABLE_MEDIA_CLEANUP')) {
+    $media_cleanup_enabled = (bool) YARDLII_ENABLE_MEDIA_CLEANUP;
+}
+
+if ($media_cleanup_enabled && class_exists(__NAMESPACE__ . '\\MediaCleanup')) {
+    (new MediaCleanup())->register();
+}
+
         // === Homepage Search ===
         if (class_exists(__NAMESPACE__ . '\\HomepageSearch')) {
             (new HomepageSearch())->register();

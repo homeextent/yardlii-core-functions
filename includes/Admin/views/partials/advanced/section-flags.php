@@ -82,6 +82,21 @@ if ($acf_sync_locked) {
         <?php endif; ?>
       </div>
 
+	<div class="yardlii-checkbox-row">
+    <label for="yardlii_enable_media_cleanup">
+        <input name="yardlii_enable_media_cleanup" type="checkbox" id="yardlii_enable_media_cleanup" value="1"
+            <?php checked(1, get_option('yardlii_enable_media_cleanup', 0)); ?>
+            <?php disabled(defined('YARDLII_ENABLE_MEDIA_CLEANUP')); ?> 
+        />
+        <span class="yardlii-toggle-label">
+            <strong><?php esc_html_e('Enable Automated Media Cleanup', 'yardlii-core'); ?></strong>
+            <p class="description">
+                <?php esc_html_e('Danger Zone: Automatically permanently deletes attached images when a listing is deleted. Compatible with PixRefiner.', 'yardlii-core'); ?>
+            </p>
+        </span>
+    </label>
+</div>
+
       <div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
         <input type="hidden" name="yardlii_enable_role_control" value="0" />
         <input

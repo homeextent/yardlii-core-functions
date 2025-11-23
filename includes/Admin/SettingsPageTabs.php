@@ -276,6 +276,12 @@ final class SettingsPageTabs
         register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_role_control',       ['sanitize_callback' => self::success_notifier(self::GROUP_FEATURE_FLAGS, static fn($v)=>(bool)$v)]);
     }
 
+    register_setting(
+    self::GROUP_FEATURE_FLAGS,
+    'yardlii_enable_media_cleanup',
+    ['sanitize_callback' => static fn($v) => (bool)$v]
+);
+
     /** Search & Location */
     private function register_search_settings(): void
     {
