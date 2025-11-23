@@ -9,6 +9,7 @@ use WP_Query;
  * 1. Post Deletion (Listing removed -> Images removed)
  * 2. Edit Updates (Image removed from gallery -> Image deleted)
  * 3. Ghost Files (Abandoned uploads older than 24h -> Deleted)
+ * * UPGRADE: Includes explicit logic to remove PixRefiner custom sizes (-400, -768, etc.)
  */
 class MediaCleanup {
 
@@ -26,6 +27,12 @@ class MediaCleanup {
      * @var string Cron hook name
      */
     private const CRON_HOOK = 'yardlii_daily_media_cleanup';
+
+    /**
+     * @var int[] The specific widths PixRefiner generates that WP might miss.
+     * Derived from PixRefiner Manual Profile: 1920, 1200, 768, 400
+     */
+    private const PIXREFINER_WIDTHS = [1920, 1200, 768, 400];
 
     public function register(): void {
         // 1. Post Deletion Handler
@@ -64,7 +71,6 @@ class MediaCleanup {
         }
 
         foreach ($attachments as $att_id) {
-            // Cast to int for strict type safety
             $this->process_attachment_deletion((int) $att_id);
         }
 
@@ -80,12 +86,11 @@ class MediaCleanup {
      * @param array<mixed> $form_vars
      */
     public function handle_wpuf_update(int $post_id, int $form_id, array $form_settings, array $form_vars): void {
-        // 1. Security Check: Is this a Listing?
         if (get_post_type($post_id) !== self::TARGET_CPTS[0]) { 
             return; 
         }
 
-        // A. Get all images currently attached to the post parent
+        // A. Get all images currently attached
         $attached_images = get_children([
             'post_parent'    => $post_id,
             'post_type'      => 'attachment',
@@ -98,11 +103,10 @@ class MediaCleanup {
             return;
         }
 
-        // B. Get the IDs explicitly submitted in the form now
+        // B. Get IDs submitted in the form
         $submitted_gallery = [];
         if (isset($form_vars[self::GALLERY_META_KEY])) {
             $raw = $form_vars[self::GALLERY_META_KEY];
-            
             if (is_array($raw)) {
                 $submitted_gallery = array_map('intval', $raw);
             } elseif (is_string($raw)) {
@@ -110,7 +114,7 @@ class MediaCleanup {
             }
         }
 
-        // C. Calculate the Diff
+        // C. Calculate Diff
         $to_delete = array_diff($attached_images, $submitted_gallery);
 
         if (!empty($to_delete)) {
@@ -125,7 +129,6 @@ class MediaCleanup {
      * HANDLER C: Ghost Files (Cron Janitor)
      */
     public function cleanup_ghost_files(): void {
-        // Find images uploaded > 24 hours ago that have NO parent.
         $query = new WP_Query([
             'post_type'      => 'attachment',
             'post_mime_type' => 'image',
@@ -134,9 +137,7 @@ class MediaCleanup {
             'posts_per_page' => 50, 
             'fields'         => 'ids',
             'date_query'     => [
-                [
-                    'before' => '24 hours ago',
-                ],
+                ['before' => '24 hours ago'],
             ],
         ]);
 
@@ -161,17 +162,46 @@ class MediaCleanup {
      * @param int $att_id
      */
     private function process_attachment_deletion(int $att_id): void {
-        // 1. PixRefiner .orig Cleanup
         $file_path = get_attached_file($att_id);
+        
         if ($file_path) {
+            // 1. Clean up .orig backup
             $backup_path = $file_path . '.orig';
             if (file_exists($backup_path)) {
                 @unlink($backup_path);
             }
+
+            // 2. Clean up "Unregistered" PixRefiner Variants (-400, -768, etc)
+            $this->cleanup_pixrefiner_variants($file_path);
         }
 
-        // 2. Force Delete
+        // 3. Force Delete (Removes DB row + standard sizes)
         wp_delete_attachment($att_id, true);
+    }
+
+    /**
+     * Explicitly deletes files that match PixRefiner's custom width patterns.
+     * * @param string $main_file_path The full path to the main image (e.g. /uploads/2025/11/image.webp)
+     */
+    private function cleanup_pixrefiner_variants(string $main_file_path): void {
+        $path_info = pathinfo($main_file_path);
+        
+        if (!isset($path_info['dirname'], $path_info['filename'], $path_info['extension'])) {
+            return;
+        }
+
+        $dir = $path_info['dirname'];
+        $name = $path_info['filename'];
+        $ext = $path_info['extension'];
+
+        foreach (self::PIXREFINER_WIDTHS as $width) {
+            // Pattern: name-WIDTH.ext (e.g., test_image-5-400.webp)
+            $variant_path = $dir . DIRECTORY_SEPARATOR . $name . '-' . $width . '.' . $ext;
+            
+            if (file_exists($variant_path)) {
+                @unlink($variant_path);
+            }
+        }
     }
 
     /**
