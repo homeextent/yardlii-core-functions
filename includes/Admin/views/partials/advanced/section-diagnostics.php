@@ -569,9 +569,58 @@ $hs_diag = [
       }
   });
   </script>
+</div>
+<?php
+// --- 6. NEW: Media Cleanup Diagnostics ---
+?>
+
+<hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+
+<div class="form-config-block">
+    <h2>🧹 Media Cleanup Diagnostics</h2>
+    <table class="widefat striped">
+        <thead>
+            <tr>
+                <th>Check</th>
+                <th>Status</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            // Check 1: Feature Flag Status
+            $cleanup_enabled = (bool) get_option('yardlii_enable_media_cleanup', false);
+            if (defined('YARDLII_ENABLE_MEDIA_CLEANUP')) {
+                $cleanup_enabled = (bool) YARDLII_ENABLE_MEDIA_CLEANUP;
+            }
+            yardlii_diag_flag_status_row('Master Flag', 'yardlii_enable_media_cleanup', 'YARDLII_ENABLE_MEDIA_CLEANUP');
+
+            // Check 2: Cron Schedule Status
+            $next_run = wp_next_scheduled('yardlii_daily_media_cleanup');
+            $cron_active = ($next_run !== false);
+            
+            // Logic: It is valid to be "Not Scheduled" if the feature is Disabled.
+            // It is a FAIL if feature is Enabled but no Cron is found.
+            $is_healthy = (!$cleanup_enabled) || $cron_active;
+            
+            $status_msg = $cron_active 
+                ? 'Scheduled. Next run: ' . get_date_from_gmt(date('Y-m-d H:i:s', $next_run), 'Y-m-d H:i:s')
+                : ($cleanup_enabled ? '❌ Error: Feature enabled but Cron missing.' : '⚪ Idle (Feature Disabled)');
+
+            yardlii_diag_check(
+                'Janitor Schedule',
+                $is_healthy,
+                $status_msg,
+                $status_msg
+            );
+            ?>
+        </tbody>
+    </table>
+</div>
+
 
 <?php
-// --- 6. NEW: FacetWP Index Inspector ---
+// --- 7. NEW: FacetWP Index Inspector ---
 ?>
 <div class="form-config-block">
   <h2>💎 FacetWP Index Inspector</h2>
@@ -610,5 +659,4 @@ $hs_diag = [
       }
   }
   ?>
-</div>
 </div>
