@@ -74,10 +74,10 @@ class MediaCleanup {
     /**
      * HANDLER B: WPUF Updates (The Edit Leak)
      *
-     * @param int   $post_id
-     * @param int   $form_id
-     * @param array $form_settings
-     * @param array $form_vars
+     * @param int          $post_id
+     * @param int          $form_id
+     * @param array<mixed> $form_settings
+     * @param array<mixed> $form_vars
      */
     public function handle_wpuf_update(int $post_id, int $form_id, array $form_settings, array $form_vars): void {
         // 1. Security Check: Is this a Listing?
