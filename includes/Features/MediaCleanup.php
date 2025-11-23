@@ -13,7 +13,7 @@ use WP_Query;
 class MediaCleanup {
 
     /**
-     * @var array Target CPTs for the 'Listing Deletion' logic.
+     * @var string[] List of Post Types to target for cleanup.
      */
     private const TARGET_CPTS = ['listings']; 
 
@@ -41,6 +41,8 @@ class MediaCleanup {
 
     /**
      * HANDLER A: Listing Deletion
+     *
+     * @param int $post_id
      */
     public function handle_post_deletion(int $post_id): void {
         $post = get_post($post_id);
@@ -62,6 +64,7 @@ class MediaCleanup {
         }
 
         foreach ($attachments as $att_id) {
+            // Cast to int for strict type safety
             $this->process_attachment_deletion((int) $att_id);
         }
 
@@ -70,8 +73,13 @@ class MediaCleanup {
 
     /**
      * HANDLER B: WPUF Updates (The Edit Leak)
+     *
+     * @param int   $post_id
+     * @param int   $form_id
+     * @param array $form_settings
+     * @param array $form_vars
      */
-    public function handle_wpuf_update($post_id, $form_id, $form_settings, $form_vars): void {
+    public function handle_wpuf_update(int $post_id, int $form_id, array $form_settings, array $form_vars): void {
         // 1. Security Check: Is this a Listing?
         if (get_post_type($post_id) !== self::TARGET_CPTS[0]) { 
             return; 
@@ -94,7 +102,7 @@ class MediaCleanup {
         $submitted_gallery = [];
         if (isset($form_vars[self::GALLERY_META_KEY])) {
             $raw = $form_vars[self::GALLERY_META_KEY];
-            // WPUF sometimes sends array, sometimes comma-separated string
+            
             if (is_array($raw)) {
                 $submitted_gallery = array_map('intval', $raw);
             } elseif (is_string($raw)) {
@@ -103,7 +111,6 @@ class MediaCleanup {
         }
 
         // C. Calculate the Diff
-        // If an image is 'Attached' to the post, but NOT in the 'Submitted Gallery', it was removed by the user.
         $to_delete = array_diff($attached_images, $submitted_gallery);
 
         if (!empty($to_delete)) {
@@ -123,8 +130,8 @@ class MediaCleanup {
             'post_type'      => 'attachment',
             'post_mime_type' => 'image',
             'post_status'    => 'inherit',
-            'post_parent'    => 0, // <--- The definition of a Ghost
-            'posts_per_page' => 50, // Process in chunks
+            'post_parent'    => 0,
+            'posts_per_page' => 50, 
             'fields'         => 'ids',
             'date_query'     => [
                 [
@@ -150,6 +157,8 @@ class MediaCleanup {
 
     /**
      * Core Deletion Logic (PixRefiner Compatible)
+     *
+     * @param int $att_id
      */
     private function process_attachment_deletion(int $att_id): void {
         // 1. PixRefiner .orig Cleanup
@@ -162,7 +171,6 @@ class MediaCleanup {
         }
 
         // 2. Force Delete
-        // This triggers 'wp_delete_attachment' hook --> PixRefiner cleans up WebP.
         wp_delete_attachment($att_id, true);
     }
 
@@ -175,7 +183,12 @@ class MediaCleanup {
         }
     }
     
-    private function log($msg): void {
+    /**
+     * Internal logger
+     *
+     * @param string $msg
+     */
+    private function log(string $msg): void {
         if (function_exists('yardlii_log')) {
             yardlii_log('[MediaCleanup] ' . $msg);
         }
