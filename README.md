@@ -130,7 +130,14 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
-## [3.16.0] - 2025-11-23
+= 3.16.1 = 
+Added
+Diagnostics UI: Added a dedicated "Media Cleanup" section in Settings → Advanced → Diagnostics. This verifies if the "Janitor" Cron job (yardlii_daily_media_cleanup) is correctly scheduled and active.
+
+Integration Tests: Added automated testing (tests/integration/Features/MediaCleanupTest.php) to the CI pipeline. This simulates the creation and deletion of listings to guarantee that images (including PixRefiner variants) are physically removed from the disk.
+
+
+= 3.16.0 = 
 ### Added
 - **Automated Media Cleanup:** New module to prevent server bloat.
     - **Listing Deletion:** Automatically deletes all attached images when a listing is permanently deleted.
