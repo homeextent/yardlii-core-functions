@@ -4,7 +4,7 @@ namespace Yardlii\Core\Features;
 
 /**
  * Class PostingLogic
- * Handles dynamic form switching by intercepting low-level metadata calls.
+ * Handles dynamic form switching by intercepting WPUF at multiple levels.
  */
 class PostingLogic {
 
@@ -12,57 +12,41 @@ class PostingLogic {
      * Register hooks.
      */
     public function register(): void {
-        // "God Mode" Hook: Intercepts the database read itself.
-        // This runs BEFORE WPUF checks permissions.
-        add_filter( 'get_post_metadata', [ $this, 'intercept_form_id' ], 10, 4 );
+        // CONFIRMATION LOG: Prove this class is loaded
+        error_log( '[YARDLII] PostingLogic: Class registered and listening.' );
+
+        // 1. The "God Mode" DB Intercept (Priority 10)
+        add_filter( 'get_post_metadata', [ $this, 'intercept_metadata' ], 10, 4 );
+
+        // 2. The Standard WPUF Filter (Priority 999)
+        add_filter( 'wpuf_edit_post_form_id', [ $this, 'dynamic_switch' ], 999, 2 );
+
+        // 3. The Shortcode Attribute Intercept (Catch-all)
+        add_filter( 'shortcode_atts_wpuf_edit', [ $this, 'intercept_shortcode' ], 999, 3 );
     }
 
     /**
-     * Intercepts calls to get_post_meta for '_wpuf_form_id'.
-     *
-     * @param mixed  $value     The value to return (null means "continue to DB").
-     * @param int    $object_id The Post ID.
-     * @param string $meta_key  The meta key being requested.
-     * @param bool   $single    Whether a single value is requested.
-     * @return mixed
+     * Helper: Central logic to determine the correct Form ID for the current user.
+     * Returns 0 if no override is needed.
      */
-    public function intercept_form_id( $value, $object_id, $meta_key, $single ) {
-        // 1. Performance Gate: ONLY run for our specific key
-        if ( '_wpuf_form_id' !== $meta_key ) {
-            return $value;
-        }
-
-        // 2. Safety: Ensure we have a user
+    private function get_target_form_id(): int {
         $user = wp_get_current_user();
         if ( 0 === $user->ID ) {
-            return $value;
+            return 0;
         }
 
-        // 3. Load Settings
         $pro_form_id         = (int) get_option( 'yardlii_posting_logic_pro_form', 0 );
         $provisional_form_id = (int) get_option( 'yardlii_posting_logic_provisional_form', 0 );
 
-        // If settings are off, let DB handle it.
         if ( empty( $pro_form_id ) && empty( $provisional_form_id ) ) {
-            return $value;
+            return 0;
         }
 
-        $roles = (array) $user->roles;
-
-        // 4. Debugging (Optional: writes to error_log if Debug Mode is ON)
-        $debug_mode = (bool) get_option( 'yardlii_debug_mode', false );
-        if ( $debug_mode ) {
-            // Rate limit logs slightly or just log:
-            // error_log( "[YARDLII-META] Intercepting Form ID for Post $object_id" );
-        }
-
-        // 5. Logic: Check Roles and Return NEW ID directly
-        // This effectively "hides" the old ID from WPUF entirely.
+        $roles          = (array) $user->roles;
+        $verified_roles = [ 'verified_contractor', 'verified_business', 'administrator' ];
 
         // Check Verified
-        $verified_roles = [ 'verified_contractor', 'verified_business', 'administrator' ];
         if ( $pro_form_id > 0 && ! empty( array_intersect( $verified_roles, $roles ) ) ) {
-             // We return the integer ID. WPUF expects a string or int.
             return $pro_form_id;
         }
 
@@ -71,7 +55,68 @@ class PostingLogic {
             return $provisional_form_id;
         }
 
-        // Default: Return $value (null) to let WordPress fetch the real DB value
+        return 0;
+    }
+
+    /**
+     * Hook 1: Low-level Metadata Intercept
+     *
+     * @param mixed  $value     The value to return (null means "continue to DB").
+     * @param int    $object_id The Post ID.
+     * @param string $meta_key  The meta key being requested.
+     * @param bool   $single    Whether a single value is requested.
+     * @return mixed
+     */
+    public function intercept_metadata( mixed $value, int $object_id, string $meta_key, bool $single ): mixed {
+        if ( '_wpuf_form_id' !== $meta_key ) {
+            return $value;
+        }
+
+        $target_id = $this->get_target_form_id();
+        if ( $target_id > 0 ) {
+            return $target_id;
+        }
+
         return $value;
+    }
+
+    /**
+     * Hook 2: Standard WPUF Filter
+     *
+     * @param int|string $form_id The current form ID.
+     * @param int|string $post_id The post ID (WPUF sometimes passes string, sometimes int).
+     * @return int|string
+     */
+    public function dynamic_switch( $form_id, $post_id ) {
+        $target_id = $this->get_target_form_id();
+        if ( $target_id > 0 ) {
+            error_log( "[YARDLII-FILTER] Switching Post $post_id to Form $target_id" );
+            return $target_id;
+        }
+        return $form_id;
+    }
+
+    /**
+     * Hook 3: Shortcode Attributes
+     * This forces the form ID even if WPUF ignored the post meta.
+     *
+     * @param mixed $out   The output array of attributes.
+     * @param mixed $pairs The supported attributes.
+     * @param mixed $atts  The user defined attributes.
+     * @return array<string, mixed>
+     */
+    public function intercept_shortcode( mixed $out, mixed $pairs, mixed $atts ): array {
+        // Ensure $out is an array before modifying
+        if ( ! is_array( $out ) ) {
+            $out = (array) $out;
+        }
+
+        $target_id = $this->get_target_form_id();
+        if ( $target_id > 0 ) {
+            error_log( "[YARDLII-SHORTCODE] Forcing Form ID: $target_id" );
+            $out['id']      = $target_id;
+            $out['form_id'] = $target_id; // Just in case
+        }
+        return $out;
     }
 }
