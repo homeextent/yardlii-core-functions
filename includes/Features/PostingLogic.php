@@ -20,7 +20,7 @@ class PostingLogic {
 
         // 2. The Standard WPUF Filter (Priority 999)
         add_filter( 'wpuf_edit_post_form_id', [ $this, 'dynamic_switch' ], 999, 2 );
-        
+
         // 3. The Shortcode Attribute Intercept (Catch-all)
         add_filter( 'shortcode_atts_wpuf_edit', [ $this, 'intercept_shortcode' ], 999, 3 );
     }
@@ -42,7 +42,7 @@ class PostingLogic {
             return 0;
         }
 
-        $roles = (array) $user->roles;
+        $roles          = (array) $user->roles;
         $verified_roles = [ 'verified_contractor', 'verified_business', 'administrator' ];
 
         // Check Verified
@@ -60,14 +60,21 @@ class PostingLogic {
 
     /**
      * Hook 1: Low-level Metadata Intercept
+     *
+     * @param mixed  $value     The value to return (null means "continue to DB").
+     * @param int    $object_id The Post ID.
+     * @param string $meta_key  The meta key being requested.
+     * @param bool   $single    Whether a single value is requested.
+     * @return mixed
      */
-    public function intercept_metadata( $value, $object_id, $meta_key, $single ) {
+    public function intercept_metadata( mixed $value, int $object_id, string $meta_key, bool $single ): mixed {
         if ( '_wpuf_form_id' !== $meta_key ) {
             return $value;
         }
 
         $target_id = $this->get_target_form_id();
         if ( $target_id > 0 ) {
+            // Log commented out to reduce noise, enable if needed
             // error_log( "[YARDLII-META] Override Post $object_id to Form $target_id" );
             return $target_id;
         }
@@ -77,6 +84,10 @@ class PostingLogic {
 
     /**
      * Hook 2: Standard WPUF Filter
+     *
+     * @param int|string $form_id The current form ID.
+     * @param int|string $post_id The post ID (WPUF sometimes passes string, sometimes int).
+     * @return int|string
      */
     public function dynamic_switch( $form_id, $post_id ) {
         $target_id = $this->get_target_form_id();
@@ -90,12 +101,22 @@ class PostingLogic {
     /**
      * Hook 3: Shortcode Attributes
      * This forces the form ID even if WPUF ignored the post meta.
+     *
+     * @param mixed $out   The output array of attributes.
+     * @param mixed $pairs The supported attributes.
+     * @param mixed $atts  The user defined attributes.
+     * @return array
      */
-    public function intercept_shortcode( $out, $pairs, $atts ) {
+    public function intercept_shortcode( mixed $out, mixed $pairs, mixed $atts ): array {
+        // Ensure $out is an array before modifying
+        if ( ! is_array( $out ) ) {
+            $out = (array) $out;
+        }
+
         $target_id = $this->get_target_form_id();
         if ( $target_id > 0 ) {
             error_log( "[YARDLII-SHORTCODE] Forcing Form ID: $target_id" );
-            $out['id'] = $target_id;
+            $out['id']      = $target_id;
             $out['form_id'] = $target_id; // Just in case
         }
         return $out;
