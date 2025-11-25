@@ -130,6 +130,10 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+= 3.16.2 =
+* **Fix:** Resolved a critical conflict between FacetWP and Google Maps "Advanced Markers" (gmp-pin error) by forcing the 'weekly' API channel.
+* **Fix:** Restored map pin visibility by enabling compatibility with legacy map markers.
+
 = 3.16.1 = 
 Added
 Diagnostics UI: Added a dedicated "Media Cleanup" section in Settings → Advanced → Diagnostics. This verifies if the "Janitor" Cron job (yardlii_daily_media_cleanup) is correctly scheduled and active.
