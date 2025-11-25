@@ -100,7 +100,7 @@
         <p class="description">Backend data handling.</p>
       </th>
       <td>
-        <div class="yardlii-setting-row">
+        <div class="yardlii-setting-row" style="margin-bottom: 20px;">
             <label class="yardlii-toggle">
                 <input type="checkbox" name="yardlii_enable_featured_listings" value="1" <?php checked($featured_enabled, true); ?> />
                 <span class="yardlii-toggle-slider"></span>
@@ -111,6 +111,42 @@
                     Synchronizes "Featured" status between ACF, WPUF, and WordPress Sticky posts.<br>
                     Enables the <code>[yardlii_featured_badge]</code> shortcode and Admin Filters.
                 </p>
+            </div>
+        </div>
+
+        <div style="background: #f9f9f9; border: 1px solid #e5e5e5; padding: 15px; border-radius: 4px;">
+            <strong style="display:block; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                🔄 Dynamic Form Switching
+            </strong>
+            <p class="description" style="margin-bottom: 15px;">
+                Automatically swap the form used when editing a post based on the user's current role.<br>
+                <em>Leave blank or set to 0 to disable this behavior.</em>
+            </p>
+
+            <div style="display: flex; gap: 20px;">
+                <div style="flex: 1;">
+                    <label for="yardlii_posting_logic_pro_form"><strong>Verified/Pro Form ID</strong></label><br>
+                    <input 
+                        type="number" 
+                        id="yardlii_posting_logic_pro_form" 
+                        name="yardlii_posting_logic_pro_form" 
+                        value="<?php echo esc_attr(get_option('yardlii_posting_logic_pro_form', '')); ?>" 
+                        class="small-text"
+                    />
+                    <p class="description">Used for Verified Contractors & Business.</p>
+                </div>
+                
+                <div style="flex: 1;">
+                    <label for="yardlii_posting_logic_provisional_form"><strong>Provisional Form ID</strong></label><br>
+                    <input 
+                        type="number" 
+                        id="yardlii_posting_logic_provisional_form" 
+                        name="yardlii_posting_logic_provisional_form" 
+                        value="<?php echo esc_attr(get_option('yardlii_posting_logic_provisional_form', '')); ?>" 
+                        class="small-text"
+                    />
+                    <p class="description">Used for Pending Verification roles.</p>
+                </div>
             </div>
         </div>
       </td>

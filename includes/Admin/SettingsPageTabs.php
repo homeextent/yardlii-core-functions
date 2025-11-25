@@ -205,6 +205,17 @@ final class SettingsPageTabs
             'sanitize_callback' => 'rest_sanitize_boolean',
             'default'           => false,
         ]);
+
+	// WPUF: Dynamic Form Switching IDs
+        // We register these in the General Group so they save on the WPUF Customisations tab
+        register_setting(self::GROUP_GENERAL, 'yardlii_posting_logic_pro_form', [
+            'sanitize_callback' => 'absint',
+            'default'           => 0,
+        ]);
+        register_setting(self::GROUP_GENERAL, 'yardlii_posting_logic_provisional_form', [
+            'sanitize_callback' => 'absint',
+            'default'           => 0,
+        ]); 
         // 1. Register the Mapping Config (General Group)
         register_setting(
             'yardlii_general_group',
