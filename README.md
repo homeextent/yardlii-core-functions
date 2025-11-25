@@ -130,6 +130,9 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+### 3.17.1 - 2025-11-25
+* **Fix:** Updated PostingLogic to use metadata interception ("God Mode") to prevent WPUF permission redirects.
+
 ### 3.17.0 - 2025-11-25
 * **Feature:** Added Dynamic Posting Logic module to automatically swap WPUF forms based on user role (e.g., swapping a "Basic" form for a "Pro" form upon editing).
 * **UI:** Added configuration fields for "Verified/Pro Form ID" and "Provisional Form ID" under **Settings -> YARDLII Core -> General -> WPUF Customisations**.
