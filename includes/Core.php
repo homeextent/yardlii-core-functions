@@ -49,6 +49,12 @@ class Core
             $this->log_init('Error initializing Loader: ' . $e->getMessage());
         }
 
+        // [FIX] Force Google Maps to 'weekly' channel to fix <gmp-pin> error
+        add_filter( 'facetwp_gmaps_params', function( $params ) {
+            $params['v'] = 'weekly';
+            return $params;
+        });
+
         
 
         $this->log_init('Core::init() completed.');
