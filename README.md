@@ -130,6 +130,11 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+### 3.17.0 - 2025-11-25
+* **Feature:** Added Dynamic Posting Logic module to automatically swap WPUF forms based on user role (e.g., swapping a "Basic" form for a "Pro" form upon editing).
+* **UI:** Added configuration fields for "Verified/Pro Form ID" and "Provisional Form ID" under **Settings -> YARDLII Core -> General -> WPUF Customisations**.
+* **Fix:** Resolved PHPStan strict type errors in role checking logic.
+
 = 3.16.2 =
 * **Fix:** Resolved a critical conflict between FacetWP and Google Maps "Advanced Markers" (gmp-pin error) by forcing the 'weekly' API channel.
 * **Fix:** Restored map pin visibility by enabling compatibility with legacy map markers.
