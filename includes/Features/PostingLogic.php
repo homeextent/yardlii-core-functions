@@ -74,8 +74,6 @@ class PostingLogic {
 
         $target_id = $this->get_target_form_id();
         if ( $target_id > 0 ) {
-            // Log commented out to reduce noise, enable if needed
-            // error_log( "[YARDLII-META] Override Post $object_id to Form $target_id" );
             return $target_id;
         }
 
@@ -105,7 +103,7 @@ class PostingLogic {
      * @param mixed $out   The output array of attributes.
      * @param mixed $pairs The supported attributes.
      * @param mixed $atts  The user defined attributes.
-     * @return array
+     * @return array<string, mixed>
      */
     public function intercept_shortcode( mixed $out, mixed $pairs, mixed $atts ): array {
         // Ensure $out is an array before modifying
