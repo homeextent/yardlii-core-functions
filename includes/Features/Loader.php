@@ -122,6 +122,8 @@ if ($media_cleanup_enabled && class_exists(__NAMESPACE__ . '\\MediaCleanup')) {
             $geo_enabled = (bool) constant('YARDLII_ENABLE_WPUF_GEOCODING');
         }
 
+        
+
         // [DEBUG] Force log to verify loader
         if ($geo_enabled) {
              error_log('[YARDLII] Loader: Geocoding is ENABLED. Loading class...');
@@ -138,6 +140,12 @@ if ($media_cleanup_enabled && class_exists(__NAMESPACE__ . '\\MediaCleanup')) {
             if (class_exists(__NAMESPACE__ . '\\FeaturedListings')) {
                 (new FeaturedListings())->register();
             }
+        }
+
+        // === Dynamic Posting Logic ===
+        // Automatically swaps WPUF forms based on user role (Simple Mode)
+        if (class_exists(__NAMESPACE__ . '\\PostingLogic')) {
+            (new PostingLogic())->register();
         }
 
         // === Role Control (master + subfeatures) ===
