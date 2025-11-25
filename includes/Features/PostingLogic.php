@@ -26,7 +26,10 @@ class PostingLogic {
     public function dynamic_form_switch( $form_id, $post_id ) {
         // Security: Ensure we have a user context
         $user = wp_get_current_user();
-        if ( ! $user || ! $user->exists() ) {
+        
+        // PHPStan Fix: wp_get_current_user() always returns an object.
+        // We check ID to see if they are actually logged in.
+        if ( 0 === $user->ID ) {
             return $form_id;
         }
 
