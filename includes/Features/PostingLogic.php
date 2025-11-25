@@ -4,10 +4,8 @@ namespace Yardlii\Core\Features;
 
 /**
  * Class PostingLogic
- * Handles dynamic form switching using the standard WPUF filter.
- * * REVERTED TO SIMPLE MODE:
- * - Uses only the official 'wpuf_edit_post_form_id' hook.
- * - Runs at Priority 999 to override defaults.
+ * Handles dynamic form switching by intercepting low-level metadata calls.
+ * "God Mode" - Bypasses WPUF permission checks by lying to the database reader.
  */
 class PostingLogic {
 
@@ -15,51 +13,61 @@ class PostingLogic {
      * Register hooks.
      */
     public function register(): void {
-        // Log to confirm the class is actually active
-        error_log( '[YARDLII] PostingLogic: Registered and active (Simple Mode).' );
+        // Log that we are active
+        error_log( '[YARDLII] PostingLogic: Active (God Mode).' );
 
-        add_filter( 'wpuf_edit_post_form_id', [ $this, 'dynamic_form_switch' ], 999, 2 );
+        // Hook into get_post_metadata to catch the read BEFORE WPUF sees it
+        add_filter( 'get_post_metadata', [ $this, 'intercept_metadata' ], 10, 4 );
     }
 
     /**
-     * Forces WPUF to load the appropriate form for the user's CURRENT role.
+     * Intercepts calls to get_post_meta for '_wpuf_form_id'.
      *
-     * @param int|string $form_id The form ID stored with the post.
-     * @param int|string $post_id The post ID being edited.
-     * @return int|string
+     * @param mixed  $value     The value to return (null means "continue to DB").
+     * @param int    $object_id The Post ID.
+     * @param string $meta_key  The meta key being requested.
+     * @param bool   $single    Whether a single value is requested.
+     * @return mixed
      */
-    public function dynamic_form_switch( $form_id, $post_id ) {
-        // 1. Log entry to debug.log to prove the hook fired
-        // error_log( "[YARDLII] Hook fired on Post $post_id with Form $form_id" );
-
-        $user = wp_get_current_user();
-        if ( 0 === $user->ID ) {
-            return $form_id;
+    public function intercept_metadata( mixed $value, int $object_id, string $meta_key, bool $single ): mixed {
+        // 1. Performance Gate: ONLY run for our specific key
+        if ( '_wpuf_form_id' !== $meta_key ) {
+            return $value;
         }
 
-        // 2. Get Settings
+        // 2. Safety: Ensure we have a user
+        $user = wp_get_current_user();
+        if ( 0 === $user->ID ) {
+            return $value;
+        }
+
+        // 3. Load Settings
         $pro_form_id         = (int) get_option( 'yardlii_posting_logic_pro_form', 0 );
         $provisional_form_id = (int) get_option( 'yardlii_posting_logic_provisional_form', 0 );
 
         if ( empty( $pro_form_id ) && empty( $provisional_form_id ) ) {
-            return $form_id;
+            return $value;
         }
 
-        $roles = (array) $user->roles;
+        $roles          = (array) $user->roles;
         $verified_roles = [ 'verified_contractor', 'verified_business', 'administrator' ];
 
-        // 3. Logic: Check Verified
+        // 4. Logic: Return the NEW ID directly.
+        // This effectively "hides" the old ID from WPUF entirely.
+
+        // Check Verified
         if ( $pro_form_id > 0 && ! empty( array_intersect( $verified_roles, $roles ) ) ) {
-            // error_log( "[YARDLII] Switching to Pro Form: $pro_form_id" );
+             // Log the interception if needed for debugging
+             // error_log( "[YARDLII-META] Post $object_id: Swapping to Pro Form $pro_form_id" );
             return $pro_form_id;
         }
 
-        // 4. Logic: Check Provisional
+        // Check Provisional
         if ( $provisional_form_id > 0 && in_array( 'pending_verification', $roles, true ) ) {
-            // error_log( "[YARDLII] Switching to Provisional Form: $provisional_form_id" );
             return $provisional_form_id;
         }
 
-        return $form_id;
+        // Default: Return $value (usually null) to let WordPress fetch the real DB value
+        return $value;
     }
 }
