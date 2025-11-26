@@ -2,7 +2,6 @@
 
 namespace Yardlii\Core\Features\TrustVerification\Support;
 
-use Yardlii\Core\Features\TrustVerification\TvDecisionService;
 use WP_Query;
 
 /**
@@ -19,6 +18,8 @@ class AutoPublisher {
     /**
      * Define which WPUF Forms are "safe" to auto-publish.
      * This targets the "Basic Member" form defined in settings.
+     *
+     * @return array<int>
      */
     private function get_allowed_form_ids(): array {
         $ids = [];
@@ -36,7 +37,8 @@ class AutoPublisher {
 
     public function handleDecision(int $request_id, string $action, int $user_id, int $actor_id): void {
         // 1. Only run on Approval
-        if ($action !== TvDecisionService::ACTION_APPROVE) {
+        // FIX: Use literal 'approve' to avoid undefined constant error
+        if ($action !== 'approve') {
             return;
         }
 
@@ -48,8 +50,7 @@ class AutoPublisher {
         // 3. Get Safe Forms
         $allowed_forms = $this->get_allowed_form_ids();
         
-        // Safety: If no forms are defined, DO NOT run. 
-        // We don't want to blindly publish everything.
+        // Safety: If no forms are defined, DO NOT run.
         if (empty($allowed_forms)) {
             return;
         }
@@ -79,7 +80,11 @@ class AutoPublisher {
 
         // 5. Publish Them
         $published_count = 0;
-        foreach ($query->posts as $post_id) {
+        
+        /** @var array<int> $posts Help PHPStan see these as integers */
+        $posts = $query->posts;
+
+        foreach ($posts as $post_id) {
             $update = [
                 'ID'          => $post_id,
                 'post_status' => 'publish'
@@ -90,10 +95,13 @@ class AutoPublisher {
         }
 
         // 6. Log the action
-        if ($published_count > 0 && class_exists(Meta::class)) {
+        // Note: We removed "if ($published_count > 0)" because strictly speaking,
+        // if $query->posts was not empty (checked above), count is guaranteed > 0.
+        if (class_exists(Meta::class)) {
             Meta::appendLog($request_id, 'auto_publish', $actor_id, [
                 'count' => $published_count,
-                'ids'   => implode(',', $query->posts)
+                // FIX: Cast ints to strings for implode to satisfy strict types
+                'ids'   => implode(',', array_map('strval', $posts))
             ]);
         }
     }

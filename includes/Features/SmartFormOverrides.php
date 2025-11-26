@@ -17,9 +17,10 @@ class SmartFormOverrides {
 
     /**
      * Force post status to 'publish' if User is Pending AND using Basic Form.
-     * * @param array $post_args The arguments for wp_insert_post
-     * @param int   $form_id   The form ID being submitted
-     * @return array
+     *
+     * @param array<string, mixed> $post_args The arguments for wp_insert_post
+     * @param int                  $form_id   The form ID being submitted
+     * @return array<string, mixed>
      */
     public function force_publish_status( array $post_args, int $form_id ): array {
         $user = wp_get_current_user();
@@ -39,13 +40,14 @@ class SmartFormOverrides {
 
     /**
      * Force redirect to the newly created post if User is Pending.
-     * * @param string $response      The redirect URL
-     * @param int    $post_id       The new post ID
-     * @param int    $form_id       The form ID
-     * @param array  $form_settings Form settings
+     *
+     * @param string               $response      The redirect URL
+     * @param int                  $post_id       The new post ID
+     * @param int                  $form_id       The form ID
+     * @param array<string, mixed> $form_settings Form settings
      * @return string
      */
-    public function force_redirect( $response, $post_id, $form_id, $form_settings ) {
+    public function force_redirect( string $response, int $post_id, int $form_id, array $form_settings ): string {
         $user = wp_get_current_user();
         if ( 0 === $user->ID ) return $response;
 
