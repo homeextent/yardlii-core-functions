@@ -8,6 +8,7 @@ use Yardlii\Core\Features\TrustVerification\Emails\Mailer;
 use Yardlii\Core\Features\TrustVerification\Requests\Decisions;
 // NEW: Import the registry
 use Yardlii\Core\Features\TrustVerification\TvProviderRegistry;
+use Yardlii\Core\Features\TrustVerification\Requests\NativeAdminColumns;
 
 final class Module
 {
@@ -35,9 +36,14 @@ final class Module
         }
 
         // --- UI ---
-        if (class_exists(AdminPage::class)) {
-            (new AdminPage($this->pluginFile, $this->version))->register();
-        }
+    if (class_exists(AdminPage::class)) {
+        (new AdminPage($this->pluginFile, $this->version))->register();
+    }
+
+    // [NEW] Register Native Admin Columns for the top-level menu
+    if (is_admin() && class_exists(NativeAdminColumns::class)) {
+        (new NativeAdminColumns())->register();
+    }
 
         // --- Manual Dependency Injection for Decisions ---
         $mailer = class_exists(Mailer::class) ? new Mailer() : null;

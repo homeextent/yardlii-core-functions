@@ -58,7 +58,7 @@ if (is_readable($providers_doc_file)) {
      aria-label="<?php esc_attr_e('Trust & Verification', 'yardlii-core'); ?>">
 
   <?php
-    echo $btn('requests',      __('Requests', 'yardlii-core'),      '📥');
+   // echo $btn('requests', __('Requests', 'yardlii-core'), '📥'); // <-- REMOVED
     echo $btn('configuration', __('Configuration', 'yardlii-core'), '⚙️');
     echo $btn('tools',         __('Tools', 'yardlii-core'),         '🛠️');
   ?>
