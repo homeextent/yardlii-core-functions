@@ -213,16 +213,59 @@ final class NativeAdminColumns
      */
     public function modifyMainQuery(WP_Query $query): void
     {
-        if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== CPT::POST_TYPE) return;
+        if (
+            !is_admin() || 
+            !$query->is_main_query() || 
+            $query->get('post_type') !== CPT::POST_TYPE
+        ) {
+            return;
+        }
 
+        // 1. Fix "All" View: Force custom statuses if none selected
         if (empty($_GET['post_status']) && empty($query->get('post_status'))) {
             $query->set('post_status', ['vp_pending', 'vp_approved', 'vp_rejected']);
         }
 
+        // 2. Support "Employer Vouch" Filter
         if (isset($_GET['verification_type']) && $_GET['verification_type'] === 'employer_vouch') {
              $meta_query = $query->get('meta_query') ?: [];
-             $meta_query[] = ['key' => '_vp_verification_type', 'value' => 'employer_vouch', 'compare' => '='];
+             $meta_query[] = [
+                 'key'     => '_vp_verification_type',
+                 'value'   => 'employer_vouch',
+                 'compare' => '='
+             ];
              $query->set('meta_query', $meta_query);
+        }
+
+        // 3. [NEW] Advanced Search (Search by User Email/Name)
+        $search_term = $query->get('s');
+        if (!empty($search_term)) {
+            // Remove the default search (which only looks at post_title)
+            $query->set('s', '');
+
+            // Find users matching the search term
+            $user_query = new \WP_User_Query([
+                'search'         => '*' . $search_term . '*',
+                'search_columns' => ['user_login', 'user_email', 'display_name'],
+                'fields'         => 'ID',
+                'number'         => 50 // Limit to prevent performance issues
+            ]);
+            
+            $found_user_ids = $user_query->get_results();
+
+            if (!empty($found_user_ids)) {
+                // Search for posts where _vp_user_id matches one of these users
+                $meta_query = $query->get('meta_query') ?: [];
+                $meta_query[] = [
+                    'key'     => '_vp_user_id',
+                    'value'   => $found_user_ids,
+                    'compare' => 'IN'
+                ];
+                $query->set('meta_query', $meta_query);
+            } else {
+                // No users found? Force no results (search failed)
+                $query->set('post__in', [0]);
+            }
         }
     }
 
