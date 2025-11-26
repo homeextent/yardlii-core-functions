@@ -222,7 +222,7 @@ final class NativeAdminColumns
         $screen = get_current_screen();
         if (!$screen || $screen->post_type !== CPT::POST_TYPE) return;
 
-        // Action Feedback (using yardlii-banner to avoid tray capture)
+        // Action Feedback
         if (isset($_GET['tv_notice'])) {
             $map = [
                 'approve'      => __('Request approved.', 'yardlii-core'),
@@ -251,7 +251,6 @@ final class NativeAdminColumns
              $label = esc_html__('Search results for:', 'yardlii-core');
              
              // We use a unique ID and script to move this element to the title area
-             // This ensures it sits exactly where WP normally puts it.
              printf(
                 '<div id="yardlii-tv-search-subtitle" style="display:none;">' . 
                 '<span class="subtitle">%s <strong>%s</strong></span>' . 
@@ -358,7 +357,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 6. Register Status Views
+     * 6. Register Status Views (Top Filters)
      * @param array<string, string> $views
      * @return array<string, string>
      */
@@ -366,9 +365,8 @@ final class NativeAdminColumns
     {
         $base = admin_url('edit.php?post_type=' . CPT::POST_TYPE);
         
-        if (isset($_GET['tv_search'])) {
-            $base = add_query_arg('tv_search', urlencode(sanitize_text_field($_GET['tv_search'])), $base);
-        }
+        // [FIXED] Do NOT preserve 'tv_search' here. 
+        // This ensures clicking a filter link resets the search state.
 
         $emp_count = (new WP_Query([
             'post_type' => CPT::POST_TYPE, 'post_status' => 'any',
