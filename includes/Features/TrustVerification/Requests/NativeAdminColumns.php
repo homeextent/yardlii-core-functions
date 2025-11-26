@@ -44,7 +44,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * Render custom search bar + checkbox with Yardlii styling classes
+     * Render custom search bar + checkbox with specific positioning
      */
     public function renderCustomSearchAndToolbar(string $post_type): void
     {
@@ -63,6 +63,26 @@ final class NativeAdminColumns
                 <?php esc_html_e('Send me a copy', 'yardlii-core'); ?>
             </label>
         </span>
+
+        <script>
+        jQuery(document).ready(function($) {
+            // Locate the "All Dates" dropdown (standard name="m")
+            var dateSelect = $('select[name="m"]');
+            var ourCheckbox = $('.yardlii-tv-toolbar-item');
+
+            if (dateSelect.length > 0 && ourCheckbox.length > 0) {
+                // Move our checkbox immediately BEFORE the dates dropdown
+                ourCheckbox.insertBefore(dateSelect);
+                
+                // Adjust spacing: Add margin to the right, remove from left
+                ourCheckbox.css({
+                    'margin-left': '0',
+                    'margin-right': '15px',
+                    'display': 'inline-block'
+                });
+            }
+        });
+        </script>
         <?php
     }
 
@@ -175,11 +195,13 @@ final class NativeAdminColumns
     public function handleRowActions(array $actions, WP_Post $post): array
     {
         if ($post->post_type !== CPT::POST_TYPE) return $actions;
+
         unset($actions['edit'], $actions['inline hide-if-no-js'], $actions['trash']);
 
         $status = $post->post_status;
         $nonce  = wp_create_nonce('yardlii_tv_action_nonce');
         $base   = admin_url('admin.php');
+
         $new_actions = [];
 
         if ($status === 'vp_pending') {
@@ -209,7 +231,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 4. Notifications
+     * 4. Notifications (Action Feedback + Search Result)
      */
     public function displayAdminNotices(): void
     {
@@ -239,7 +261,7 @@ final class NativeAdminColumns
             }
         }
 
-        // Search Feedback (Manual injection to evade notification tray)
+        // Search Feedback
         if (isset($_GET['tv_search']) && !empty($_GET['tv_search'])) {
              $term = sanitize_text_field($_GET['tv_search']);
              $label = esc_html__('Search results for:', 'yardlii-core');
@@ -268,7 +290,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 5. Logic: Fix "All" View & Handle Custom Search
+     * 5. Logic: Fix "All" View & Handle Custom Search (tv_search)
      * @param WP_Query $query
      */
     public function modifyMainQuery(WP_Query $query): void
