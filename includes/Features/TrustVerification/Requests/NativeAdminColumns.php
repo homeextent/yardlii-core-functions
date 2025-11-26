@@ -6,11 +6,9 @@ namespace Yardlii\Core\Features\TrustVerification\Requests;
 use Yardlii\Core\Features\TrustVerification\Requests\CPT;
 use WP_Post;
 use WP_Query;
-use WP_User_Query;
 
 /**
  * Controls the native WordPress Admin List for Verification Requests.
- * Handles: Columns, Row Actions, Bulk Actions, and Status Filtering.
  */
 final class NativeAdminColumns
 {
@@ -27,8 +25,10 @@ final class NativeAdminColumns
         add_filter('views_edit-' . CPT::POST_TYPE, [$this, 'registerStatusViews']);
         add_action('restrict_manage_posts', [$this, 'renderToolbarExtras']);
         
-        // 3. Logic (Search & Filter)
+        // 3. Logic & Search
         add_action('pre_get_posts', [$this, 'modifyMainQuery']);
+        add_filter('posts_join', [$this, 'joinUserTable'], 10, 2);
+        add_filter('posts_search', [$this, 'extendSearchSql'], 10, 2);
         
         // 4. Notifications
         add_action('admin_notices', [$this, 'displayAdminNotices']);
@@ -203,8 +203,7 @@ final class NativeAdminColumns
             $notice = sanitize_key($_GET['tv_notice']);
             
             if (isset($map[$notice])) {
-                // We use the .yardlii-banner class to bypass WP's notice aggregation if desired,
-                // but keeping standard structure ensuring visibility.
+                // Uses global Yardlii banner styles
                 printf(
                     '<div class="yardlii-banner yardlii-banner--success yardlii-banner--dismiss" style="margin: 15px 0 15px 0; display:block;">' .
                     '<p><strong>%s</strong> %s</p>' .
@@ -217,8 +216,56 @@ final class NativeAdminColumns
     }
 
     /**
-     * 5. Fix "All" View & Enable Robust Search
-     * @param WP_Query $query
+     * 5. SQL Join: Users Table
+     * Allows us to search User Email/Login during post search
+     */
+    public function joinUserTable(string $join, WP_Query $query): string
+    {
+        if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== CPT::POST_TYPE || !$query->is_search()) {
+            return $join;
+        }
+
+        global $wpdb;
+        $join .= " LEFT JOIN {$wpdb->postmeta} AS pm_vp_user ON ({$wpdb->posts}.ID = pm_vp_user.post_id AND pm_vp_user.meta_key = '_vp_user_id') ";
+        $join .= " LEFT JOIN {$wpdb->users} AS u_vp ON (pm_vp_user.meta_value = u_vp.ID) ";
+
+        return $join;
+    }
+
+    /**
+     * 6. SQL Search: Inject User Fields
+     * Modifies the WHERE clause to search user_email/user_login alongside post_title
+     */
+    public function extendSearchSql(string $search, WP_Query $query): string
+    {
+        if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== CPT::POST_TYPE || !$query->is_search()) {
+            return $search;
+        }
+
+        global $wpdb;
+        $search_term = $query->get('s');
+        if (!$search_term) return $search;
+
+        $like = '%' . $wpdb->esc_like($search_term) . '%';
+
+        // Append OR condition to the existing search clause
+        // It typically ends with ))) so we inject before that or just append AND with OR inside
+        // The safest way without regex complexity is to append our logic to the existing string if not empty.
+        
+        $user_search = $wpdb->prepare(
+            " OR (u_vp.user_email LIKE %s) OR (u_vp.user_login LIKE %s) OR (u_vp.display_name LIKE %s) ",
+            $like, $like, $like
+        );
+
+        // If existing search exists (AND (...)), we need to inject inside the parenthesis or ensure precedence.
+        // WordPress wraps search in AND (((...))).
+        // We replace the final ))) with ) OR ... ))) to include our conditions in the group.
+        
+        return preg_replace('/\)\)\)$/', $user_search . ')))', $search);
+    }
+
+    /**
+     * 7. Fix "All" View & Filters
      */
     public function modifyMainQuery(WP_Query $query): void
     {
@@ -241,62 +288,9 @@ final class NativeAdminColumns
              $meta_query[] = ['key' => '_vp_verification_type', 'value' => 'employer_vouch', 'compare' => '='];
              $query->set('meta_query', $meta_query);
         }
-
-        // C. Robust Search (Title OR User Meta)
-        $search_term = $query->get('s');
-        if (!empty($search_term)) {
-            // 1. Get matching IDs via Title/Content
-            $title_search_args = [
-                'post_type'   => CPT::POST_TYPE,
-                'post_status' => 'any',
-                's'           => $search_term,
-                'fields'      => 'ids',
-                'posts_per_page' => -1
-            ];
-            $title_ids = get_posts($title_search_args);
-
-            // 2. Get matching IDs via User Search (Meta)
-            $user_query = new WP_User_Query([
-                'search'         => '*' . $search_term . '*',
-                'search_columns' => ['user_login', 'user_email', 'display_name'],
-                'fields'         => 'ID',
-                'number'         => 100
-            ]);
-            
-            $user_ids = $user_query->get_results();
-            $user_post_ids = [];
-
-            if (!empty($user_ids)) {
-                $user_post_ids = get_posts([
-                    'post_type'      => CPT::POST_TYPE,
-                    'post_status'    => 'any',
-                    'fields'         => 'ids',
-                    'posts_per_page' => -1,
-                    'meta_query'     => [
-                        [
-                            'key'     => '_vp_user_id',
-                            'value'   => $user_ids,
-                            'compare' => 'IN'
-                        ]
-                    ]
-                ]);
-            }
-
-            // 3. Merge
-            $merged_ids = array_unique(array_merge($title_ids, $user_post_ids));
-
-            if (!empty($merged_ids)) {
-                $query->set('post__in', $merged_ids);
-                $query->set('s', ''); // Clear default search to avoid 0 results
-            } else {
-                $query->set('post__in', [0]);
-                $query->set('s', '');
-            }
-        }
     }
 
-    /**
-     * 6. Register Status Views (Top Filters)
+    /** * 8. Register Status Views (Top Filters)
      * @param array<string, string> $views
      * @return array<string, string>
      */
@@ -325,6 +319,7 @@ final class NativeAdminColumns
             if ($key === 'all') $args['post_status'] = ['vp_pending', 'vp_approved', 'vp_rejected'];
             
             $count = (new WP_Query($args))->found_posts;
+            
             $class = ($current === $data['status'] && !$is_emp) ? 'current' : '';
             $url   = $key === 'all' ? $base : add_query_arg('post_status', $data['status'], $base);
             
@@ -345,7 +340,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 7. Register Bulk Actions
+     * 9. Register Bulk Actions
      * @param array<string, string> $actions
      * @return array<string, string>
      */
@@ -361,10 +356,10 @@ final class NativeAdminColumns
     }
 
     /**
-     * 8. Handle Bulk Action Logic
+     * 10. Handle Bulk Action Logic
      * @param string $redirect_to
      * @param string $action
-     * @param array<int|string> $post_ids
+     * @param array<int> $post_ids
      * @return string
      */
     public function handleBulkProcessing(string $redirect_to, string $action, array $post_ids): string
