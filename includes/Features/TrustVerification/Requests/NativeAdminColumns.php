@@ -36,19 +36,15 @@ final class NativeAdminColumns
         add_action('admin_notices', [$this, 'displayAdminNotices']);
     }
 
-    /**
-     * Hide the native WordPress search box.
-     */
     public function hideNativeSearchBox(): void
     {
         $screen = get_current_screen();
         if (!$screen || $screen->post_type !== CPT::POST_TYPE) return;
-        
         echo '<style>.search-box { display: none !important; }</style>';
     }
 
     /**
-     * Render our custom search box + the "Send me a copy" checkbox
+     * Render custom search bar + checkbox with Yardlii styling classes
      */
     public function renderCustomSearchAndToolbar(string $post_type): void
     {
@@ -56,15 +52,17 @@ final class NativeAdminColumns
 
         $val = isset($_GET['tv_search']) ? sanitize_text_field($_GET['tv_search']) : '';
         ?>
-        <span style="float: right; margin-left: 10px;">
-            <input type="search" name="tv_search" id="yardlii-tv-search-input" value="<?php echo esc_attr($val); ?>" placeholder="<?php esc_attr_e('Search User or Request #', 'yardlii-core'); ?>">
-            <input type="submit" id="yardlii-tv-search-submit" class="button" value="<?php esc_attr_e('Search Requests', 'yardlii-core'); ?>">
+        <span class="yardlii-tv-search-box">
+            <input type="search" name="tv_search" value="<?php echo esc_attr($val); ?>" placeholder="<?php esc_attr_e('Search User or Request #', 'yardlii-core'); ?>">
+            <input type="submit" id="yardlii-tv-search-submit" class="button button-primary" value="<?php esc_attr_e('Search Requests', 'yardlii-core'); ?>">
         </span>
 
-        <label style="margin-left:10px;line-height:30px;vertical-align:middle;font-size:13px;">
-            <input type="checkbox" name="tv_send_copy" value="1" style="margin-top:-2px;"> 
-            <?php esc_html_e('Send me a copy', 'yardlii-core'); ?>
-        </label>
+        <span class="yardlii-tv-toolbar-item">
+            <label for="tv_send_copy_toggle">
+                <input type="checkbox" name="tv_send_copy" id="tv_send_copy_toggle" value="1" style="margin-top:-2px;"> 
+                <?php esc_html_e('Send me a copy', 'yardlii-core'); ?>
+            </label>
+        </span>
         <?php
     }
 
@@ -88,21 +86,16 @@ final class NativeAdminColumns
         ];
     }
 
-    /**
-     * 2. Render Column Content
-     */
     public function renderColumn(string $column, int $post_id): void
     {
         switch ($column) {
             case 'tv_user':
                 $uid = (int) get_post_meta($post_id, '_vp_user_id', true);
                 $user = get_userdata($uid);
-                
                 $edit_link = get_edit_post_link($post_id);
                 $title = _draft_or_post_title($post_id);
                 
                 echo '<strong><a class="row-title" href="' . esc_url((string)$edit_link) . '">' . esc_html($title) . '</a></strong>';
-                
                 if ($user) {
                     printf('<br><a href="mailto:%1$s">%1$s</a>', esc_html($user->user_email));
                     if ($user->user_login !== $user->user_email) {
@@ -215,7 +208,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 4. Notifications (Action Feedback + Search Result)
+     * 4. Notifications
      */
     public function displayAdminNotices(): void
     {
@@ -250,10 +243,9 @@ final class NativeAdminColumns
              $term = sanitize_text_field($_GET['tv_search']);
              $label = esc_html__('Search results for:', 'yardlii-core');
              
-             // We use a unique ID and script to move this element to the title area
              printf(
                 '<div id="yardlii-tv-search-subtitle" style="display:none;">' . 
-                '<span class="subtitle">%s <strong>%s</strong></span>' . 
+                '<span class="subtitle" style="font-size:13px; color:#50575e; margin-left:5px;">%s <strong>%s</strong></span>' . 
                 '</div>',
                 $label,
                 esc_html($term)
@@ -275,7 +267,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 5. Logic: Fix "All" View & Handle Custom Search (tv_search)
+     * 5. Logic: Fix "All" View & Handle Custom Search
      * @param WP_Query $query
      */
     public function modifyMainQuery(WP_Query $query): void
@@ -365,108 +357,12 @@ final class NativeAdminColumns
     {
         $base = admin_url('edit.php?post_type=' . CPT::POST_TYPE);
         
-        // [FIXED] Do NOT preserve 'tv_search' here. 
-        // This ensures clicking a filter link resets the search state.
+        // Clear search when filter clicked
+        if (isset($_GET['tv_search'])) {
+            $base = remove_query_arg('tv_search', $base);
+        }
 
         $emp_count = (new WP_Query([
             'post_type' => CPT::POST_TYPE, 'post_status' => 'any',
             'meta_query' => [['key' => '_vp_verification_type', 'value' => 'employer_vouch']]
-        ]))->found_posts;
-
-        $statuses = [
-            'all'         => ['label' => __('All', 'yardlii-core'),      'status' => ''],
-            'vp_pending'  => ['label' => __('Pending', 'yardlii-core'),  'status' => 'vp_pending'],
-            'vp_approved' => ['label' => __('Approved', 'yardlii-core'), 'status' => 'vp_approved'],
-            'vp_rejected' => ['label' => __('Rejected', 'yardlii-core'), 'status' => 'vp_rejected'],
-        ];
-
-        $new_views = [];
-        $current = $_GET['post_status'] ?? '';
-        $is_emp  = isset($_GET['verification_type']);
-
-        foreach ($statuses as $key => $data) {
-            $args = ['post_type' => CPT::POST_TYPE, 'post_status' => $data['status']];
-            if ($key === 'all') $args['post_status'] = ['vp_pending', 'vp_approved', 'vp_rejected'];
-            
-            $count = (new WP_Query($args))->found_posts;
-            
-            $class = ($current === $data['status'] && !$is_emp) ? 'current' : '';
-            $url   = $key === 'all' ? $base : add_query_arg('post_status', $data['status'], $base);
-            
-            $new_views[$key] = sprintf(
-                '<a href="%s" class="%s">%s <span class="count">(%d)</span></a>',
-                esc_url($url),
-                $class,
-                esc_html($data['label']),
-                $count
-            );
-        }
-
-        $emp_class = $is_emp ? 'current' : '';
-        $new_views['employer'] = sprintf(
-            '<a href="%s" class="%s">%s <span class="count">(%d)</span></a>',
-            esc_url(add_query_arg('verification_type', 'employer_vouch', $base)),
-            $emp_class,
-            __('Employer Vouch', 'yardlii-core'),
-            $emp_count
-        );
-
-        return $new_views;
-    }
-
-    /**
-     * 7. Register Bulk Actions
-     * @param array<string, string> $actions
-     * @return array<string, string>
-     */
-    public function registerBulkActions(array $actions): array
-    {
-        unset($actions['edit'], $actions['trash']); 
-        return [
-            'yardlii_tv_bulk_approve' => __('Approve', 'yardlii-core'),
-            'yardlii_tv_bulk_reject'  => __('Reject', 'yardlii-core'),
-            'yardlii_tv_bulk_reopen'  => __('Re-open', 'yardlii-core'),
-            'yardlii_tv_bulk_resend'  => __('Resend Email', 'yardlii-core'),
-        ] + $actions;
-    }
-
-    /**
-     * 8. Handle Bulk Action Logic
-     * @param string $redirect_to
-     * @param string $action
-     * @param array<int|string> $post_ids
-     * @return string
-     */
-    public function handleBulkProcessing(string $redirect_to, string $action, array $post_ids): string
-    {
-        $map = [
-            'yardlii_tv_bulk_approve' => 'approve',
-            'yardlii_tv_bulk_reject'  => 'reject',
-            'yardlii_tv_bulk_reopen'  => 'reopen',
-            'yardlii_tv_bulk_resend'  => 'resend',
-        ];
-
-        if (!isset($map[$action])) return $redirect_to;
-
-        $decisions = new Decisions();
-        $processed = 0;
-        $sendCopy = !empty($_REQUEST['tv_send_copy']);
-
-        foreach ($post_ids as $id) {
-            if ($decisions->applyDecision((int)$id, $map[$action], ['cc_self' => $sendCopy])) {
-                $processed++;
-            }
-        }
-
-        return add_query_arg(['tv_notice' => 'bulk_' . $map[$action], 'tv_count' => $processed], $redirect_to);
-    }
-
-    private function getStatusLabel(string $slug): string {
-        $map = [
-            'vp_pending'  => 'Pending',
-            'vp_approved' => 'Approved',
-            'vp_rejected' => 'Rejected'
-        ];
-        return $map[$slug] ?? ucfirst(str_replace(['vp_', '_'], ['', ' '], $slug));
-    }
-}
+        ]))
