@@ -207,11 +207,18 @@ final class SettingsPageTabs
         ]);
 
 	// WPUF: Dynamic Form Switching IDs
-        // We register these in the General Group so they save on the WPUF Customisations tab
         register_setting(self::GROUP_GENERAL, 'yardlii_posting_logic_pro_form', [
             'sanitize_callback' => 'absint',
             'default'           => 0,
         ]);
+        
+        // NEW: Basic Member Form ID (Target for Smart Logic)
+        register_setting(self::GROUP_GENERAL, 'yardlii_posting_logic_basic_form', [
+            'sanitize_callback' => 'absint',
+            'default'           => 0,
+        ]);
+        
+        // DEPRECATED: Provisional Form (Logic removed, keeping registration to prevent errors if DB has value)
         register_setting(self::GROUP_GENERAL, 'yardlii_posting_logic_provisional_form', [
             'sanitize_callback' => 'absint',
             'default'           => 0,
