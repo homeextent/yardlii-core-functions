@@ -25,7 +25,7 @@ final class NativeAdminColumns
         add_filter('handle_bulk_actions-edit-' . CPT::POST_TYPE, [$this, 'handleBulkProcessing'], 10, 3);
         add_filter('views_edit-' . CPT::POST_TYPE, [$this, 'registerStatusViews']);
         
-        // 3. CUSTOM SEARCH UI [NEW]
+        // 3. CUSTOM SEARCH UI
         add_action('restrict_manage_posts', [$this, 'renderCustomSearchAndToolbar']);
         add_action('admin_head', [$this, 'hideNativeSearchBox']);
         
@@ -37,7 +37,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * [NEW] Hide the native WordPress search box to avoid confusion.
+     * Hide the native WordPress search box.
      */
     public function hideNativeSearchBox(): void
     {
@@ -48,7 +48,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * [NEW] Render our custom search box + the "Send me a copy" checkbox
+     * Render our custom search box + the "Send me a copy" checkbox
      */
     public function renderCustomSearchAndToolbar(string $post_type): void
     {
@@ -113,7 +113,6 @@ final class NativeAdminColumns
                 }
                 break;
 
-            // ... (Rest of columns identical to previous version) ...
             case 'tv_form':
                 echo esc_html((string) get_post_meta($post_id, '_vp_form_id', true));
                 break;
@@ -223,7 +222,7 @@ final class NativeAdminColumns
         $screen = get_current_screen();
         if (!$screen || $screen->post_type !== CPT::POST_TYPE) return;
 
-        // Action Feedback
+        // Action Feedback (using yardlii-banner to avoid tray capture)
         if (isset($_GET['tv_notice'])) {
             $map = [
                 'approve'      => __('Request approved.', 'yardlii-core'),
@@ -246,13 +245,33 @@ final class NativeAdminColumns
             }
         }
 
-        // [NEW] Search Feedback (replacing native "Search results for:")
+        // Search Feedback (Manual injection to evade notification tray)
         if (isset($_GET['tv_search']) && !empty($_GET['tv_search'])) {
+             $term = sanitize_text_field($_GET['tv_search']);
+             $label = esc_html__('Search results for:', 'yardlii-core');
+             
+             // We use a unique ID and script to move this element to the title area
+             // This ensures it sits exactly where WP normally puts it.
              printf(
-                '<div class="notice notice-info" style="margin: 15px 0 5px 0;"><p>%s <strong>%s</strong></p></div>',
-                esc_html__('Search results for:', 'yardlii-core'),
-                esc_html(sanitize_text_field($_GET['tv_search']))
-            );
+                '<div id="yardlii-tv-search-subtitle" style="display:none;">' . 
+                '<span class="subtitle">%s <strong>%s</strong></span>' . 
+                '</div>',
+                $label,
+                esc_html($term)
+             );
+             
+             ?>
+             <script>
+             document.addEventListener('DOMContentLoaded', function() {
+                 var sub = document.getElementById('yardlii-tv-search-subtitle');
+                 var title = document.querySelector('.wrap h1');
+                 if(sub && title) {
+                     title.insertAdjacentHTML('afterend', sub.innerHTML);
+                     sub.remove();
+                 }
+             });
+             </script>
+             <?php
         }
     }
 
@@ -284,16 +303,15 @@ final class NativeAdminColumns
              $query->set('meta_query', $meta_query);
         }
 
-        // C. [NEW] Handle "tv_search" (The Custom Search Logic)
-        // We ignore 's' completely.
+        // C. Handle "tv_search"
         $search_term = isset($_GET['tv_search']) ? sanitize_text_field($_GET['tv_search']) : '';
         
         if (!empty($search_term)) {
-            // 1. Title Search (Standard WP Search, but on our custom statuses)
+            // 1. Title Search
             $title_search_args = [
                 'post_type'   => CPT::POST_TYPE,
                 'post_status' => $our_statuses,
-                's'           => $search_term, // native search for title
+                's'           => $search_term, 
                 'fields'      => 'ids',
                 'posts_per_page' => -1
             ];
@@ -313,7 +331,7 @@ final class NativeAdminColumns
             if (!empty($user_ids)) {
                 $user_post_ids = get_posts([
                     'post_type'      => CPT::POST_TYPE,
-                    'post_status'    => $our_statuses, // Search ALL statuses
+                    'post_status'    => $our_statuses, 
                     'fields'         => 'ids',
                     'posts_per_page' => -1,
                     'meta_query'     => [
@@ -331,17 +349,16 @@ final class NativeAdminColumns
 
             if (!empty($merged_ids)) {
                 $query->set('post__in', $merged_ids);
-                // Ensure we see the results regardless of status filters
                 $query->set('post_status', $our_statuses); 
             } else {
-                // Nothing found -> force empty result
+                // Nothing found
                 $query->set('post__in', [0]);
             }
         }
     }
 
     /**
-     * 6. Register Status Views (Top Filters)
+     * 6. Register Status Views
      * @param array<string, string> $views
      * @return array<string, string>
      */
@@ -349,7 +366,6 @@ final class NativeAdminColumns
     {
         $base = admin_url('edit.php?post_type=' . CPT::POST_TYPE);
         
-        // Preserve search term in filter links
         if (isset($_GET['tv_search'])) {
             $base = add_query_arg('tv_search', urlencode(sanitize_text_field($_GET['tv_search'])), $base);
         }
