@@ -143,9 +143,14 @@ if ($media_cleanup_enabled && class_exists(__NAMESPACE__ . '\\MediaCleanup')) {
         }
 
         // === Dynamic Posting Logic ===
-        // Automatically swaps WPUF forms based on user role (Simple Mode)
         if (class_exists(__NAMESPACE__ . '\\PostingLogic')) {
             (new PostingLogic())->register();
+        }
+
+        // === Smart Form Overrides (New) ===
+        // Handles "Pending" user behavior on the Basic Form
+        if (class_exists(__NAMESPACE__ . '\\SmartFormOverrides')) {
+            (new SmartFormOverrides())->register();
         }
 
         // === Role Control (master + subfeatures) ===
