@@ -6,9 +6,11 @@ namespace Yardlii\Core\Features\TrustVerification\Requests;
 use Yardlii\Core\Features\TrustVerification\Requests\CPT;
 use WP_Post;
 use WP_Query;
+use WP_User_Query;
 
 /**
  * Controls the native WordPress Admin List for Verification Requests.
+ * Handles: Columns, Row Actions, Bulk Actions, and Status Filtering.
  */
 final class NativeAdminColumns
 {
@@ -25,7 +27,7 @@ final class NativeAdminColumns
         add_filter('views_edit-' . CPT::POST_TYPE, [$this, 'registerStatusViews']);
         add_action('restrict_manage_posts', [$this, 'renderToolbarExtras']);
         
-        // 3. Logic
+        // 3. Logic (Search & Filter)
         add_action('pre_get_posts', [$this, 'modifyMainQuery']);
         
         // 4. Notifications
@@ -40,7 +42,6 @@ final class NativeAdminColumns
     public function defineColumns(array $columns): array
     {
         $cb = $columns['cb'] ?? '<input type="checkbox" />';
-        
         return [
             'cb'             => $cb,
             'tv_user'        => __('User / Request', 'yardlii-core'),
@@ -202,13 +203,21 @@ final class NativeAdminColumns
             $notice = sanitize_key($_GET['tv_notice']);
             
             if (isset($map[$notice])) {
-                echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($map[$notice]) . '</p></div>';
+                // We use the .yardlii-banner class to bypass WP's notice aggregation if desired,
+                // but keeping standard structure ensuring visibility.
+                printf(
+                    '<div class="yardlii-banner yardlii-banner--success yardlii-banner--dismiss" style="margin: 15px 0 15px 0; display:block;">' .
+                    '<p><strong>%s</strong> %s</p>' .
+                    '</div>',
+                    esc_html__('Success:', 'yardlii-core'),
+                    esc_html($map[$notice])
+                );
             }
         }
     }
 
     /**
-     * 5. Fix "All" View & Filters
+     * 5. Fix "All" View & Enable Robust Search
      * @param WP_Query $query
      */
     public function modifyMainQuery(WP_Query $query): void
@@ -221,55 +230,73 @@ final class NativeAdminColumns
             return;
         }
 
-        // 1. Fix "All" View: Force custom statuses if none selected
+        // A. Fix "All" View
         if (empty($_GET['post_status']) && empty($query->get('post_status'))) {
             $query->set('post_status', ['vp_pending', 'vp_approved', 'vp_rejected']);
         }
 
-        // 2. Support "Employer Vouch" Filter
+        // B. Employer Vouch Filter
         if (isset($_GET['verification_type']) && $_GET['verification_type'] === 'employer_vouch') {
              $meta_query = $query->get('meta_query') ?: [];
-             $meta_query[] = [
-                 'key'     => '_vp_verification_type',
-                 'value'   => 'employer_vouch',
-                 'compare' => '='
-             ];
+             $meta_query[] = ['key' => '_vp_verification_type', 'value' => 'employer_vouch', 'compare' => '='];
              $query->set('meta_query', $meta_query);
         }
 
-        // 3. [NEW] Advanced Search (Search by User Email/Name)
+        // C. Robust Search (Title OR User Meta)
         $search_term = $query->get('s');
         if (!empty($search_term)) {
-            // Remove the default search (which only looks at post_title)
-            $query->set('s', '');
+            // 1. Get matching IDs via Title/Content
+            $title_search_args = [
+                'post_type'   => CPT::POST_TYPE,
+                'post_status' => 'any',
+                's'           => $search_term,
+                'fields'      => 'ids',
+                'posts_per_page' => -1
+            ];
+            $title_ids = get_posts($title_search_args);
 
-            // Find users matching the search term
-            $user_query = new \WP_User_Query([
+            // 2. Get matching IDs via User Search (Meta)
+            $user_query = new WP_User_Query([
                 'search'         => '*' . $search_term . '*',
                 'search_columns' => ['user_login', 'user_email', 'display_name'],
                 'fields'         => 'ID',
-                'number'         => 50 // Limit to prevent performance issues
+                'number'         => 100
             ]);
             
-            $found_user_ids = $user_query->get_results();
+            $user_ids = $user_query->get_results();
+            $user_post_ids = [];
 
-            if (!empty($found_user_ids)) {
-                // Search for posts where _vp_user_id matches one of these users
-                $meta_query = $query->get('meta_query') ?: [];
-                $meta_query[] = [
-                    'key'     => '_vp_user_id',
-                    'value'   => $found_user_ids,
-                    'compare' => 'IN'
-                ];
-                $query->set('meta_query', $meta_query);
+            if (!empty($user_ids)) {
+                $user_post_ids = get_posts([
+                    'post_type'      => CPT::POST_TYPE,
+                    'post_status'    => 'any',
+                    'fields'         => 'ids',
+                    'posts_per_page' => -1,
+                    'meta_query'     => [
+                        [
+                            'key'     => '_vp_user_id',
+                            'value'   => $user_ids,
+                            'compare' => 'IN'
+                        ]
+                    ]
+                ]);
+            }
+
+            // 3. Merge
+            $merged_ids = array_unique(array_merge($title_ids, $user_post_ids));
+
+            if (!empty($merged_ids)) {
+                $query->set('post__in', $merged_ids);
+                $query->set('s', ''); // Clear default search to avoid 0 results
             } else {
-                // No users found? Force no results (search failed)
                 $query->set('post__in', [0]);
+                $query->set('s', '');
             }
         }
     }
 
-    /** * 6. Register Status Views (Top Filters)
+    /**
+     * 6. Register Status Views (Top Filters)
      * @param array<string, string> $views
      * @return array<string, string>
      */
@@ -298,7 +325,6 @@ final class NativeAdminColumns
             if ($key === 'all') $args['post_status'] = ['vp_pending', 'vp_approved', 'vp_rejected'];
             
             $count = (new WP_Query($args))->found_posts;
-            
             $class = ($current === $data['status'] && !$is_emp) ? 'current' : '';
             $url   = $key === 'all' ? $base : add_query_arg('post_status', $data['status'], $base);
             
@@ -315,8 +341,6 @@ final class NativeAdminColumns
             __('Employer Vouch', 'yardlii-core'), $emp_count
         );
 
-        // We intentionally skip 'trash' to discourage deletion, but you can add it back here if needed.
-        
         return $new_views;
     }
 
@@ -340,7 +364,7 @@ final class NativeAdminColumns
      * 8. Handle Bulk Action Logic
      * @param string $redirect_to
      * @param string $action
-     * @param array<int> $post_ids
+     * @param array<int|string> $post_ids
      * @return string
      */
     public function handleBulkProcessing(string $redirect_to, string $action, array $post_ids): string
