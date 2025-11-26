@@ -24,15 +24,48 @@ final class NativeAdminColumns
         add_filter('bulk_actions-edit-' . CPT::POST_TYPE, [$this, 'registerBulkActions']);
         add_filter('handle_bulk_actions-edit-' . CPT::POST_TYPE, [$this, 'handleBulkProcessing'], 10, 3);
         add_filter('views_edit-' . CPT::POST_TYPE, [$this, 'registerStatusViews']);
-        add_action('restrict_manage_posts', [$this, 'renderToolbarExtras']);
         
-        // 3. Logic (Search & Filter)
+        // 3. CUSTOM SEARCH UI [NEW]
+        add_action('restrict_manage_posts', [$this, 'renderCustomSearchAndToolbar']);
+        add_action('admin_head', [$this, 'hideNativeSearchBox']);
+        
+        // 4. Logic (Search & Filter)
         add_action('pre_get_posts', [$this, 'modifyMainQuery']);
-        // Silence default search SQL so we can keep 's' in the query object (fixing the UI label)
-        add_filter('posts_search', [$this, 'killDefaultSearchSQL'], 10, 2);
         
-        // 4. Notifications
+        // 5. Notifications
         add_action('admin_notices', [$this, 'displayAdminNotices']);
+    }
+
+    /**
+     * [NEW] Hide the native WordPress search box to avoid confusion.
+     */
+    public function hideNativeSearchBox(): void
+    {
+        $screen = get_current_screen();
+        if (!$screen || $screen->post_type !== CPT::POST_TYPE) return;
+        
+        echo '<style>.search-box { display: none !important; }</style>';
+    }
+
+    /**
+     * [NEW] Render our custom search box + the "Send me a copy" checkbox
+     */
+    public function renderCustomSearchAndToolbar(string $post_type): void
+    {
+        if ($post_type !== CPT::POST_TYPE) return;
+
+        $val = isset($_GET['tv_search']) ? sanitize_text_field($_GET['tv_search']) : '';
+        ?>
+        <span style="float: right; margin-left: 10px;">
+            <input type="search" name="tv_search" id="yardlii-tv-search-input" value="<?php echo esc_attr($val); ?>" placeholder="<?php esc_attr_e('Search User or Request #', 'yardlii-core'); ?>">
+            <input type="submit" id="yardlii-tv-search-submit" class="button" value="<?php esc_attr_e('Search Requests', 'yardlii-core'); ?>">
+        </span>
+
+        <label style="margin-left:10px;line-height:30px;vertical-align:middle;font-size:13px;">
+            <input type="checkbox" name="tv_send_copy" value="1" style="margin-top:-2px;"> 
+            <?php esc_html_e('Send me a copy', 'yardlii-core'); ?>
+        </label>
+        <?php
     }
 
     /**
@@ -80,6 +113,7 @@ final class NativeAdminColumns
                 }
                 break;
 
+            // ... (Rest of columns identical to previous version) ...
             case 'tv_form':
                 echo esc_html((string) get_post_meta($post_id, '_vp_form_id', true));
                 break;
@@ -87,12 +121,9 @@ final class NativeAdminColumns
             case 'tv_status':
                 $status = get_post_status($post_id);
                 if (!$status) { echo '—'; break; }
-                
                 $label  = $this->getStatusLabel($status);
                 $class  = str_replace(['vp_', '_'], ['', '-'], $status); 
-                
                 printf('<span class="status-badge status-badge--%s">%s</span>', esc_attr($class), esc_html($label));
-                
                 $type = get_post_meta($post_id, '_vp_verification_type', true);
                 if ($status === 'vp_pending' && $type === 'employer_vouch') {
                      echo ' <span class="dashicons dashicons-businessperson" title="Waiting for Employer" style="color:#888;margin-left:4px;"></span>';
@@ -185,13 +216,14 @@ final class NativeAdminColumns
     }
 
     /**
-     * 4. Notifications (Only Success/Action feedback)
+     * 4. Notifications (Action Feedback + Search Result)
      */
     public function displayAdminNotices(): void
     {
         $screen = get_current_screen();
         if (!$screen || $screen->post_type !== CPT::POST_TYPE) return;
 
+        // Action Feedback
         if (isset($_GET['tv_notice'])) {
             $map = [
                 'approve'      => __('Request approved.', 'yardlii-core'),
@@ -213,10 +245,19 @@ final class NativeAdminColumns
                 );
             }
         }
+
+        // [NEW] Search Feedback (replacing native "Search results for:")
+        if (isset($_GET['tv_search']) && !empty($_GET['tv_search'])) {
+             printf(
+                '<div class="notice notice-info" style="margin: 15px 0 5px 0;"><p>%s <strong>%s</strong></p></div>',
+                esc_html__('Search results for:', 'yardlii-core'),
+                esc_html(sanitize_text_field($_GET['tv_search']))
+            );
+        }
     }
 
     /**
-     * 5. Fix "All" View & Enable Robust Search
+     * 5. Logic: Fix "All" View & Handle Custom Search (tv_search)
      * @param WP_Query $query
      */
     public function modifyMainQuery(WP_Query $query): void
@@ -243,14 +284,16 @@ final class NativeAdminColumns
              $query->set('meta_query', $meta_query);
         }
 
-        // C. Robust Search (Title OR User Meta)
-        $search_term = $query->get('s');
+        // C. [NEW] Handle "tv_search" (The Custom Search Logic)
+        // We ignore 's' completely.
+        $search_term = isset($_GET['tv_search']) ? sanitize_text_field($_GET['tv_search']) : '';
+        
         if (!empty($search_term)) {
-            // 1. Standard Title Search
+            // 1. Title Search (Standard WP Search, but on our custom statuses)
             $title_search_args = [
                 'post_type'   => CPT::POST_TYPE,
                 'post_status' => $our_statuses,
-                's'           => $search_term,
+                's'           => $search_term, // native search for title
                 'fields'      => 'ids',
                 'posts_per_page' => -1
             ];
@@ -270,7 +313,7 @@ final class NativeAdminColumns
             if (!empty($user_ids)) {
                 $user_post_ids = get_posts([
                     'post_type'      => CPT::POST_TYPE,
-                    'post_status'    => $our_statuses,
+                    'post_status'    => $our_statuses, // Search ALL statuses
                     'fields'         => 'ids',
                     'posts_per_page' => -1,
                     'meta_query'     => [
@@ -288,37 +331,17 @@ final class NativeAdminColumns
 
             if (!empty($merged_ids)) {
                 $query->set('post__in', $merged_ids);
-                // [FIX] We DO NOT clear 's' here. We want native WP UI to see it.
-                // Instead, we use killDefaultSearchSQL to prevent the SQL query from failing.
+                // Ensure we see the results regardless of status filters
+                $query->set('post_status', $our_statuses); 
             } else {
+                // Nothing found -> force empty result
                 $query->set('post__in', [0]);
             }
         }
     }
 
     /**
-     * 6. Silence Default Search SQL
-     * We have manually found the IDs in modifyMainQuery() and set post__in.
-     * Now we must tell WP *not* to run its default "AND post_title LIKE %s" logic.
-     */
-    public function killDefaultSearchSQL(string $search, WP_Query $query): string
-    {
-        if (
-            !is_admin() || 
-            !$query->is_main_query() || 
-            $query->get('post_type') !== CPT::POST_TYPE || 
-            !$query->is_search()
-        ) {
-            return $search;
-        }
-
-        // We have handled the search logic via post__in.
-        // Return empty string to disable the default SQL LIKE clause.
-        return '';
-    }
-
-    /**
-     * 7. Register Status Views
+     * 6. Register Status Views (Top Filters)
      * @param array<string, string> $views
      * @return array<string, string>
      */
@@ -326,6 +349,11 @@ final class NativeAdminColumns
     {
         $base = admin_url('edit.php?post_type=' . CPT::POST_TYPE);
         
+        // Preserve search term in filter links
+        if (isset($_GET['tv_search'])) {
+            $base = add_query_arg('tv_search', urlencode(sanitize_text_field($_GET['tv_search'])), $base);
+        }
+
         $emp_count = (new WP_Query([
             'post_type' => CPT::POST_TYPE, 'post_status' => 'any',
             'meta_query' => [['key' => '_vp_verification_type', 'value' => 'employer_vouch']]
@@ -373,7 +401,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 8. Register Bulk Actions
+     * 7. Register Bulk Actions
      * @param array<string, string> $actions
      * @return array<string, string>
      */
@@ -389,7 +417,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 9. Handle Bulk Action Logic
+     * 8. Handle Bulk Action Logic
      * @param string $redirect_to
      * @param string $action
      * @param array<int|string> $post_ids
@@ -417,17 +445,6 @@ final class NativeAdminColumns
         }
 
         return add_query_arg(['tv_notice' => 'bulk_' . $map[$action], 'tv_count' => $processed], $redirect_to);
-    }
-
-    public function renderToolbarExtras(string $post_type): void
-    {
-        if ($post_type !== CPT::POST_TYPE) return;
-        ?>
-        <label style="margin-left:10px;line-height:30px;vertical-align:middle;font-size:13px;">
-            <input type="checkbox" name="tv_send_copy" value="1" style="margin-top:-2px;"> 
-            <?php esc_html_e('Send me a copy', 'yardlii-core'); ?>
-        </label>
-        <?php
     }
 
     private function getStatusLabel(string $slug): string {
