@@ -23,15 +23,15 @@
 .status-badge--approved, .status-badge--vp_approved { background:#28a745; color:#fff; }
 .status-badge--rejected, .status-badge--vp_rejected { background:#dc3545; color:#fff; }
 
-/* --- Inline banners --- */
-#yardlii-tab-trust-verification .yardlii-banner{
+/* --- Inline banners (Global) --- */
+.yardlii-banner {
   margin:12px 0; padding:10px 12px; border:1px solid #dcdcde; border-left-width:4px;
   background:#fff; border-radius:2px;
 }
-#yardlii-tab-trust-verification .yardlii-banner--success{ border-left-color:#00a32a; background:#f6fff7; }
-#yardlii-tab-trust-verification .yardlii-banner--info{    border-left-color:#2271b1; background:#f0f6fc; }
-#yardlii-tab-trust-verification .yardlii-banner p{ margin:0; }
-#yardlii-tab-trust-verification .yardlii-banner__close{
+.yardlii-banner--success { border-left-color:#00a32a; background:#f6fff7; }
+.yardlii-banner--info    { border-left-color:#2271b1; background:#f0f6fc; }
+.yardlii-banner p { margin:0; }
+.yardlii-banner__close {
   float:right; font-size:16px; line-height:1; border:0; background:transparent; cursor:pointer;
 }
 
