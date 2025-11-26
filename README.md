@@ -130,6 +130,12 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+### 3.18.0 - 2025-11-25
+* **Feature:** "Smart Form Overrides" module added. Forces 'Publish' status and instant redirect for Pending Verification users on the Basic Form.
+* **Update:** Dynamic Posting Logic now exclusively targets Verified users (swapping them to Pro Form) using "God Mode" metadata interception.
+* **Update:** Auto-Publisher now targets the configured "Basic Member Form" to release drafts upon user verification.
+* **Admin:** Added "Basic Member Form ID" setting to WPUF Customisations. Deprecated "Provisional Form ID".
+
 ### 3.17.1 - 2025-11-25
 * **Fix:** Updated PostingLogic to use metadata interception ("God Mode") to prevent WPUF permission redirects.
 
