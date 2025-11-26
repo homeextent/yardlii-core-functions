@@ -28,13 +28,12 @@ final class NativeAdminColumns
         // 3. Logic
         add_action('pre_get_posts', [$this, 'modifyMainQuery']);
         
-        // 4. Notifications [NEW]
+        // 4. Notifications
         add_action('admin_notices', [$this, 'displayAdminNotices']);
     }
 
     /**
      * 1. Define Columns
-     * We remove 'title' and add 'tv_user' to display rich user info + email.
      * @param array<string, string> $columns
      * @return array<string, string>
      */
@@ -42,10 +41,9 @@ final class NativeAdminColumns
     {
         $cb = $columns['cb'] ?? '<input type="checkbox" />';
         
-        // Custom order
         return [
             'cb'             => $cb,
-            'tv_user'        => __('User / Request', 'yardlii-core'), // Replaces 'title'
+            'tv_user'        => __('User / Request', 'yardlii-core'),
             'tv_form'        => __('Form', 'yardlii-core'),
             'tv_status'      => __('Status', 'yardlii-core'),
             'tv_role'        => __('Current Role', 'yardlii-core'),
@@ -62,7 +60,6 @@ final class NativeAdminColumns
     {
         switch ($column) {
             case 'tv_user':
-                // [NEW] Rich User Column: Request ID + Name + Email
                 $uid = (int) get_post_meta($post_id, '_vp_user_id', true);
                 $user = get_userdata($uid);
                 
@@ -72,10 +69,7 @@ final class NativeAdminColumns
                 echo '<strong><a class="row-title" href="' . esc_url((string)$edit_link) . '">' . esc_html($title) . '</a></strong>';
                 
                 if ($user) {
-                    // Show Email clearly on a new line
                     printf('<br><a href="mailto:%1$s">%1$s</a>', esc_html($user->user_email));
-                    
-                    // Optional: Show User Login if different from email
                     if ($user->user_login !== $user->user_email) {
                          printf('<span style="color:#888"> (%s)</span>', esc_html($user->user_login));
                     }
@@ -146,13 +140,14 @@ final class NativeAdminColumns
 
     /**
      * 3. Row Actions (Approve | Reject | History)
-     * [FIX] Explicitly removed 'trash' to prevent history loss.
+     * @param array<string, string> $actions
+     * @param WP_Post $post
+     * @return array<string, string>
      */
     public function handleRowActions(array $actions, WP_Post $post): array
     {
         if ($post->post_type !== CPT::POST_TYPE) return $actions;
 
-        // Remove standard actions
         unset($actions['edit'], $actions['inline hide-if-no-js'], $actions['trash']);
 
         $status = $post->post_status;
@@ -188,8 +183,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 4. Notifications [NEW]
-     * Displays the banner at the top of the page based on URL params.
+     * 4. Notifications
      */
     public function displayAdminNotices(): void
     {
@@ -213,10 +207,10 @@ final class NativeAdminColumns
         }
     }
 
-    // ... (Rest of the methods: modifyMainQuery, registerStatusViews, registerBulkActions, handleBulkProcessing, renderToolbarExtras, getStatusLabel) ...
-    // KEEP these methods exactly as they were in the previous step, they were correct.
-    // I will re-include them below for completeness so you can copy-paste the whole file safely.
-    
+    /**
+     * 5. Fix "All" View & Filters
+     * @param WP_Query $query
+     */
     public function modifyMainQuery(WP_Query $query): void
     {
         if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== CPT::POST_TYPE) return;
@@ -232,7 +226,10 @@ final class NativeAdminColumns
         }
     }
 
-    /** @param array<string, string> $views */
+    /** * 6. Register Status Views (Top Filters)
+     * @param array<string, string> $views
+     * @return array<string, string>
+     */
     public function registerStatusViews(array $views): array
     {
         $base = admin_url('edit.php?post_type=' . CPT::POST_TYPE);
@@ -258,6 +255,7 @@ final class NativeAdminColumns
             if ($key === 'all') $args['post_status'] = ['vp_pending', 'vp_approved', 'vp_rejected'];
             
             $count = (new WP_Query($args))->found_posts;
+            
             $class = ($current === $data['status'] && !$is_emp) ? 'current' : '';
             $url   = $key === 'all' ? $base : add_query_arg('post_status', $data['status'], $base);
             
@@ -274,13 +272,19 @@ final class NativeAdminColumns
             __('Employer Vouch', 'yardlii-core'), $emp_count
         );
 
+        // We intentionally skip 'trash' to discourage deletion, but you can add it back here if needed.
+        
         return $new_views;
     }
 
-    /** @param array<string, string> $actions */
+    /**
+     * 7. Register Bulk Actions
+     * @param array<string, string> $actions
+     * @return array<string, string>
+     */
     public function registerBulkActions(array $actions): array
     {
-        unset($actions['edit'], $actions['trash']); // Remove trash from bulk too
+        unset($actions['edit'], $actions['trash']); 
         return [
             'yardlii_tv_bulk_approve' => __('Approve', 'yardlii-core'),
             'yardlii_tv_bulk_reject'  => __('Reject', 'yardlii-core'),
@@ -289,9 +293,12 @@ final class NativeAdminColumns
         ] + $actions;
     }
 
-    /** * @param string $redirect_to
+    /**
+     * 8. Handle Bulk Action Logic
+     * @param string $redirect_to
      * @param string $action
-     * @param array<int|string> $post_ids
+     * @param array<int> $post_ids
+     * @return string
      */
     public function handleBulkProcessing(string $redirect_to, string $action, array $post_ids): string
     {
@@ -313,6 +320,7 @@ final class NativeAdminColumns
                 $processed++;
             }
         }
+
         return add_query_arg(['tv_notice' => 'bulk_' . $map[$action], 'tv_count' => $processed], $redirect_to);
     }
 
