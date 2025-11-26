@@ -28,10 +28,8 @@ final class NativeAdminColumns
         
         // 3. Logic (Search & Filter)
         add_action('pre_get_posts', [$this, 'modifyMainQuery']);
-        // [NEW] Silence default search SQL so we can keep 's' in the query object
-        add_filter('posts_search', [$this, 'killDefaultSearchSQL'], 10, 2);
         
-        // 4. Notifications
+        // 4. Notifications & Search Feedback
         add_action('admin_notices', [$this, 'displayAdminNotices']);
     }
 
@@ -141,7 +139,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 3. Row Actions
+     * 3. Row Actions (Approve | Reject | History)
      * @param array<string, string> $actions
      * @param WP_Post $post
      * @return array<string, string>
@@ -185,13 +183,14 @@ final class NativeAdminColumns
     }
 
     /**
-     * 4. Notifications
+     * 4. Notifications & Search Feedback
      */
     public function displayAdminNotices(): void
     {
         $screen = get_current_screen();
         if (!$screen || $screen->post_type !== CPT::POST_TYPE) return;
 
+        // Action Feedback
         if (isset($_GET['tv_notice'])) {
             $map = [
                 'approve'      => __('Request approved.', 'yardlii-core'),
@@ -213,10 +212,20 @@ final class NativeAdminColumns
                 );
             }
         }
+
+        // [NEW] Manual Search Feedback
+        // Since we clear 's' in the query to make it work, we manually show this banner so users know search is active.
+        if (isset($_GET['s']) && !empty($_GET['s'])) {
+             printf(
+                '<div class="notice notice-info" style="margin: 15px 0 5px 0;"><p>%s <strong>%s</strong></p></div>',
+                esc_html__('Search results for:', 'yardlii-core'),
+                esc_html(sanitize_text_field($_GET['s']))
+            );
+        }
     }
 
     /**
-     * 5. Logic: Fix "All" View & Search
+     * 5. Fix "All" View & Enable Robust Search (The Working Method)
      * @param WP_Query $query
      */
     public function modifyMainQuery(WP_Query $query): void
@@ -229,9 +238,12 @@ final class NativeAdminColumns
             return;
         }
 
+        // We must include ALL statuses, even custom/protected ones
+        $our_statuses = ['vp_pending', 'vp_approved', 'vp_rejected'];
+
         // A. Fix "All" View
         if (empty($_GET['post_status']) && empty($query->get('post_status'))) {
-            $query->set('post_status', ['vp_pending', 'vp_approved', 'vp_rejected']);
+            $query->set('post_status', $our_statuses);
         }
 
         // B. Employer Vouch Filter
@@ -244,17 +256,18 @@ final class NativeAdminColumns
         // C. Robust Search (Title OR User Meta)
         $search_term = $query->get('s');
         if (!empty($search_term)) {
-            // 1. Title Search (Force custom statuses so we don't get 0 results from 'publish')
+            // 1. Get matching IDs via Title/Content (Standard WP Search)
+            // IMPORTANT: Must explicitly set post_status to our custom statuses
             $title_search_args = [
                 'post_type'   => CPT::POST_TYPE,
-                'post_status' => ['vp_pending', 'vp_approved', 'vp_rejected'],
+                'post_status' => $our_statuses,
                 's'           => $search_term,
                 'fields'      => 'ids',
                 'posts_per_page' => -1
             ];
             $title_ids = get_posts($title_search_args);
 
-            // 2. User Search (Meta)
+            // 2. Get matching IDs via User Search (Meta)
             $user_query = new WP_User_Query([
                 'search'         => '*' . $search_term . '*',
                 'search_columns' => ['user_login', 'user_email', 'display_name'],
@@ -268,7 +281,7 @@ final class NativeAdminColumns
             if (!empty($user_ids)) {
                 $user_post_ids = get_posts([
                     'post_type'      => CPT::POST_TYPE,
-                    'post_status'    => ['vp_pending', 'vp_approved', 'vp_rejected'],
+                    'post_status'    => $our_statuses, // Search ALL statuses
                     'fields'         => 'ids',
                     'posts_per_page' => -1,
                     'meta_query'     => [
@@ -281,43 +294,29 @@ final class NativeAdminColumns
                 ]);
             }
 
-            // 3. Merge and Apply
+            // 3. Merge
             $merged_ids = array_unique(array_merge($title_ids, $user_post_ids));
 
             if (!empty($merged_ids)) {
                 $query->set('post__in', $merged_ids);
-                // [FIX] Do NOT clear 's' here. We leave it so the UI says "Search results for..."
-                // instead we use the 'posts_search' filter to mute the SQL effect.
+                
+                // CRITICAL: Clear 's' so WP doesn't run its default "AND post_title LIKE..." logic
+                // which filters out results found via User Meta. 
+                // We compensate for the UI by showing a banner in displayAdminNotices().
+                $query->set('s', ''); 
+                
+                // Ensure we see the results regardless of status
+                $query->set('post_status', $our_statuses);
             } else {
+                // Force no results found
                 $query->set('post__in', [0]);
+                $query->set('s', '');
             }
         }
     }
 
     /**
-     * 6. [NEW] Silence Default Search SQL
-     * We have manually found the IDs in modifyMainQuery() and set post__in.
-     * Now we must tell WP *not* to run its default "AND post_title LIKE %s" logic,
-     * otherwise it will filter our ID list down to nothing (because titles don't match emails).
-     */
-    public function killDefaultSearchSQL(string $search, WP_Query $query): string
-    {
-        if (
-            !is_admin() || 
-            !$query->is_main_query() || 
-            $query->get('post_type') !== CPT::POST_TYPE || 
-            !$query->is_search()
-        ) {
-            return $search;
-        }
-
-        // We have handled the search logic via post__in.
-        // Return empty string to disable the default SQL LIKE clause.
-        return '';
-    }
-
-    /**
-     * 7. Register Status Views (Top Filters)
+     * 6. Register Status Views (Top Filters)
      * @param array<string, string> $views
      * @return array<string, string>
      */
@@ -370,7 +369,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 8. Register Bulk Actions
+     * 7. Register Bulk Actions
      * @param array<string, string> $actions
      * @return array<string, string>
      */
@@ -386,7 +385,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 9. Handle Bulk Action Logic
+     * 8. Handle Bulk Action Logic
      * @param string $redirect_to
      * @param string $action
      * @param array<int|string> $post_ids
