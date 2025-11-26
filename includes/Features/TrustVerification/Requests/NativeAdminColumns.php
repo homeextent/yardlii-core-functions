@@ -36,19 +36,15 @@ final class NativeAdminColumns
         add_action('admin_notices', [$this, 'displayAdminNotices']);
     }
 
-    /**
-     * Hide the native WordPress search box.
-     */
     public function hideNativeSearchBox(): void
     {
         $screen = get_current_screen();
         if (!$screen || $screen->post_type !== CPT::POST_TYPE) return;
-        
         echo '<style>.search-box { display: none !important; }</style>';
     }
 
     /**
-     * Render our custom search box + the "Send me a copy" checkbox
+     * Render custom search bar + checkbox with Yardlii styling classes
      */
     public function renderCustomSearchAndToolbar(string $post_type): void
     {
@@ -56,15 +52,17 @@ final class NativeAdminColumns
 
         $val = isset($_GET['tv_search']) ? sanitize_text_field($_GET['tv_search']) : '';
         ?>
-        <span style="float: right; margin-left: 10px;">
-            <input type="search" name="tv_search" id="yardlii-tv-search-input" value="<?php echo esc_attr($val); ?>" placeholder="<?php esc_attr_e('Search User or Request #', 'yardlii-core'); ?>">
-            <input type="submit" id="yardlii-tv-search-submit" class="button" value="<?php esc_attr_e('Search Requests', 'yardlii-core'); ?>">
+        <span class="yardlii-tv-search-box">
+            <input type="search" name="tv_search" value="<?php echo esc_attr($val); ?>" placeholder="<?php esc_attr_e('Search User or Request #', 'yardlii-core'); ?>">
+            <input type="submit" id="yardlii-tv-search-submit" class="button button-primary" value="<?php esc_attr_e('Search Requests', 'yardlii-core'); ?>">
         </span>
 
-        <label style="margin-left:10px;line-height:30px;vertical-align:middle;font-size:13px;">
-            <input type="checkbox" name="tv_send_copy" value="1" style="margin-top:-2px;"> 
-            <?php esc_html_e('Send me a copy', 'yardlii-core'); ?>
-        </label>
+        <span class="yardlii-tv-toolbar-item">
+            <label for="tv_send_copy_toggle">
+                <input type="checkbox" name="tv_send_copy" id="tv_send_copy_toggle" value="1" style="margin-top:-2px;"> 
+                <?php esc_html_e('Send me a copy', 'yardlii-core'); ?>
+            </label>
+        </span>
         <?php
     }
 
@@ -97,12 +95,10 @@ final class NativeAdminColumns
             case 'tv_user':
                 $uid = (int) get_post_meta($post_id, '_vp_user_id', true);
                 $user = get_userdata($uid);
-                
                 $edit_link = get_edit_post_link($post_id);
                 $title = _draft_or_post_title($post_id);
                 
                 echo '<strong><a class="row-title" href="' . esc_url((string)$edit_link) . '">' . esc_html($title) . '</a></strong>';
-                
                 if ($user) {
                     printf('<br><a href="mailto:%1$s">%1$s</a>', esc_html($user->user_email));
                     if ($user->user_login !== $user->user_email) {
@@ -179,13 +175,11 @@ final class NativeAdminColumns
     public function handleRowActions(array $actions, WP_Post $post): array
     {
         if ($post->post_type !== CPT::POST_TYPE) return $actions;
-
         unset($actions['edit'], $actions['inline hide-if-no-js'], $actions['trash']);
 
         $status = $post->post_status;
         $nonce  = wp_create_nonce('yardlii_tv_action_nonce');
         $base   = admin_url('admin.php');
-
         $new_actions = [];
 
         if ($status === 'vp_pending') {
@@ -215,7 +209,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 4. Notifications (Action Feedback + Search Result)
+     * 4. Notifications
      */
     public function displayAdminNotices(): void
     {
@@ -250,10 +244,9 @@ final class NativeAdminColumns
              $term = sanitize_text_field($_GET['tv_search']);
              $label = esc_html__('Search results for:', 'yardlii-core');
              
-             // We use a unique ID and script to move this element to the title area
              printf(
                 '<div id="yardlii-tv-search-subtitle" style="display:none;">' . 
-                '<span class="subtitle">%s <strong>%s</strong></span>' . 
+                '<span class="subtitle" style="font-size:13px; color:#50575e; margin-left:5px;">%s <strong>%s</strong></span>' . 
                 '</div>',
                 $label,
                 esc_html($term)
@@ -275,7 +268,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 5. Logic: Fix "All" View & Handle Custom Search (tv_search)
+     * 5. Logic: Fix "All" View & Handle Custom Search
      * @param WP_Query $query
      */
     public function modifyMainQuery(WP_Query $query): void
@@ -365,8 +358,10 @@ final class NativeAdminColumns
     {
         $base = admin_url('edit.php?post_type=' . CPT::POST_TYPE);
         
-        // [FIXED] Do NOT preserve 'tv_search' here. 
-        // This ensures clicking a filter link resets the search state.
+        // Clear search when filter clicked
+        if (isset($_GET['tv_search'])) {
+            $base = remove_query_arg('tv_search', $base);
+        }
 
         $emp_count = (new WP_Query([
             'post_type' => CPT::POST_TYPE, 'post_status' => 'any',

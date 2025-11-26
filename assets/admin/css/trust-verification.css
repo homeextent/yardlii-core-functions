@@ -28,6 +28,40 @@
   float:right; font-size:16px; line-height:1; border:0; background:transparent; cursor:pointer;
 }
 
+/* --- Admin List Table Polish (Search & Toolbar) --- */
+.yardlii-tv-search-box {
+    float: right;
+    margin-bottom: 10px;
+}
+
+.yardlii-tv-toolbar-item {
+    float: left;
+    margin-left: 10px;
+    margin-top: 1px;
+    padding: 3px 10px;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+/* Brand the Search Button (Yardlii Blue) */
+.yardlii-tv-search-box input[type="submit"].button-primary {
+    background-color: #0A2240 !important;
+    border-color: #0A2240 !important;
+    color: #fff !important;
+    transition: background 0.2s ease;
+}
+.yardlii-tv-search-box input[type="submit"].button-primary:hover {
+    background-color: #FF7A00 !important;
+    border-color: #FF7A00 !important;
+}
+
+/* Make "Send me a copy" label clearer */
+.yardlii-tv-toolbar-item label {
+    display: flex; align-items: center; gap: 6px; line-height: 1.2; cursor: pointer;
+}
+
 /* --- Settings Panel Scoped CSS (Below only applies to Settings Page) --- */
 #yardlii-tab-trust-verification .yardlii-tv-subtabs{
   margin:10px 0 16px;
