@@ -26,8 +26,10 @@ final class NativeAdminColumns
         add_filter('views_edit-' . CPT::POST_TYPE, [$this, 'registerStatusViews']);
         add_action('restrict_manage_posts', [$this, 'renderToolbarExtras']);
         
-        // 3. Logic (Search & Filter) - Note: removed SQL filters, going back to query modification
+        // 3. Logic (Search & Filter)
         add_action('pre_get_posts', [$this, 'modifyMainQuery']);
+        // [NEW] Silence default search SQL so we can keep 's' in the query object
+        add_filter('posts_search', [$this, 'killDefaultSearchSQL'], 10, 2);
         
         // 4. Notifications
         add_action('admin_notices', [$this, 'displayAdminNotices']);
@@ -202,7 +204,6 @@ final class NativeAdminColumns
             $notice = sanitize_key($_GET['tv_notice']);
             
             if (isset($map[$notice])) {
-                // We use the .yardlii-banner class to bypass WP's notice aggregation
                 printf(
                     '<div class="yardlii-banner yardlii-banner--success yardlii-banner--dismiss" style="margin: 15px 0 15px 0; display:block;">' .
                     '<p><strong>%s</strong> %s</p>' .
@@ -215,7 +216,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 5. Fix "All" View & Enable Robust Search
+     * 5. Logic: Fix "All" View & Search
      * @param WP_Query $query
      */
     public function modifyMainQuery(WP_Query $query): void
@@ -228,12 +229,9 @@ final class NativeAdminColumns
             return;
         }
 
-        // Defined statuses for our searches
-        $our_statuses = ['vp_pending', 'vp_approved', 'vp_rejected'];
-
         // A. Fix "All" View
         if (empty($_GET['post_status']) && empty($query->get('post_status'))) {
-            $query->set('post_status', $our_statuses);
+            $query->set('post_status', ['vp_pending', 'vp_approved', 'vp_rejected']);
         }
 
         // B. Employer Vouch Filter
@@ -246,18 +244,17 @@ final class NativeAdminColumns
         // C. Robust Search (Title OR User Meta)
         $search_term = $query->get('s');
         if (!empty($search_term)) {
-            // 1. Get matching IDs via Title/Content
-            // [FIX] We MUST explicitly ask for our custom statuses, or WP defaults to 'publish' and finds nothing.
+            // 1. Title Search (Force custom statuses so we don't get 0 results from 'publish')
             $title_search_args = [
                 'post_type'   => CPT::POST_TYPE,
-                'post_status' => $our_statuses, // <--- THE FIX
+                'post_status' => ['vp_pending', 'vp_approved', 'vp_rejected'],
                 's'           => $search_term,
                 'fields'      => 'ids',
                 'posts_per_page' => -1
             ];
             $title_ids = get_posts($title_search_args);
 
-            // 2. Get matching IDs via User Search (Meta)
+            // 2. User Search (Meta)
             $user_query = new WP_User_Query([
                 'search'         => '*' . $search_term . '*',
                 'search_columns' => ['user_login', 'user_email', 'display_name'],
@@ -271,7 +268,7 @@ final class NativeAdminColumns
             if (!empty($user_ids)) {
                 $user_post_ids = get_posts([
                     'post_type'      => CPT::POST_TYPE,
-                    'post_status'    => $our_statuses, // <--- THE FIX
+                    'post_status'    => ['vp_pending', 'vp_approved', 'vp_rejected'],
                     'fields'         => 'ids',
                     'posts_per_page' => -1,
                     'meta_query'     => [
@@ -284,24 +281,43 @@ final class NativeAdminColumns
                 ]);
             }
 
-            // 3. Merge
+            // 3. Merge and Apply
             $merged_ids = array_unique(array_merge($title_ids, $user_post_ids));
 
             if (!empty($merged_ids)) {
                 $query->set('post__in', $merged_ids);
-                $query->set('s', ''); // Clear default search to avoid 0 results
-                // Ensure we search across all our statuses
-                $query->set('post_status', $our_statuses); 
+                // [FIX] Do NOT clear 's' here. We leave it so the UI says "Search results for..."
+                // instead we use the 'posts_search' filter to mute the SQL effect.
             } else {
-                // Nothing found anywhere
                 $query->set('post__in', [0]);
-                $query->set('s', '');
             }
         }
     }
 
     /**
-     * 6. Register Status Views (Top Filters)
+     * 6. [NEW] Silence Default Search SQL
+     * We have manually found the IDs in modifyMainQuery() and set post__in.
+     * Now we must tell WP *not* to run its default "AND post_title LIKE %s" logic,
+     * otherwise it will filter our ID list down to nothing (because titles don't match emails).
+     */
+    public function killDefaultSearchSQL(string $search, WP_Query $query): string
+    {
+        if (
+            !is_admin() || 
+            !$query->is_main_query() || 
+            $query->get('post_type') !== CPT::POST_TYPE || 
+            !$query->is_search()
+        ) {
+            return $search;
+        }
+
+        // We have handled the search logic via post__in.
+        // Return empty string to disable the default SQL LIKE clause.
+        return '';
+    }
+
+    /**
+     * 7. Register Status Views (Top Filters)
      * @param array<string, string> $views
      * @return array<string, string>
      */
@@ -346,17 +362,15 @@ final class NativeAdminColumns
         $emp_class = $is_emp ? 'current' : '';
         $new_views['employer'] = sprintf(
             '<a href="%s" class="%s">%s <span class="count">(%d)</span></a>',
-            esc_url(add_query_arg('verification_type', 'employer_vouch', $base)),
-            $emp_class,
-            __('Employer Vouch', 'yardlii-core'),
-            $emp_count
+            esc_url(add_query_arg('verification_type', 'employer_vouch', $base)), $emp_class,
+            __('Employer Vouch', 'yardlii-core'), $emp_count
         );
 
         return $new_views;
     }
 
     /**
-     * 7. Register Bulk Actions
+     * 8. Register Bulk Actions
      * @param array<string, string> $actions
      * @return array<string, string>
      */
@@ -372,7 +386,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 8. Handle Bulk Action Logic
+     * 9. Handle Bulk Action Logic
      * @param string $redirect_to
      * @param string $action
      * @param array<int|string> $post_ids
