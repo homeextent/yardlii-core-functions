@@ -34,6 +34,10 @@ class AutoPublisher {
 
     /**
      * NEW: Handle Role Switch (Basic -> Pending Verification)
+     *
+     * @param int           $user_id   The user ID.
+     * @param string        $new_role  The new role slug.
+     * @param array<string> $old_roles Array of previous role slugs.
      */
     public function handleRoleChange(int $user_id, string $new_role, array $old_roles): void {
         // Only run if the new role is 'pending_verification'
