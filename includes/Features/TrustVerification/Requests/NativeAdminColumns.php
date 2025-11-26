@@ -25,101 +25,15 @@ final class NativeAdminColumns
         add_filter('views_edit-' . CPT::POST_TYPE, [$this, 'registerStatusViews']);
         add_action('restrict_manage_posts', [$this, 'renderToolbarExtras']);
         
-        // 3. Logic
+        // 3. Logic & Search
         add_action('pre_get_posts', [$this, 'modifyMainQuery']);
-        
-        // 4. Search Logic (SQL Filters)
         add_filter('posts_join', [$this, 'joinUserTable'], 10, 2);
-        add_filter('posts_where', [$this, 'extendSearchWhere'], 10, 2);
+        add_filter('posts_search', [$this, 'extendSearchSql'], 10, 2);
         
-        // 5. Notifications
+        // 4. Notifications
         add_action('admin_notices', [$this, 'displayAdminNotices']);
     }
 
-    /**
-     * Advanced Search: Join the Users table so we can search by email/login
-     * @param string $join
-     * @param WP_Query $query
-     * @return string
-     */
-    public function joinUserTable(string $join, WP_Query $query): string
-    {
-        if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== CPT::POST_TYPE || !$query->is_search()) {
-            return $join;
-        }
-
-        global $wpdb;
-        // Join postmeta to get the user ID
-        $join .= " LEFT JOIN {$wpdb->postmeta} AS pm_vp_user ON ({$wpdb->posts}.ID = pm_vp_user.post_id AND pm_vp_user.meta_key = '_vp_user_id') ";
-        // Join users table on that ID
-        $join .= " LEFT JOIN {$wpdb->users} AS u_vp ON (pm_vp_user.meta_value = u_vp.ID) ";
-
-        return $join;
-    }
-
-    /**
-     * Advanced Search: Modify WHERE clause to include User fields
-     * @param string $where
-     * @param WP_Query $query
-     * @return string
-     */
-    public function extendSearchWhere(string $where, WP_Query $query): string
-    {
-        if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== CPT::POST_TYPE || !$query->is_search()) {
-            return $where;
-        }
-
-        global $wpdb;
-        $search_term = $query->get('s');
-        if (!$search_term) return $where;
-
-        // Securely escape the term for LIKE
-        $like = '%' . $wpdb->esc_like($search_term) . '%';
-
-        // We replace the default "((post_title LIKE...))" block with our extended one
-        // Note: This regex approach preserves other filters while injecting our OR conditions
-        $replacement = $wpdb->prepare(
-            "({$wpdb->posts}.post_title LIKE %s) OR (u_vp.user_email LIKE %s) OR (u_vp.user_login LIKE %s) OR (u_vp.display_name LIKE %s)",
-            $like, $like, $like, $like
-        );
-
-        // If WP generated a standard search clause, append ours to it (OR logic inside the main AND)
-        // This is tricky, so we'll use a brute-force Append for maximum reliability:
-        // "AND (Default_Search OR User_Search)"
-        
-        // Remove the default search logic to avoid restrictive ANDs, then rebuild it.
-        // Actually, the safest way in WP is to modify the existing search clause if possible, 
-        // but since we joined tables, let's just append our conditions.
-        
-        $where .= $wpdb->prepare(" OR (u_vp.user_email LIKE %s OR u_vp.user_login LIKE %s OR u_vp.display_name LIKE %s) ", $like, $like, $like);
-
-        return $where;
-    }
-
-    public function modifyMainQuery(WP_Query $query): void
-    {
-        if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== CPT::POST_TYPE) return;
-
-        // Fix "All" view
-        if (empty($_GET['post_status']) && empty($query->get('post_status'))) {
-            $query->set('post_status', ['vp_pending', 'vp_approved', 'vp_rejected']);
-        }
-
-        // Employer Filter
-        if (isset($_GET['verification_type']) && $_GET['verification_type'] === 'employer_vouch') {
-             $meta_query = $query->get('meta_query') ?: [];
-             $meta_query[] = ['key' => '_vp_verification_type', 'value' => 'employer_vouch', 'compare' => '='];
-             $query->set('meta_query', $meta_query);
-        }
-        
-        // Note: Search logic moved to 'posts_join'/'posts_where' filters above
-    }
-
-    // ... (Rest of the file remains exactly the same as previous step: columns, actions, notices) ...
-    // For brevity in chat, ensure you keep defineColumns, renderColumn, handleRowActions, 
-    // displayAdminNotices, registerStatusViews, registerBulkActions, handleBulkProcessing, 
-    // renderToolbarExtras, getStatusLabel.
-    
     /**
      * 1. Define Columns
      * @param array<string, string> $columns
@@ -140,139 +54,355 @@ final class NativeAdminColumns
         ];
     }
 
+    /**
+     * 2. Render Column Content
+     */
     public function renderColumn(string $column, int $post_id): void
     {
         switch ($column) {
             case 'tv_user':
                 $uid = (int) get_post_meta($post_id, '_vp_user_id', true);
                 $user = get_userdata($uid);
+                
                 $edit_link = get_edit_post_link($post_id);
-                // Use our custom title or fallback
-                $title = get_the_title($post_id) ?: __('(No Title)', 'yardlii-core');
+                $title = _draft_or_post_title($post_id);
                 
                 echo '<strong><a class="row-title" href="' . esc_url((string)$edit_link) . '">' . esc_html($title) . '</a></strong>';
+                
                 if ($user) {
                     printf('<br><a href="mailto:%1$s">%1$s</a>', esc_html($user->user_email));
-                    if ($user->user_login !== $user->user_email) printf('<span style="color:#888"> (%s)</span>', esc_html($user->user_login));
+                    if ($user->user_login !== $user->user_email) {
+                         printf('<span style="color:#888"> (%s)</span>', esc_html($user->user_login));
+                    }
                 } else {
                     echo '<br><span style="color:#a00;">(Deleted User)</span>';
                 }
                 break;
-            // ... other columns same as before ...
-            case 'tv_form': echo esc_html((string) get_post_meta($post_id, '_vp_form_id', true)); break;
-            case 'tv_status': 
-                $status = get_post_status($post_id);
-                if(!$status) { echo '—'; break; }
-                $label = $this->getStatusLabel($status);
-                $class = str_replace(['vp_', '_'], ['', '-'], $status); 
-                printf('<span class="status-badge status-badge--%s">%s</span>', esc_attr($class), esc_html($label));
-                $type = get_post_meta($post_id, '_vp_verification_type', true);
-                if ($status === 'vp_pending' && $type === 'employer_vouch') echo ' <span class="dashicons dashicons-businessperson" title="Waiting for Employer" style="color:#888;margin-left:4px;"></span>';
+
+            case 'tv_form':
+                echo esc_html((string) get_post_meta($post_id, '_vp_form_id', true));
                 break;
+
+            case 'tv_status':
+                $status = get_post_status($post_id);
+                if (!$status) { echo '—'; break; }
+                
+                $label  = $this->getStatusLabel($status);
+                $class  = str_replace(['vp_', '_'], ['', '-'], $status); 
+                
+                printf('<span class="status-badge status-badge--%s">%s</span>', esc_attr($class), esc_html($label));
+                
+                $type = get_post_meta($post_id, '_vp_verification_type', true);
+                if ($status === 'vp_pending' && $type === 'employer_vouch') {
+                     echo ' <span class="dashicons dashicons-businessperson" title="Waiting for Employer" style="color:#888;margin-left:4px;"></span>';
+                }
+                break;
+
             case 'tv_role':
                 $uid = (int) get_post_meta($post_id, '_vp_user_id', true);
                 $user = get_userdata($uid);
                 if ($user) {
                     $roles = (array) $user->roles;
                     $slug = reset($roles);
-                    printf('%s<br><small style="color:#888;">%s</small>', esc_html(ucfirst((string)$slug)), esc_html((string)$slug));
-                } else { echo '—'; }
+                    $role_name = ucfirst((string)$slug); 
+                    global $wp_roles;
+                    if (isset($wp_roles->role_names[$slug])) {
+                        $role_name = $wp_roles->role_names[$slug];
+                    }
+                    printf('%s<br><small style="color:#888;">%s</small>', esc_html($role_name), esc_html((string)$slug));
+                } else {
+                    echo '—';
+                }
                 break;
+
             case 'tv_processed':
                 $aid = (int) get_post_meta($post_id, '_vp_processed_by', true);
-                if ($aid > 0) { $u = get_userdata($aid); echo esc_html($u ? ($u->display_name ?: $u->user_login) : 'Unknown'); }
-                elseif ($aid === 0 && get_post_status($post_id) !== 'vp_pending') { echo '<em style="color:#888;">System / Employer</em>'; }
-                else { echo '—'; }
+                if ($aid > 0) {
+                    $u = get_userdata($aid);
+                    echo esc_html($u ? ($u->display_name ?: $u->user_login) : 'Unknown');
+                } elseif ($aid === 0 && get_post_status($post_id) !== 'vp_pending') {
+                     echo '<em style="color:#888;">System / Employer</em>';
+                } else {
+                    echo '—';
+                }
                 break;
+
             case 'tv_proc_date':
                 $ts = (string) get_post_meta($post_id, '_vp_processed_date', true);
-                if ($ts) { echo esc_html(wp_date(get_option('date_format'), strtotime($ts))) . '<br><small style="color:#888;">' . esc_html(wp_date(get_option('time_format'), strtotime($ts))) . '</small>'; }
-                else { echo '—'; }
+                if ($ts) {
+                    echo esc_html(wp_date(get_option('date_format'), strtotime($ts)));
+                    echo '<br><small style="color:#888;">' . esc_html(wp_date(get_option('time_format'), strtotime($ts))) . '</small>';
+                } else {
+                    echo '—';
+                }
                 break;
         }
     }
 
-    /** @param array<string, string> $actions @param WP_Post $post @return array<string, string> */
-    public function handleRowActions(array $actions, WP_Post $post): array {
+    /**
+     * 3. Row Actions (Approve | Reject | History)
+     * @param array<string, string> $actions
+     * @param WP_Post $post
+     * @return array<string, string>
+     */
+    public function handleRowActions(array $actions, WP_Post $post): array
+    {
         if ($post->post_type !== CPT::POST_TYPE) return $actions;
+
         unset($actions['edit'], $actions['inline hide-if-no-js'], $actions['trash']);
+
         $status = $post->post_status;
         $nonce  = wp_create_nonce('yardlii_tv_action_nonce');
         $base   = admin_url('admin.php');
-        $new = [];
+
+        $new_actions = [];
+
         if ($status === 'vp_pending') {
-            $new['yl_approve'] = sprintf('<a href="%s" style="color:green;font-weight:bold;">%s</a>', esc_url(add_query_arg(['action'=>'yardlii_tv_approve','post'=>$post->ID,'_wpnonce'=>$nonce], $base)), __('Approve'));
-            $new['yl_reject'] = sprintf('<a href="%s" style="color:#d63638;">%s</a>', esc_url(add_query_arg(['action'=>'yardlii_tv_reject','post'=>$post->ID,'_wpnonce'=>$nonce], $base)), __('Reject'));
-        } else {
-            $new['yl_reopen'] = sprintf('<a href="%s">%s</a>', esc_url(add_query_arg(['action'=>'yardlii_tv_reopen','post'=>$post->ID,'_wpnonce'=>$nonce], $base)), __('Re-open'));
-            $new['yl_resend'] = sprintf('<a href="%s">%s</a>', esc_url(add_query_arg(['action'=>'yardlii_tv_resend','post'=>$post->ID,'_wpnonce'=>$nonce], $base)), __('Resend Email'));
+            $approve_url = add_query_arg(['action' => 'yardlii_tv_approve', 'post' => $post->ID, '_wpnonce' => $nonce], $base);
+            $new_actions['yl_approve'] = sprintf('<a href="%s" style="color:green;font-weight:bold;">%s</a>', esc_url($approve_url), __('Approve', 'yardlii-core'));
+
+            $reject_url = add_query_arg(['action' => 'yardlii_tv_reject', 'post' => $post->ID, '_wpnonce' => $nonce], $base);
+            $new_actions['yl_reject'] = sprintf('<a href="%s" style="color:#d63638;">%s</a>', esc_url($reject_url), __('Reject', 'yardlii-core'));
+        } 
+        else {
+            $reopen_url = add_query_arg(['action' => 'yardlii_tv_reopen', 'post' => $post->ID, '_wpnonce' => $nonce], $base);
+            $new_actions['yl_reopen'] = sprintf('<a href="%s">%s</a>', esc_url($reopen_url), __('Re-open', 'yardlii-core'));
+
+            $resend_url = add_query_arg(['action' => 'yardlii_tv_resend', 'post' => $post->ID, '_wpnonce' => $nonce], $base);
+            $new_actions['yl_resend'] = sprintf('<a href="%s">%s</a>', esc_url($resend_url), __('Resend Email', 'yardlii-core'));
         }
-        $new['yl_history'] = sprintf('<a href="#" data-action="tv-row-history" data-post="%d" data-nonce="%s">%s</a>', $post->ID, esc_attr(wp_create_nonce('yardlii_tv_history')), __('History'));
-        return $new + $actions;
+
+        $hist_nonce = wp_create_nonce('yardlii_tv_history');
+        $new_actions['yl_history'] = sprintf(
+            '<a href="#" data-action="tv-row-history" data-post="%d" data-nonce="%s">%s</a>',
+            $post->ID,
+            esc_attr($hist_nonce),
+            __('History', 'yardlii-core')
+        );
+
+        return $new_actions + $actions;
     }
 
-    public function displayAdminNotices(): void {
+    /**
+     * 4. Notifications
+     */
+    public function displayAdminNotices(): void
+    {
         $screen = get_current_screen();
         if (!$screen || $screen->post_type !== CPT::POST_TYPE) return;
+
         if (isset($_GET['tv_notice'])) {
-            $map = ['approve'=>__('Request approved.'), 'reject'=>__('Request rejected.'), 'reopen'=>__('Request reopened.'), 'resend'=>__('Email resent.'), 'bulk_approve'=>__('Selected approved.'), 'bulk_reject'=>__('Selected rejected.')];
-            $n = sanitize_key($_GET['tv_notice']);
-            if (isset($map[$n])) {
-                printf('<div class="yardlii-banner yardlii-banner--success yardlii-banner--dismiss" style="margin:15px 0;display:block;"><p><strong>%s</strong> %s</p></div>', __('Success:'), esc_html($map[$n]));
+            $map = [
+                'approve'      => __('Request approved.', 'yardlii-core'),
+                'reject'       => __('Request rejected.', 'yardlii-core'),
+                'reopen'       => __('Request reopened.', 'yardlii-core'),
+                'resend'       => __('Email resent.', 'yardlii-core'),
+                'bulk_approve' => __('Selected requests approved.', 'yardlii-core'),
+                'bulk_reject'  => __('Selected requests rejected.', 'yardlii-core'),
+            ];
+            $notice = sanitize_key($_GET['tv_notice']);
+            
+            if (isset($map[$notice])) {
+                // Uses global Yardlii banner styles
+                printf(
+                    '<div class="yardlii-banner yardlii-banner--success yardlii-banner--dismiss" style="margin: 15px 0 15px 0; display:block;">' .
+                    '<p><strong>%s</strong> %s</p>' .
+                    '</div>',
+                    esc_html__('Success:', 'yardlii-core'),
+                    esc_html($map[$notice])
+                );
             }
         }
     }
 
-    /** @param array<string, string> $views @return array<string, string> */
-    public function registerStatusViews(array $views): array {
-        // ... (Keep existing implementation from previous step)
+    /**
+     * 5. SQL Join: Users Table
+     * Allows us to search User Email/Login during post search
+     */
+    public function joinUserTable(string $join, WP_Query $query): string
+    {
+        if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== CPT::POST_TYPE || !$query->is_search()) {
+            return $join;
+        }
+
+        global $wpdb;
+        $join .= " LEFT JOIN {$wpdb->postmeta} AS pm_vp_user ON ({$wpdb->posts}.ID = pm_vp_user.post_id AND pm_vp_user.meta_key = '_vp_user_id') ";
+        $join .= " LEFT JOIN {$wpdb->users} AS u_vp ON (pm_vp_user.meta_value = u_vp.ID) ";
+
+        return $join;
+    }
+
+    /**
+     * 6. SQL Search: Inject User Fields
+     * Modifies the WHERE clause to search user_email/user_login alongside post_title
+     */
+    public function extendSearchSql(string $search, WP_Query $query): string
+    {
+        if (!is_admin() || !$query->is_main_query() || $query->get('post_type') !== CPT::POST_TYPE || !$query->is_search()) {
+            return $search;
+        }
+
+        global $wpdb;
+        $search_term = $query->get('s');
+        if (!$search_term) return $search;
+
+        $like = '%' . $wpdb->esc_like($search_term) . '%';
+
+        // Append OR condition to the existing search clause
+        // It typically ends with ))) so we inject before that or just append AND with OR inside
+        // The safest way without regex complexity is to append our logic to the existing string if not empty.
+        
+        $user_search = $wpdb->prepare(
+            " OR (u_vp.user_email LIKE %s) OR (u_vp.user_login LIKE %s) OR (u_vp.display_name LIKE %s) ",
+            $like, $like, $like
+        );
+
+        // If existing search exists (AND (...)), we need to inject inside the parenthesis or ensure precedence.
+        // WordPress wraps search in AND (((...))).
+        // We replace the final ))) with ) OR ... ))) to include our conditions in the group.
+        
+        return preg_replace('/\)\)\)$/', $user_search . ')))', $search);
+    }
+
+    /**
+     * 7. Fix "All" View & Filters
+     */
+    public function modifyMainQuery(WP_Query $query): void
+    {
+        if (
+            !is_admin() || 
+            !$query->is_main_query() || 
+            $query->get('post_type') !== CPT::POST_TYPE
+        ) {
+            return;
+        }
+
+        // A. Fix "All" View
+        if (empty($_GET['post_status']) && empty($query->get('post_status'))) {
+            $query->set('post_status', ['vp_pending', 'vp_approved', 'vp_rejected']);
+        }
+
+        // B. Employer Vouch Filter
+        if (isset($_GET['verification_type']) && $_GET['verification_type'] === 'employer_vouch') {
+             $meta_query = $query->get('meta_query') ?: [];
+             $meta_query[] = ['key' => '_vp_verification_type', 'value' => 'employer_vouch', 'compare' => '='];
+             $query->set('meta_query', $meta_query);
+        }
+    }
+
+    /** * 8. Register Status Views (Top Filters)
+     * @param array<string, string> $views
+     * @return array<string, string>
+     */
+    public function registerStatusViews(array $views): array
+    {
         $base = admin_url('edit.php?post_type=' . CPT::POST_TYPE);
+        
+        $emp_count = (new WP_Query([
+            'post_type' => CPT::POST_TYPE, 'post_status' => 'any',
+            'meta_query' => [['key' => '_vp_verification_type', 'value' => 'employer_vouch']]
+        ]))->found_posts;
+
         $statuses = [
             'all'         => ['label' => __('All', 'yardlii-core'),      'status' => ''],
             'vp_pending'  => ['label' => __('Pending', 'yardlii-core'),  'status' => 'vp_pending'],
             'vp_approved' => ['label' => __('Approved', 'yardlii-core'), 'status' => 'vp_approved'],
             'vp_rejected' => ['label' => __('Rejected', 'yardlii-core'), 'status' => 'vp_rejected'],
         ];
+
         $new_views = [];
         $current = $_GET['post_status'] ?? '';
         $is_emp  = isset($_GET['verification_type']);
+
         foreach ($statuses as $key => $data) {
             $args = ['post_type' => CPT::POST_TYPE, 'post_status' => $data['status']];
             if ($key === 'all') $args['post_status'] = ['vp_pending', 'vp_approved', 'vp_rejected'];
+            
             $count = (new WP_Query($args))->found_posts;
+            
             $class = ($current === $data['status'] && !$is_emp) ? 'current' : '';
             $url   = $key === 'all' ? $base : add_query_arg('post_status', $data['status'], $base);
-            $new_views[$key] = sprintf('<a href="%s" class="%s">%s <span class="count">(%d)</span></a>', esc_url($url), $class, esc_html($data['label']), $count);
+            
+            $new_views[$key] = sprintf(
+                '<a href="%s" class="%s">%s <span class="count">(%d)</span></a>',
+                esc_url($url), $class, esc_html($data['label']), $count
+            );
         }
-        // Employer Vouch
-        $emp_count = (new WP_Query(['post_type'=>CPT::POST_TYPE,'post_status'=>'any','meta_query'=>[['key'=>'_vp_verification_type','value'=>'employer_vouch']]]))->found_posts;
+
         $emp_class = $is_emp ? 'current' : '';
-        $new_views['employer'] = sprintf('<a href="%s" class="%s">%s <span class="count">(%d)</span></a>', esc_url(add_query_arg('verification_type', 'employer_vouch', $base)), $emp_class, __('Employer Vouch'), $emp_count);
+        $new_views['employer'] = sprintf(
+            '<a href="%s" class="%s">%s <span class="count">(%d)</span></a>',
+            esc_url(add_query_arg('verification_type', 'employer_vouch', $base)), $emp_class,
+            __('Employer Vouch', 'yardlii-core'), $emp_count
+        );
+
         return $new_views;
     }
 
-    /** @param array<string, string> $actions @return array<string, string> */
-    public function registerBulkActions(array $actions): array {
+    /**
+     * 9. Register Bulk Actions
+     * @param array<string, string> $actions
+     * @return array<string, string>
+     */
+    public function registerBulkActions(array $actions): array
+    {
         unset($actions['edit'], $actions['trash']); 
-        return ['yardlii_tv_bulk_approve'=>__('Approve'), 'yardlii_tv_bulk_reject'=>__('Reject'), 'yardlii_tv_bulk_reopen'=>__('Re-open'), 'yardlii_tv_bulk_resend'=>__('Resend Email')] + $actions;
+        return [
+            'yardlii_tv_bulk_approve' => __('Approve', 'yardlii-core'),
+            'yardlii_tv_bulk_reject'  => __('Reject', 'yardlii-core'),
+            'yardlii_tv_bulk_reopen'  => __('Re-open', 'yardlii-core'),
+            'yardlii_tv_bulk_resend'  => __('Resend Email', 'yardlii-core'),
+        ] + $actions;
     }
 
-    /** @param string $r @param string $a @param array<int|string> $ids @return string */
-    public function handleBulkProcessing(string $r, string $a, array $ids): string {
-        $map = ['yardlii_tv_bulk_approve'=>'approve', 'yardlii_tv_bulk_reject'=>'reject', 'yardlii_tv_bulk_reopen'=>'reopen', 'yardlii_tv_bulk_resend'=>'resend'];
-        if (!isset($map[$a])) return $r;
-        $d = new Decisions(); $cnt = 0; $cc = !empty($_REQUEST['tv_send_copy']);
-        foreach ($ids as $id) { if ($d->applyDecision((int)$id, $map[$a], ['cc_self'=>$cc])) $cnt++; }
-        return add_query_arg(['tv_notice'=>'bulk_'.$map[$a], 'tv_count'=>$cnt], $r);
+    /**
+     * 10. Handle Bulk Action Logic
+     * @param string $redirect_to
+     * @param string $action
+     * @param array<int> $post_ids
+     * @return string
+     */
+    public function handleBulkProcessing(string $redirect_to, string $action, array $post_ids): string
+    {
+        $map = [
+            'yardlii_tv_bulk_approve' => 'approve',
+            'yardlii_tv_bulk_reject'  => 'reject',
+            'yardlii_tv_bulk_reopen'  => 'reopen',
+            'yardlii_tv_bulk_resend'  => 'resend',
+        ];
+
+        if (!isset($map[$action])) return $redirect_to;
+
+        $decisions = new Decisions();
+        $processed = 0;
+        $sendCopy = !empty($_REQUEST['tv_send_copy']);
+
+        foreach ($post_ids as $id) {
+            if ($decisions->applyDecision((int)$id, $map[$action], ['cc_self' => $sendCopy])) {
+                $processed++;
+            }
+        }
+
+        return add_query_arg(['tv_notice' => 'bulk_' . $map[$action], 'tv_count' => $processed], $redirect_to);
     }
 
-    public function renderToolbarExtras(string $pt): void {
-        if ($pt !== CPT::POST_TYPE) return;
-        echo '<label style="margin-left:10px;line-height:30px;vertical-align:middle;font-size:13px;"><input type="checkbox" name="tv_send_copy" value="1" style="margin-top:-2px;"> ' . esc_html__('Send me a copy') . '</label>';
+    public function renderToolbarExtras(string $post_type): void
+    {
+        if ($post_type !== CPT::POST_TYPE) return;
+        ?>
+        <label style="margin-left:10px;line-height:30px;vertical-align:middle;font-size:13px;">
+            <input type="checkbox" name="tv_send_copy" value="1" style="margin-top:-2px;"> 
+            <?php esc_html_e('Send me a copy', 'yardlii-core'); ?>
+        </label>
+        <?php
     }
 
     private function getStatusLabel(string $slug): string {
-        $map = ['vp_pending'=>'Pending', 'vp_approved'=>'Approved', 'vp_rejected'=>'Rejected'];
+        $map = [
+            'vp_pending'  => 'Pending',
+            'vp_approved' => 'Approved',
+            'vp_rejected' => 'Rejected'
+        ];
         return $map[$slug] ?? ucfirst(str_replace(['vp_', '_'], ['', ' '], $slug));
     }
 }
