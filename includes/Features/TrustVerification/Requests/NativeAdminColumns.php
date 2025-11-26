@@ -28,10 +28,11 @@ final class NativeAdminColumns
         
         // 3. Logic (Search & Filter)
         add_action('pre_get_posts', [$this, 'modifyMainQuery']);
+        // Silence default search SQL so we can keep 's' in the query object (fixing the UI label)
+        add_filter('posts_search', [$this, 'killDefaultSearchSQL'], 10, 2);
         
-        // 4. Notifications & UI Polish
+        // 4. Notifications
         add_action('admin_notices', [$this, 'displayAdminNotices']);
-        add_action('admin_footer', [$this, 'injectSearchSubtitle']); // [NEW]
     }
 
     /**
@@ -184,8 +185,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 4. Notifications (Action Feedback only)
-     * Removed the search banner to place it better via JS below.
+     * 4. Notifications (Only Success/Action feedback)
      */
     public function displayAdminNotices(): void
     {
@@ -216,40 +216,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 5. [NEW] Inject Search Subtitle next to H1
-     * Since we cleared the 's' query var to fix the search logic, WP won't show the label.
-     * We inject it manually using a tiny inline script.
-     */
-    public function injectSearchSubtitle(): void
-    {
-        $screen = get_current_screen();
-        if (!$screen || $screen->post_type !== CPT::POST_TYPE) return;
-
-        // Only run if we actually have a search term in the URL
-        if (empty($_GET['s'])) return;
-
-        $term = sanitize_text_field($_GET['s']);
-        $label = esc_html__('Search results for:', 'yardlii-core');
-        $term_safe = esc_html($term);
-
-        // This mimics standard WP behavior: <span class="subtitle">Search results for: <strong>...</strong></span>
-        ?>
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var h1 = document.querySelector('.wrap h1.wp-heading-inline');
-            if (h1) {
-                var sub = document.createElement('span');
-                sub.className = 'subtitle';
-                sub.innerHTML = '<?php echo $label; ?> <strong><?php echo $term_safe; ?></strong>';
-                h1.after(sub);
-            }
-        });
-        </script>
-        <?php
-    }
-
-    /**
-     * 6. Fix "All" View & Enable Robust Search (The Working Method)
+     * 5. Fix "All" View & Enable Robust Search
      * @param WP_Query $query
      */
     public function modifyMainQuery(WP_Query $query): void
@@ -321,14 +288,33 @@ final class NativeAdminColumns
 
             if (!empty($merged_ids)) {
                 $query->set('post__in', $merged_ids);
-                // Clear 's' so WP doesn't filter further, but we reinject the UI label via JS
-                $query->set('s', ''); 
-                $query->set('post_status', $our_statuses);
+                // [FIX] We DO NOT clear 's' here. We want native WP UI to see it.
+                // Instead, we use killDefaultSearchSQL to prevent the SQL query from failing.
             } else {
                 $query->set('post__in', [0]);
-                $query->set('s', '');
             }
         }
+    }
+
+    /**
+     * 6. Silence Default Search SQL
+     * We have manually found the IDs in modifyMainQuery() and set post__in.
+     * Now we must tell WP *not* to run its default "AND post_title LIKE %s" logic.
+     */
+    public function killDefaultSearchSQL(string $search, WP_Query $query): string
+    {
+        if (
+            !is_admin() || 
+            !$query->is_main_query() || 
+            $query->get('post_type') !== CPT::POST_TYPE || 
+            !$query->is_search()
+        ) {
+            return $search;
+        }
+
+        // We have handled the search logic via post__in.
+        // Return empty string to disable the default SQL LIKE clause.
+        return '';
     }
 
     /**
