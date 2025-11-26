@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Yardlii\Core\Features\TrustVerification\Requests;
 
 use Yardlii\Core\Features\TrustVerification\Requests\CPT;
+use WP_Post;
 
 /**
  * Handles the columns and display for the native 'verification_request' admin screen.
@@ -17,19 +18,25 @@ final class NativeAdminColumns
         add_filter('post_row_actions', [$this, 'removeQuickEdit'], 10, 2);
     }
 
+    /**
+     * @param array<string, string> $columns
+     * @return array<string, string>
+     */
     public function defineColumns(array $columns): array
     {
-        // Define new column order
-        $new = [
-            'cb'             => $columns['cb'],
-            'title'          => __('User / Request', 'yardlii-core'), // WP puts title here
+        // Reorder and rename
+        // Helper to preserve checkbox if present
+        $cb = $columns['cb'] ?? '<input type="checkbox" />';
+
+        return [
+            'cb'             => $cb,
+            'title'          => __('User / Request', 'yardlii-core'), // WordPress puts title here automatically
             'tv_form'        => __('Form', 'yardlii-core'),
             'tv_status'      => __('Status', 'yardlii-core'),
             'tv_role'        => __('Current Role', 'yardlii-core'),
             'tv_processed'   => __('Processed By', 'yardlii-core'),
             'date'           => __('Submitted', 'yardlii-core'),
         ];
-        return $new;
     }
 
     public function renderColumn(string $column, int $post_id): void
@@ -41,8 +48,13 @@ final class NativeAdminColumns
 
             case 'tv_status':
                 $status = get_post_status($post_id);
+                if (!$status) {
+                    echo '—';
+                    break;
+                }
+                
                 $label  = $this->getStatusLabel($status);
-                // Use the same CSS classes defined in our admin CSS
+                // Use the same CSS classes we defined in our admin.css
                 $class  = str_replace('vp_', '', $status); 
                 printf('<span class="status-badge status-badge--%s">%s</span>', esc_attr($class), esc_html($label));
                 
@@ -68,7 +80,7 @@ final class NativeAdminColumns
                 $aid = (int) get_post_meta($post_id, '_vp_processed_by', true);
                 if ($aid > 0) {
                     $u = get_userdata($aid);
-                    echo esc_html($u ? $u->display_name : 'Unknown');
+                    echo esc_html($u ? ($u->display_name ?: $u->user_login) : 'Unknown');
                 } elseif ($aid === 0 && get_post_status($post_id) !== 'vp_pending') {
                      echo '<em style="color:#888;">System / Employer</em>';
                 } else {
@@ -78,15 +90,24 @@ final class NativeAdminColumns
         }
     }
 
-    public function removeQuickEdit(array $actions, \WP_Post $post): array
+    /**
+     * @param array<string, string> $actions
+     * @param WP_Post $post
+     * @return array<string, string>
+     */
+    public function removeQuickEdit(array $actions, WP_Post $post): array
     {
         if ($post->post_type === CPT::POST_TYPE) {
-            unset($actions['inline hide-if-no-js']); // Remove Quick Edit
+            // 'inline hide-if-no-js' is the key used by WP for "Quick Edit"
+            if (isset($actions['inline hide-if-no-js'])) {
+                unset($actions['inline hide-if-no-js']);
+            }
         }
         return $actions;
     }
     
-    private function getStatusLabel($slug) {
+    // Helper to translate status slugs
+    private function getStatusLabel(string $slug): string {
         $map = [
             'vp_pending'  => 'Pending',
             'vp_approved' => 'Approved',
