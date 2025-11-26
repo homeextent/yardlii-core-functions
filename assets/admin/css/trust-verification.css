@@ -8,18 +8,19 @@
   gap:8px;
 }
 
-/* --- Status badges --- */
-#yardlii-tab-trust-verification .status-badge{
+/* --- Status badges (Global) --- */
+.status-badge {
   display:inline-block;
   padding:4px 8px;
   border-radius:10px;
   font-weight:600;
   line-height:1;
+  font-size: 11px;
+  text-transform: uppercase;
 }
-#yardlii-tab-trust-verification .status-badge--pending  { background:#FFD400; color:#000; }
-#yardlii-tab-trust-verification .status-badge--approved { background:#28a745; color:#fff; }
-#yardlii-tab-trust-verification .status-badge--rejected { background:#dc3545; color:#fff; }
-
+.status-badge--pending, .status-badge--vp_pending  { background:#FFD400; color:#000; }
+.status-badge--approved, .status-badge--vp_approved { background:#28a745; color:#fff; }
+.status-badge--rejected, .status-badge--vp_rejected { background:#dc3545; color:#fff; }
 /* --- Inline banners --- */
 #yardlii-tab-trust-verification .yardlii-banner{
   margin:12px 0; padding:10px 12px; border:1px solid #dcdcde; border-left-width:4px;
