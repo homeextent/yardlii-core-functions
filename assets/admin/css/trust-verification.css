@@ -117,3 +117,45 @@
 .tv-history-item{ margin:0 0 10px; padding-bottom:10px; border-bottom:1px solid #eee; }
 .tv-history-meta{ color:#888; font-size:12px; }
 .tv-history-detail{ margin-top:4px; font-family:monospace; font-size:11px; background:#f9f9f9; padding:4px; }
+
+/* --- Admin List Table Polish (Search & Toolbar) --- */
+
+/* Search Box Area */
+.yardlii-tv-search-box {
+    float: right;
+    margin-bottom: 10px;
+}
+
+/* Send Me Copy Checkbox Area */
+.yardlii-tv-toolbar-item {
+    float: left;
+    margin-left: 10px;
+    margin-top: 1px;
+    padding: 3px 10px;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+/* Brand the Search Button (Trust Blue) */
+.yardlii-tv-search-box input[type="submit"].button-primary {
+    background-color: #0A2240 !important; /* Yardlii Blue */
+    border-color: #0A2240 !important;
+    color: #fff !important;
+    transition: background 0.2s ease;
+}
+
+.yardlii-tv-search-box input[type="submit"].button-primary:hover {
+    background-color: #FF7A00 !important; /* Action Orange on hover */
+    border-color: #FF7A00 !important;
+}
+
+/* Make "Send me a copy" label clearer */
+.yardlii-tv-toolbar-item label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.2;
+    cursor: pointer;
+}
