@@ -29,8 +29,9 @@ final class NativeAdminColumns
         // 3. Logic (Search & Filter)
         add_action('pre_get_posts', [$this, 'modifyMainQuery']);
         
-        // 4. Notifications & Search Feedback
+        // 4. Notifications & UI Polish
         add_action('admin_notices', [$this, 'displayAdminNotices']);
+        add_action('admin_footer', [$this, 'injectSearchSubtitle']); // [NEW]
     }
 
     /**
@@ -139,7 +140,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 3. Row Actions (Approve | Reject | History)
+     * 3. Row Actions
      * @param array<string, string> $actions
      * @param WP_Post $post
      * @return array<string, string>
@@ -183,14 +184,14 @@ final class NativeAdminColumns
     }
 
     /**
-     * 4. Notifications & Search Feedback
+     * 4. Notifications (Action Feedback only)
+     * Removed the search banner to place it better via JS below.
      */
     public function displayAdminNotices(): void
     {
         $screen = get_current_screen();
         if (!$screen || $screen->post_type !== CPT::POST_TYPE) return;
 
-        // Action Feedback
         if (isset($_GET['tv_notice'])) {
             $map = [
                 'approve'      => __('Request approved.', 'yardlii-core'),
@@ -212,20 +213,43 @@ final class NativeAdminColumns
                 );
             }
         }
-
-        // [NEW] Manual Search Feedback
-        // Since we clear 's' in the query to make it work, we manually show this banner so users know search is active.
-        if (isset($_GET['s']) && !empty($_GET['s'])) {
-             printf(
-                '<div class="notice notice-info" style="margin: 15px 0 5px 0;"><p>%s <strong>%s</strong></p></div>',
-                esc_html__('Search results for:', 'yardlii-core'),
-                esc_html(sanitize_text_field($_GET['s']))
-            );
-        }
     }
 
     /**
-     * 5. Fix "All" View & Enable Robust Search (The Working Method)
+     * 5. [NEW] Inject Search Subtitle next to H1
+     * Since we cleared the 's' query var to fix the search logic, WP won't show the label.
+     * We inject it manually using a tiny inline script.
+     */
+    public function injectSearchSubtitle(): void
+    {
+        $screen = get_current_screen();
+        if (!$screen || $screen->post_type !== CPT::POST_TYPE) return;
+
+        // Only run if we actually have a search term in the URL
+        if (empty($_GET['s'])) return;
+
+        $term = sanitize_text_field($_GET['s']);
+        $label = esc_html__('Search results for:', 'yardlii-core');
+        $term_safe = esc_html($term);
+
+        // This mimics standard WP behavior: <span class="subtitle">Search results for: <strong>...</strong></span>
+        ?>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var h1 = document.querySelector('.wrap h1.wp-heading-inline');
+            if (h1) {
+                var sub = document.createElement('span');
+                sub.className = 'subtitle';
+                sub.innerHTML = '<?php echo $label; ?> <strong><?php echo $term_safe; ?></strong>';
+                h1.after(sub);
+            }
+        });
+        </script>
+        <?php
+    }
+
+    /**
+     * 6. Fix "All" View & Enable Robust Search (The Working Method)
      * @param WP_Query $query
      */
     public function modifyMainQuery(WP_Query $query): void
@@ -238,7 +262,6 @@ final class NativeAdminColumns
             return;
         }
 
-        // We must include ALL statuses, even custom/protected ones
         $our_statuses = ['vp_pending', 'vp_approved', 'vp_rejected'];
 
         // A. Fix "All" View
@@ -256,8 +279,7 @@ final class NativeAdminColumns
         // C. Robust Search (Title OR User Meta)
         $search_term = $query->get('s');
         if (!empty($search_term)) {
-            // 1. Get matching IDs via Title/Content (Standard WP Search)
-            // IMPORTANT: Must explicitly set post_status to our custom statuses
+            // 1. Standard Title Search
             $title_search_args = [
                 'post_type'   => CPT::POST_TYPE,
                 'post_status' => $our_statuses,
@@ -267,7 +289,7 @@ final class NativeAdminColumns
             ];
             $title_ids = get_posts($title_search_args);
 
-            // 2. Get matching IDs via User Search (Meta)
+            // 2. User Meta Search
             $user_query = new WP_User_Query([
                 'search'         => '*' . $search_term . '*',
                 'search_columns' => ['user_login', 'user_email', 'display_name'],
@@ -281,7 +303,7 @@ final class NativeAdminColumns
             if (!empty($user_ids)) {
                 $user_post_ids = get_posts([
                     'post_type'      => CPT::POST_TYPE,
-                    'post_status'    => $our_statuses, // Search ALL statuses
+                    'post_status'    => $our_statuses,
                     'fields'         => 'ids',
                     'posts_per_page' => -1,
                     'meta_query'     => [
@@ -299,16 +321,10 @@ final class NativeAdminColumns
 
             if (!empty($merged_ids)) {
                 $query->set('post__in', $merged_ids);
-                
-                // CRITICAL: Clear 's' so WP doesn't run its default "AND post_title LIKE..." logic
-                // which filters out results found via User Meta. 
-                // We compensate for the UI by showing a banner in displayAdminNotices().
+                // Clear 's' so WP doesn't filter further, but we reinject the UI label via JS
                 $query->set('s', ''); 
-                
-                // Ensure we see the results regardless of status
                 $query->set('post_status', $our_statuses);
             } else {
-                // Force no results found
                 $query->set('post__in', [0]);
                 $query->set('s', '');
             }
@@ -316,7 +332,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 6. Register Status Views (Top Filters)
+     * 7. Register Status Views
      * @param array<string, string> $views
      * @return array<string, string>
      */
@@ -361,15 +377,17 @@ final class NativeAdminColumns
         $emp_class = $is_emp ? 'current' : '';
         $new_views['employer'] = sprintf(
             '<a href="%s" class="%s">%s <span class="count">(%d)</span></a>',
-            esc_url(add_query_arg('verification_type', 'employer_vouch', $base)), $emp_class,
-            __('Employer Vouch', 'yardlii-core'), $emp_count
+            esc_url(add_query_arg('verification_type', 'employer_vouch', $base)),
+            $emp_class,
+            __('Employer Vouch', 'yardlii-core'),
+            $emp_count
         );
 
         return $new_views;
     }
 
     /**
-     * 7. Register Bulk Actions
+     * 8. Register Bulk Actions
      * @param array<string, string> $actions
      * @return array<string, string>
      */
@@ -385,7 +403,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 8. Handle Bulk Action Logic
+     * 9. Handle Bulk Action Logic
      * @param string $redirect_to
      * @param string $action
      * @param array<int|string> $post_ids
