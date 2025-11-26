@@ -290,7 +290,7 @@ final class Guards
         );
 
         $link =
-            admin_url('admin.php?page=yardlii-core-settings&tab=trust-verification&tvsection=requests');
+            $link = admin_url('edit.php?post_type=verification_request');
 
         $user_name = $user ? ($user->display_name ?: $user->user_login) : 'N/A';
         $user_email = $user ? $user->user_email : 'N/A';
