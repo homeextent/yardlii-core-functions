@@ -130,6 +130,12 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+### 3.18.4 - 2025-11-25
+* **Fix:** Resolved "Spinning Wheel" crash in SmartFormOverrides by handling WPUF AJAX array responses correctly.
+* **Fix:** Added strict 1-post limit check to SmartFormOverrides to prevent duplicate "Pending" listings.
+* **Fix:** Updated Auto-Publisher to support the plural `listings` Custom Post Type slug.
+* **Feature:** Auto-Publisher now triggers immediately when a user role switches to "Pending Verification", ensuring instant draft publication.
+
 ### 3.18.0 - 2025-11-25
 * **Feature:** "Smart Form Overrides" module added. Forces 'Publish' status and instant redirect for Pending Verification users on the Basic Form.
 * **Update:** Dynamic Posting Logic now exclusively targets Verified users (swapping them to Pro Form) using "God Mode" metadata interception.
