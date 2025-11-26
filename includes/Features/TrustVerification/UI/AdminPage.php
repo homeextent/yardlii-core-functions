@@ -106,8 +106,14 @@ wp_localize_script(self::SCRIPT_HANDLE, 'YardliiTV', [
      */
     private function isOurSettingsPage(string $hook): bool
     {
-        // 1) Fast path: hook contains our slug
+        // 1) Fast path: hook contains our settings slug
         if (strpos($hook, 'yardlii-core-settings') !== false) {
+            return true;
+        }
+        
+        // [NEW] Also load CSS on the native "Verifications" list screen
+        // The hook for a CPT list is 'edit.php' and we check the post_type param
+        if ($hook === 'edit.php' && isset($_GET['post_type']) && $_GET['post_type'] === 'verification_request') {
             return true;
         }
 

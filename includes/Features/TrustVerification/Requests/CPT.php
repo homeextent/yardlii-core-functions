@@ -16,11 +16,27 @@ final class CPT
     public function registerPostType(): void
     {
         register_post_type(self::POST_TYPE, [
-            'label' => __('Verification Requests', 'yardlii-core'),
-            'public' => false, 'show_ui' => false, // rendered inside our tab
-            'supports' => ['title'],
-            'capability_type' => 'post',
-            'map_meta_cap' => true,
+            'label'               => __('Verifications', 'yardlii-core'),
+            'labels'              => [
+                'name'               => __('Verifications', 'yardlii-core'),
+                'singular_name'      => __('Verification Request', 'yardlii-core'),
+                'menu_name'          => __('Verifications', 'yardlii-core'),
+                'all_items'          => __('All Requests', 'yardlii-core'),
+                'not_found'          => __('No requests found.', 'yardlii-core'),
+                'not_found_in_trash' => __('No requests found in Trash.', 'yardlii-core'),
+            ],
+            'public'              => false,  // Keep false (not viewable on frontend)
+            'show_ui'             => true,   // [CHANGED] Show in Admin UI
+            'show_in_menu'        => true,   // [CHANGED] Show in Admin Menu
+            'menu_position'       => 58,     // Below "Users"
+            'menu_icon'           => 'dashicons-id-alt', // ID Card Icon
+            'supports'            => ['title'],
+            'capability_type'     => 'post',
+            'map_meta_cap'        => true,
+            // Disable "Add New" button (requests are created programmatically)
+            'capabilities' => [
+                'create_posts' => 'do_not_allow', 
+            ],
         ]);
     }
 
