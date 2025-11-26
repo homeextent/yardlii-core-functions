@@ -10,6 +10,7 @@ use WP_User_Query;
 
 /**
  * Controls the native WordPress Admin List for Verification Requests.
+ * Handles: Columns, Row Actions, Bulk Actions, and Status Filtering.
  */
 final class NativeAdminColumns
 {
@@ -139,7 +140,10 @@ final class NativeAdminColumns
     }
 
     /**
-     * 3. Row Actions
+     * 3. Row Actions (Approve | Reject | History)
+     * @param array<string, string> $actions
+     * @param WP_Post $post
+     * @return array<string, string>
      */
     public function handleRowActions(array $actions, WP_Post $post): array
     {
@@ -180,8 +184,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 4. Notifications (Using custom Yardlii Banner)
-     * Uses the .yardlii-banner class instead of .notice to avoid "Notification Center" capture.
+     * 4. Notifications
      */
     public function displayAdminNotices(): void
     {
@@ -200,7 +203,8 @@ final class NativeAdminColumns
             $notice = sanitize_key($_GET['tv_notice']);
             
             if (isset($map[$notice])) {
-                // NOTE: We use inline style margin-top to clear the WP toolbar if needed
+                // We use the .yardlii-banner class to bypass WP's notice aggregation if desired,
+                // but keeping standard structure ensuring visibility.
                 printf(
                     '<div class="yardlii-banner yardlii-banner--success yardlii-banner--dismiss" style="margin: 15px 0 15px 0; display:block;">' .
                     '<p><strong>%s</strong> %s</p>' .
@@ -226,7 +230,7 @@ final class NativeAdminColumns
             return;
         }
 
-        // A. Fix "All" View (Force custom statuses)
+        // A. Fix "All" View
         if (empty($_GET['post_status']) && empty($query->get('post_status'))) {
             $query->set('post_status', ['vp_pending', 'vp_approved', 'vp_rejected']);
         }
@@ -241,8 +245,7 @@ final class NativeAdminColumns
         // C. Robust Search (Title OR User Meta)
         $search_term = $query->get('s');
         if (!empty($search_term)) {
-            // 1. Get matching IDs via Title/Content search (Standard WP behavior)
-            // We run a separate light query just to get these IDs.
+            // 1. Get matching IDs via Title/Content
             $title_search_args = [
                 'post_type'   => CPT::POST_TYPE,
                 'post_status' => 'any',
@@ -257,14 +260,13 @@ final class NativeAdminColumns
                 'search'         => '*' . $search_term . '*',
                 'search_columns' => ['user_login', 'user_email', 'display_name'],
                 'fields'         => 'ID',
-                'number'         => 100 // Limit to reasonable number
+                'number'         => 100
             ]);
             
             $user_ids = $user_query->get_results();
             $user_post_ids = [];
 
             if (!empty($user_ids)) {
-                // Find posts where _vp_user_id is in $user_ids
                 $user_post_ids = get_posts([
                     'post_type'      => CPT::POST_TYPE,
                     'post_status'    => 'any',
@@ -280,22 +282,24 @@ final class NativeAdminColumns
                 ]);
             }
 
-            // 3. Merge and Apply
+            // 3. Merge
             $merged_ids = array_unique(array_merge($title_ids, $user_post_ids));
 
             if (!empty($merged_ids)) {
                 $query->set('post__in', $merged_ids);
-                // IMPORTANT: Clear 's' so WP doesn't try to search title again and restrict results
-                $query->set('s', ''); 
+                $query->set('s', ''); // Clear default search to avoid 0 results
             } else {
-                // Nothing found in either title or user meta
                 $query->set('post__in', [0]);
                 $query->set('s', '');
             }
         }
     }
 
-    /** @param array<string, string> $views */
+    /**
+     * 6. Register Status Views (Top Filters)
+     * @param array<string, string> $views
+     * @return array<string, string>
+     */
     public function registerStatusViews(array $views): array
     {
         $base = admin_url('edit.php?post_type=' . CPT::POST_TYPE);
@@ -340,7 +344,11 @@ final class NativeAdminColumns
         return $new_views;
     }
 
-    /** @param array<string, string> $actions */
+    /**
+     * 7. Register Bulk Actions
+     * @param array<string, string> $actions
+     * @return array<string, string>
+     */
     public function registerBulkActions(array $actions): array
     {
         unset($actions['edit'], $actions['trash']); 
@@ -352,9 +360,12 @@ final class NativeAdminColumns
         ] + $actions;
     }
 
-    /** * @param string $redirect_to
+    /**
+     * 8. Handle Bulk Action Logic
+     * @param string $redirect_to
      * @param string $action
      * @param array<int|string> $post_ids
+     * @return string
      */
     public function handleBulkProcessing(string $redirect_to, string $action, array $post_ids): string
     {
