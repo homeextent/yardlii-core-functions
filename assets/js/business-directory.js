@@ -1,43 +1,59 @@
 /**
- * YARDLII Directory - Dual Filter Logic (Trade + Location)
+ * YARDLII Directory - Dual Filter Logic (Bundled + Decoupled)
  */
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Find all Directory Wrappers on the page
+    // 1. Handle Bundled Wrappers (Search and Grid together)
     const wrappers = document.querySelectorAll('.yardlii-directory-wrapper');
+    if (wrappers.length > 0) {
+        wrappers.forEach(function(wrapper) {
+            // Only process if this wrapper actually HAS a search bar inside it
+            // (If hide_search="true" was used, these won't exist inside)
+            const tradeSelect = wrapper.querySelector('.yardlii-filter-trade');
+            const locInput    = wrapper.querySelector('.yardlii-filter-location');
+            const grid        = wrapper.querySelector('.yardlii-directory-grid');
+            
+            if (grid && (tradeSelect || locInput)) {
+                setupFilterLogic(tradeSelect, locInput, grid);
+            }
+        });
+    }
 
-    if (wrappers.length === 0) return;
+    // 2. Handle Standalone Search Bars (Decoupled)
+    const remoteBars = document.querySelectorAll('.yardlii-standalone-search');
+    if (remoteBars.length > 0) {
+        remoteBars.forEach(function(bar) {
+            const targetId = bar.getAttribute('data-target');
+            if (!targetId) return;
 
-    wrappers.forEach(function(wrapper) {
-        
-        const tradeSelect = wrapper.querySelector('.yardlii-filter-trade');
-        const locInput    = wrapper.querySelector('.yardlii-filter-location');
-        const grid        = wrapper.querySelector('.yardlii-directory-grid');
-        
-        if (!grid) return; // Safety check
+            const grid = document.getElementById(targetId);
+            if (!grid) return;
 
+            const tradeSelect = bar.querySelector('.yardlii-filter-trade');
+            const locInput    = bar.querySelector('.yardlii-filter-location');
+
+            setupFilterLogic(tradeSelect, locInput, grid);
+        });
+    }
+
+    /**
+     * Shared Filter Logic
+     * Attaches listeners to inputs and filters the specific grid.
+     */
+    function setupFilterLogic(tradeSelect, locInput, grid) {
         const cards = grid.getElementsByClassName('yardlii-business-card');
 
-        // The Filter Function
         function runFilter() {
-            // Get values
             const tradeVal = tradeSelect ? tradeSelect.value.toLowerCase() : '';
             const locVal   = locInput ? locInput.value.toLowerCase().trim() : '';
 
             for (let i = 0; i < cards.length; i++) {
                 const card = cards[i];
-                
-                // Get Card Data
                 const cardTrade = card.getAttribute('data-trade') || '';
                 const cardLoc   = card.getAttribute('data-location') || '';
 
-                // Logic:
-                // 1. Trade Match: If dropdown is empty, match everything. Else match exact string.
-                // 2. Loc Match: If input is empty, match everything. Else match partial string (indexOf).
-                
                 let tradeMatch = true;
                 if (tradeVal !== '') {
-                    // Check if card trade contains the selected value
                     tradeMatch = cardTrade.indexOf(tradeVal) > -1;
                 }
 
@@ -46,7 +62,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     locMatch = cardLoc.indexOf(locVal) > -1;
                 }
 
-                // Show if BOTH match
                 if (tradeMatch && locMatch) {
                     card.style.display = "";
                 } else {
@@ -55,12 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Attach Listeners
-        if (tradeSelect) {
-            tradeSelect.addEventListener('change', runFilter);
-        }
-        if (locInput) {
-            locInput.addEventListener('keyup', runFilter);
-        }
-    });
+        if (tradeSelect) tradeSelect.addEventListener('change', runFilter);
+        if (locInput)    locInput.addEventListener('keyup', runFilter);
+    }
 });
