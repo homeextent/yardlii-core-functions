@@ -1,0 +1,94 @@
+/* Card Layout for Repeater Rows */
+.yardlii-dir-repeater-container {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    margin-bottom: 15px;
+    border-radius: 6px;
+    padding: 20px;
+    position: relative;
+    transition: border-color 0.2s;
+}
+
+.yardlii-dir-repeater-container:hover {
+    border-color: #0073aa;
+}
+
+/* Close Button (Top Right) */
+.yardlii-remove-row-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    color: #b32d2e;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 5px;
+}
+
+.yardlii-remove-row-btn:hover {
+    color: #d63638;
+    background: #f0f0f1;
+    border-radius: 4px;
+}
+
+/* Header Section */
+.yardlii-row-header {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.yardlii-row-header select {
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 250px;
+}
+
+/* Field Grid (2x2) */
+.yardlii-row-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.yardlii-field-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    font-size: 12px;
+    color: #50575e;
+}
+
+/* Tech Inputs (Code style) */
+.yardlii-tech-input {
+    font-family: monospace;
+    background-color: #f6f7f7 !important;
+    width: 100%;
+}
+
+/* Shortcode Generator Box */
+.yardlii-shortcode-box {
+    margin-top: 15px;
+    background: #e5f5fa;
+    border: 1px solid #bce0ed;
+    padding: 10px 15px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.yardlii-shortcode-preview {
+    font-family: monospace;
+    background: transparent;
+    border: none;
+    width: 100%;
+    color: #005a8c;
+    font-size: 13px;
+}
+
+.yardlii-copy-btn {
+    white-space: nowrap;
+}

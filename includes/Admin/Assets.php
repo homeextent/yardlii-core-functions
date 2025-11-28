@@ -1,57 +1,102 @@
 <?php
 namespace Yardlii\Core\Admin;
 
+/**
+ * Admin Assets Handler
+ * Enqueues CSS and JS for the settings page.
+ */
 class Assets
 {
     public function register(): void
     {
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
-        // ✅ Removed runtime diagnostic injection hook
     }
 
     public function enqueue_admin_assets(): void
     {
         $screen = get_current_screen();
 
-        // Only load on YARDLII Core settings page
+        // 1. Screen Check
         if (empty($screen) || strpos($screen->id, 'yardlii-core') === false) {
             return;
         }
 
-        // Enqueue CSS
+        // 2. PHPStan Safe Constants (Fix for CI errors)
+        // We define local variables with fallbacks so static analysis doesn't crash
+        $coreUrl  = defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL : '';
+        $coreVer  = defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0.0';
+        $coreFile = defined('YARDLII_CORE_FILE') ? YARDLII_CORE_FILE : __FILE__;
+
+        // 3. Global CSS
+        // Core Admin CSS
         wp_enqueue_style(
             'yardlii-admin',
-            plugins_url('/assets/css/admin.css', YARDLII_CORE_FILE),
+            plugins_url('/assets/css/admin.css', $coreFile),
             [],
-            YARDLII_CORE_VERSION
+            $coreVer
         );
 
-        // Enqueue admin JS
+        // Directory Settings CSS (Card Layout)
+        wp_enqueue_style(
+            'yardlii-admin-directory',
+            $coreUrl . 'assets/admin/css/admin-directory.css',
+            [],
+            $coreVer
+        );
+
+        // 4. Global JS
         wp_enqueue_script(
             'yardlii-admin',
-            plugins_url('/assets/js/admin.js', YARDLII_CORE_FILE),
+            plugins_url('/assets/js/admin.js', $coreFile),
             ['jquery'],
-            YARDLII_CORE_VERSION,
+            $coreVer,
             true
         );
 
-       // Dynamically get all registered special handlers
-$acf_sync = new \Yardlii\Core\Features\ACFUserSync();
-$registered_handlers = $acf_sync->get_registered_special_handlers();
+        // 5. Data Localization (Diagnostics & ACF)
+        if (class_exists('\Yardlii\Core\Features\ACFUserSync')) {
+            $acf_sync = new \Yardlii\Core\Features\ACFUserSync();
+            $registered_handlers = $acf_sync->get_registered_special_handlers();
 
-// Build the dropdown options from the registry
-$special_options = ['' => __('None', 'yardlii-core')];
-foreach ($registered_handlers as $key => $handler) {
-    $special_options[$key] = $handler['label'];
-}
+            $special_options = ['' => __('None', 'yardlii-core')];
+            foreach ($registered_handlers as $key => $handler) {
+                $special_options[$key] = $handler['label'];
+            }
 
-wp_localize_script('yardlii-admin', 'YARDLII_ADMIN', [
-    'nonce'            => wp_create_nonce('yardlii_admin_nonce'),
-    'nonce_badge_sync' => wp_create_nonce('yardlii_diag_badge_sync_nonce'),
-    'nonce_search_cache' => wp_create_nonce('yardlii_diag_search_cache_nonce'),
-    'ajaxurl'          => admin_url('admin-ajax.php'),
-    'specialOptions'   => $special_options,
-]);
+            wp_localize_script('yardlii-admin', 'YARDLII_ADMIN', [
+                'nonce'              => wp_create_nonce('yardlii_admin_nonce'),
+                'nonce_badge_sync'   => wp_create_nonce('yardlii_diag_badge_sync_nonce'),
+                'nonce_search_cache' => wp_create_nonce('yardlii_diag_search_cache_nonce'),
+                'ajaxurl'            => admin_url('admin-ajax.php'),
+                'specialOptions'     => $special_options,
+            ]);
+        }
 
+        // 6. Trust & Verification Assets (Conditional)
+        if (isset($_GET['tab']) && $_GET['tab'] === 'trust-verification') {
+            wp_enqueue_style(
+                'yardlii-admin-tv',
+                $coreUrl . 'assets/admin/css/trust-verification.css',
+                ['yardlii-admin'],
+                $coreVer
+            );
+
+            wp_enqueue_script(
+                'yardlii-admin-tv-js',
+                $coreUrl . 'assets/admin/js/admin-tv.js',
+                ['jquery', 'yardlii-admin'],
+                $coreVer,
+                true
+            );
+
+            wp_localize_script('yardlii-admin-tv-js', 'yardliiTv', [
+                'ajaxurl'      => admin_url('admin-ajax.php'),
+                'noncePreview' => wp_create_nonce('yardlii_tv_preview_email'),
+                'nonceSend'    => wp_create_nonce('yardlii_tv_send_test_email'),
+                'nonceHistory' => wp_create_nonce('yardlii_tv_history_load'),
+                'restNonce'    => wp_create_nonce('wp_rest'),
+                'restUrl'      => rest_url('yardlii/v1/verification-requests/'),
+            ]);
+        }
     }
 }

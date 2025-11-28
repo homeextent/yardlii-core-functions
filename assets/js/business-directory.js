@@ -1,5 +1,5 @@
 /**
- * YARDLII Directory - Dual Filter Logic (Bundled + Decoupled)
+ * YARDLII Directory - Dual Filter Logic (Auto-Discovery + Trigger Modes)
  */
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -7,14 +7,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const wrappers = document.querySelectorAll('.yardlii-directory-wrapper');
     if (wrappers.length > 0) {
         wrappers.forEach(function(wrapper) {
-            // Only process if this wrapper actually HAS a search bar inside it
-            // (If hide_search="true" was used, these won't exist inside)
             const tradeSelect = wrapper.querySelector('.yardlii-filter-trade');
             const locInput    = wrapper.querySelector('.yardlii-filter-location');
+            const submitBtn   = wrapper.querySelector('.yardlii-dir-submit');
             const grid        = wrapper.querySelector('.yardlii-directory-grid');
             
+            // Get Trigger Mode (default instant)
+            const trigger = wrapper.getAttribute('data-trigger') || 'instant';
+            
             if (grid && (tradeSelect || locInput)) {
-                setupFilterLogic(tradeSelect, locInput, grid);
+                setupFilterLogic(tradeSelect, locInput, submitBtn, grid, trigger);
             }
         });
     }
@@ -23,24 +25,35 @@ document.addEventListener('DOMContentLoaded', function() {
     const remoteBars = document.querySelectorAll('.yardlii-standalone-search');
     if (remoteBars.length > 0) {
         remoteBars.forEach(function(bar) {
-            const targetId = bar.getAttribute('data-target');
-            if (!targetId) return;
+            let targetId = bar.getAttribute('data-target');
+            let grid = null;
 
-            const grid = document.getElementById(targetId);
+            if (targetId) {
+                // Explicit Targeting
+                grid = document.getElementById(targetId);
+            } else {
+                // AUTO-DISCOVERY: Find the first grid on the page
+                grid = document.querySelector('.yardlii-directory-grid');
+                if (grid) {
+                    console.log('[YARDLII] Auto-discovered directory grid for search bar.');
+                }
+            }
+
             if (!grid) return;
 
             const tradeSelect = bar.querySelector('.yardlii-filter-trade');
             const locInput    = bar.querySelector('.yardlii-filter-location');
+            const submitBtn   = bar.querySelector('.yardlii-dir-submit');
+            const trigger     = bar.getAttribute('data-trigger') || 'instant';
 
-            setupFilterLogic(tradeSelect, locInput, grid);
+            setupFilterLogic(tradeSelect, locInput, submitBtn, grid, trigger);
         });
     }
 
     /**
      * Shared Filter Logic
-     * Attaches listeners to inputs and filters the specific grid.
      */
-    function setupFilterLogic(tradeSelect, locInput, grid) {
+    function setupFilterLogic(tradeSelect, locInput, submitBtn, grid, trigger) {
         const cards = grid.getElementsByClassName('yardlii-business-card');
 
         function runFilter() {
@@ -70,7 +83,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        if (tradeSelect) tradeSelect.addEventListener('change', runFilter);
-        if (locInput)    locInput.addEventListener('keyup', runFilter);
+        if (trigger === 'button' && submitBtn) {
+            // Button Mode: Only fire on click or Enter key
+            submitBtn.addEventListener('click', runFilter);
+            if (locInput) {
+                locInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') runFilter();
+                });
+            }
+        } else {
+            // Instant Mode: Fire on change/keyup
+            if (tradeSelect) tradeSelect.addEventListener('change', runFilter);
+            if (locInput)    locInput.addEventListener('keyup', runFilter);
+        }
     }
 });
