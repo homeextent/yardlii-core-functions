@@ -1,5 +1,5 @@
 /**
- * YARDLII Directory - Fixed Button Logic (v3.23)
+ * YARDLII Directory - Dual Filter, Autocomplete & Reset (v3.24)
  */
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -10,11 +10,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const tradeSelect = wrapper.querySelector('.yardlii-filter-trade');
             const locInput    = wrapper.querySelector('.yardlii-filter-location');
             const submitBtn   = wrapper.querySelector('.yardlii-dir-submit');
+            const resetBtn    = wrapper.querySelector('.yardlii-dir-reset');
             const grid        = wrapper.querySelector('.yardlii-directory-grid');
             const trigger     = wrapper.getAttribute('data-trigger') || 'instant';
             
             if (grid && (tradeSelect || locInput)) {
-                setupFilterLogic(tradeSelect, locInput, submitBtn, grid, trigger);
+                setupFilterLogic(tradeSelect, locInput, submitBtn, resetBtn, grid, trigger);
             }
         });
     }
@@ -29,7 +30,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (targetId) {
                 grid = document.getElementById(targetId);
             } else {
-                // Auto-discovery
                 grid = document.querySelector('.yardlii-directory-grid');
             }
 
@@ -38,19 +38,46 @@ document.addEventListener('DOMContentLoaded', function() {
             const tradeSelect = bar.querySelector('.yardlii-filter-trade');
             const locInput    = bar.querySelector('.yardlii-filter-location');
             const submitBtn   = bar.querySelector('.yardlii-dir-submit');
+            const resetBtn    = bar.querySelector('.yardlii-dir-reset');
             const trigger     = bar.getAttribute('data-trigger') || 'instant';
 
-            setupFilterLogic(tradeSelect, locInput, submitBtn, grid, trigger);
+            setupFilterLogic(tradeSelect, locInput, submitBtn, resetBtn, grid, trigger);
         });
     }
 
-    function setupFilterLogic(tradeSelect, locInput, submitBtn, grid, trigger) {
+    function setupFilterLogic(tradeSelect, locInput, submitBtn, resetBtn, grid, trigger) {
         const cards = grid.getElementsByClassName('yardlii-business-card');
 
+        // --- GOOGLE AUTOCOMPLETE ---
+        if (locInput && typeof google !== 'undefined' && google.maps && google.maps.places) {
+            const autocomplete = new google.maps.places.Autocomplete(locInput, {
+                types: ['(cities)'] // Restrict to cities for cleaner results
+            });
+            
+            // When user selects a city, trigger filter
+            autocomplete.addListener('place_changed', function() {
+                // If in instant mode, run immediately. If button mode, wait for click.
+                if (trigger !== 'button') {
+                    runFilter();
+                }
+            });
+        }
+
+        // --- FILTER FUNCTION ---
         function runFilter() {
             const tradeVal = tradeSelect ? tradeSelect.value.toLowerCase() : '';
             const locVal   = locInput ? locInput.value.toLowerCase().trim() : '';
 
+            // Toggle Reset Button Visibility
+            if (resetBtn) {
+                if (tradeVal !== '' || locVal !== '') {
+                    resetBtn.style.display = 'inline-block';
+                } else {
+                    resetBtn.style.display = 'none';
+                }
+            }
+
+            // Perform Filtering
             for (let i = 0; i < cards.length; i++) {
                 const card = cards[i];
                 const cardTrade = card.getAttribute('data-trade') || '';
@@ -74,16 +101,23 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        // --- RESET FUNCTION ---
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                if (tradeSelect) tradeSelect.selectedIndex = 0;
+                if (locInput) locInput.value = '';
+                runFilter(); // Re-run to show all
+            });
+        }
+
+        // --- EVENT LISTENERS ---
         if (trigger === 'button') {
-            // STRICT BUTTON MODE
-            // 1. Click Listener on Button
             if (submitBtn) {
                 submitBtn.addEventListener('click', function(e) {
-                    e.preventDefault(); // Prevent form sub if inside form
+                    e.preventDefault();
                     runFilter();
                 });
             }
-            // 2. Enter Key Listener on Text Input (Standard UX)
             if (locInput) {
                 locInput.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {
@@ -92,9 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
             }
-            // NOTE: We intentionally DO NOT listen to 'change' on select here.
         } else {
-            // INSTANT MODE
             if (tradeSelect) tradeSelect.addEventListener('change', runFilter);
             if (locInput)    locInput.addEventListener('keyup', runFilter);
         }
