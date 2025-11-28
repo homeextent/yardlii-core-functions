@@ -130,6 +130,13 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## [3.20.0] - 2025-11-28
+### Added
+- **Dynamic User Directory:** New module to display user grids with instant search.
+- **Role-Based Configuration:** New "User Directory" settings tab allows mapping specific ACF fields or Meta keys per user role.
+- **Shortcode:** Added `[yardlii_directory]` with `role` and `limit` attributes.
+- **Visuals:** Role-specific CSS classes added to directory grids for custom styling.
+
 ### 3.19.0 - 2025-11-26
 * **UI Overhaul:** Completely redesigned the Verification Requests admin screen to match native WordPress standards while retaining custom Yardlii functionality.
 * **Feature:** "Search Requests" toolbar. Replaces the default WordPress search with a dedicated engine that supports searching by **User Email**, **User Login**, **Display Name**, and **Request ID**.
