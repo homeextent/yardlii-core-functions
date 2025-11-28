@@ -285,6 +285,12 @@ final class SettingsPageTabs
             ['sanitize_callback' => static fn($v) => (bool)$v]
         );
     }
+/** Enable Business Directory */
+register_setting(
+    self::GROUP_FEATURE_FLAGS,
+    'yardlii_enable_business_directory',
+    ['sanitize_callback' => static fn($v) => (bool)$v]
+);
 
     /** Search & Location */
     private function register_search_settings(): void

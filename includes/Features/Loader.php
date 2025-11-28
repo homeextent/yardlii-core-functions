@@ -86,6 +86,16 @@ final class Loader
             (new FeaturedImage())->register();
         }
 
+// Feature: Business Directory
+$directory_enabled = (bool) get_option('yardlii_enable_business_directory', false);
+if (defined('YARDLII_ENABLE_BUSINESS_DIRECTORY')) {
+    $directory_enabled = (bool) YARDLII_ENABLE_BUSINESS_DIRECTORY;
+}
+
+if ($directory_enabled && class_exists(__NAMESPACE__ . '\\BusinessDirectory')) {
+    (new BusinessDirectory())->register();
+}
+
 	// Feature: Automated Media Cleanup
 $media_cleanup_enabled = (bool) get_option('yardlii_enable_media_cleanup', false);
 if (defined('YARDLII_ENABLE_MEDIA_CLEANUP')) {
