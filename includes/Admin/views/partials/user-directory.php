@@ -1,60 +1,119 @@
 <?php
 /**
- * Partial: General -> User Directory Configuration
+ * Partial: General -> User Directory Configuration (Role-Based Repeater)
  */
 defined('ABSPATH') || exit;
 
-// Fetch current values or defaults
-$map_image = get_option('yardlii_dir_map_image', 'yardlii_business_logo');
-$map_title = get_option('yardlii_dir_map_title', 'yardlii_company_name');
-$map_badge = get_option('yardlii_dir_map_badge', 'yardlii_primary_trade');
-$map_loc   = get_option('yardlii_dir_map_location', 'billing_city');
+// Fetch saved config
+$configs = get_option('yardlii_directory_role_config', []);
+if (!is_array($configs)) $configs = [];
+
+// Fetch all available roles for the dropdown
+$editable_roles = array_reverse(get_editable_roles()); // Reverse to put custom roles usually at top
 ?>
 
 <div class="yardlii-card">
-    <h2 style="margin-top:0;">📂 Directory Field Mapping</h2>
+    <h2 style="margin-top:0;">📂 Role-Based Directory Mapping</h2>
     <p class="description">
-        Map the visual elements of the "Business Card" to your specific <strong>ACF Field Names</strong> or <strong>User Meta Keys</strong>.
-        <br>Leave a field blank to disable that element on the card.
+        Configure how the "Business Card" looks for each specific user role.
+        <br>The shortcode <code>[yardlii_directory role="contractor"]</code> will look for the "contractor" row below.
     </p>
 
     <form method="post" action="options.php">
         <?php settings_fields('yardlii_directory_group'); ?>
         
-        <table class="form-table" role="presentation">
-            <tr>
-                <th scope="row"><label for="yardlii_dir_map_image">Card Image / Logo</label></th>
-                <td>
-                    <input name="yardlii_dir_map_image" type="text" id="yardlii_dir_map_image" value="<?php echo esc_attr($map_image); ?>" class="regular-text code">
-                    <p class="description">Enter the ACF Image Field Name. (Fallback: User Avatar)</p>
-                </td>
-            </tr>
-
-            <tr>
-                <th scope="row"><label for="yardlii_dir_map_title">Card Title</label></th>
-                <td>
-                    <input name="yardlii_dir_map_title" type="text" id="yardlii_dir_map_title" value="<?php echo esc_attr($map_title); ?>" class="regular-text code">
-                    <p class="description">Enter ACF Field Name (e.g., <code>company_name</code>). (Fallback: User Display Name)</p>
-                </td>
-            </tr>
-
-            <tr>
-                <th scope="row"><label for="yardlii_dir_map_badge">Badge / Subtitle</label></th>
-                <td>
-                    <input name="yardlii_dir_map_badge" type="text" id="yardlii_dir_map_badge" value="<?php echo esc_attr($map_badge); ?>" class="regular-text code">
-                    <p class="description">e.g., <code>primary_trade</code> or <code>job_title</code>.</p>
-                </td>
-            </tr>
-
-            <tr>
-                <th scope="row"><label for="yardlii_dir_map_location">Location</label></th>
-                <td>
-                    <input name="yardlii_dir_map_location" type="text" id="yardlii_dir_map_location" value="<?php echo esc_attr($map_loc); ?>" class="regular-text code">
-                    <p class="description">e.g., <code>billing_city</code> or an ACF text field.</p>
-                </td>
-            </tr>
+        <table class="widefat striped" id="yardlii-dir-repeater" style="margin-top:15px; border:1px solid #ddd;">
+            <thead>
+                <tr>
+                    <th style="width: 20%;">User Role</th>
+                    <th style="width: 20%;">Image Source <span class="dashicons dashicons-info" title="ACF Field Name. Leave empty for Avatar."></span></th>
+                    <th style="width: 20%;">Title Source <span class="dashicons dashicons-info" title="ACF Field Name. Leave empty for Display Name."></span></th>
+                    <th style="width: 20%;">Badge Source <span class="dashicons dashicons-info" title="ACF Field Name. Leave empty for Role Name."></span></th>
+                    <th style="width: 15%;">Location Source <span class="dashicons dashicons-info" title="ACF or Meta Key (e.g. billing_city)."></span></th>
+                    <th style="width: 5%;"></th>
+                </tr>
+            </thead>
+            <tbody id="yardlii-dir-rows">
+                <?php 
+                // Ensure at least one empty row if none exist
+                if (empty($configs)) {
+                    $configs = [['role' => '', 'image' => '', 'title' => '', 'badge' => '', 'location' => '']];
+                }
+                
+                foreach ($configs as $index => $row): 
+                ?>
+                <tr class="yardlii-dir-row">
+                    <td>
+                        <select name="yardlii_directory_role_config[<?php echo $index; ?>][role]" style="width:100%">
+                            <option value="">-- Select Role --</option>
+                            <?php foreach ($editable_roles as $slug => $details): ?>
+                                <option value="<?php echo esc_attr($slug); ?>" <?php selected($row['role'] ?? '', $slug); ?>>
+                                    <?php echo esc_html($details['name']); ?> (<?php echo esc_html($slug); ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" name="yardlii_directory_role_config[<?php echo $index; ?>][image]" value="<?php echo esc_attr($row['image'] ?? ''); ?>" placeholder="e.g. business_logo" style="width:100%">
+                    </td>
+                    <td>
+                        <input type="text" name="yardlii_directory_role_config[<?php echo $index; ?>][title]" value="<?php echo esc_attr($row['title'] ?? ''); ?>" placeholder="e.g. company_name" style="width:100%">
+                    </td>
+                    <td>
+                        <input type="text" name="yardlii_directory_role_config[<?php echo $index; ?>][badge]" value="<?php echo esc_attr($row['badge'] ?? ''); ?>" placeholder="e.g. primary_trade" style="width:100%">
+                    </td>
+                    <td>
+                        <input type="text" name="yardlii_directory_role_config[<?php echo $index; ?>][location]" value="<?php echo esc_attr($row['location'] ?? ''); ?>" placeholder="e.g. billing_city" style="width:100%">
+                    </td>
+                    <td>
+                        <button type="button" class="button yardlii-remove-row" aria-label="Remove Row">&times;</button>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
         </table>
 
-        <?php submit_button('Save Directory Mapping'); ?>
+        <div style="margin-top: 10px; display:flex; gap:10px;">
+            <button type="button" id="yardlii-add-row" class="button button-secondary">Add Configuration</button>
+            <?php submit_button('Save Mappings', 'primary', 'submit', false); ?>
+        </div>
     </form>
 </div>
+
+<script>
+(function($) {
+    // Simple Repeater Logic
+    const container = document.getElementById('yardlii-dir-rows');
+    const addBtn    = document.getElementById('yardlii-add-row');
+
+    addBtn.addEventListener('click', function() {
+        const rows = container.querySelectorAll('tr');
+        const clone = rows[0].cloneNode(true);
+        const newIndex = rows.length;
+
+        // Reset values and update names
+        const inputs = clone.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            input.value = '';
+            // Update index in name="yardlii_directory_role_config[X][field]"
+            if (input.name) {
+                input.name = input.name.replace(/\[\d+\]/, '[' + newIndex + ']');
+            }
+        });
+
+        container.appendChild(clone);
+    });
+
+    // Delegation for Remove
+    container.addEventListener('click', function(e) {
+        if (e.target.classList.contains('yardlii-remove-row')) {
+            if (container.querySelectorAll('tr').length > 1) {
+                e.target.closest('tr').remove();
+            } else {
+                // Clear inputs if it's the last row
+                e.target.closest('tr').querySelectorAll('input, select').forEach(i => i.value = '');
+            }
+        }
+    });
+})(jQuery);
+</script>

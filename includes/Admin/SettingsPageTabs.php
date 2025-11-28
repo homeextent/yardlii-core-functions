@@ -244,12 +244,26 @@ final class SettingsPageTabs
             ['sanitize_callback' => static fn($v) => (bool)$v]
         );
 
-	// === User Directory Mapping ===
-$N = self::success_notifier(self::GROUP_DIRECTORY);
-register_setting(self::GROUP_DIRECTORY, 'yardlii_dir_map_image',    ['sanitize_callback' => $N]);
-register_setting(self::GROUP_DIRECTORY, 'yardlii_dir_map_title',    ['sanitize_callback' => $N]);
-register_setting(self::GROUP_DIRECTORY, 'yardlii_dir_map_badge',    ['sanitize_callback' => $N]);
-register_setting(self::GROUP_DIRECTORY, 'yardlii_dir_map_location', ['sanitize_callback' => $N]);
+	// === User Directory (Role-Based Config) ===
+    register_setting(
+        self::GROUP_DIRECTORY, 
+        'yardlii_directory_role_config', 
+        [
+            'sanitize_callback' => static function ($input) {
+                if (!is_array($input)) return [];
+                // Sanitize the repeater array
+                return array_map(function($row) {
+                    return [
+                        'role'     => sanitize_text_field($row['role'] ?? ''),
+                        'image'    => sanitize_text_field($row['image'] ?? ''),
+                        'title'    => sanitize_text_field($row['title'] ?? ''),
+                        'badge'    => sanitize_text_field($row['badge'] ?? ''),
+                        'location' => sanitize_text_field($row['location'] ?? ''),
+                    ];
+                }, $input);
+            }
+        ]
+    )
 
         // Role Control (main group)
         $this->register_role_control_settings();
