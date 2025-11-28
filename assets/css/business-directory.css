@@ -20,25 +20,26 @@
 .yardlii-business-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 10px 20px rgba(0,0,0,0.08);
-    border-color: var(--yardlii-blue, #0073aa); /* Use Core Var */
+    border-color: var(--yardlii-blue, #0073aa);
 }
 
-/* Header (Logo Area) */
+/* --- Header (Logo Area) --- */
 .ybc-header {
     background: #F9F9F9;
-    padding: 20px;
+    padding: 15px;
     display: flex;
     justify-content: center;
     align-items: center;
     border-bottom: 1px solid #eee;
-    height: 120px;
+    height: 140px; /* Slight increase for better spacing */
 }
 
+/* Fix: Ensure image is never cut off */
 .ybc-logo {
-    max-height: 80px;
+    max-height: 100px;
     width: auto;
     max-width: 100%;
-    object-fit: contain;
+    object-fit: contain; /* Shows full logo without cropping */
 }
 
 .ybc-logo-placeholder {
@@ -46,7 +47,7 @@
     color: #ccc;
 }
 
-/* Body Content */
+/* --- Body Content --- */
 .ybc-body {
     padding: 20px;
     flex-grow: 1;
@@ -81,21 +82,21 @@
     letter-spacing: 0.5px;
 }
 
-/* Footer Button */
+/* --- Footer Button (Polished) --- */
 .ybc-footer {
-    padding: 15px 20px;
-    border-top: 1px solid #eee;
+    padding: 10px 0 20px 0; /* Add bottom padding */
+    border-top: none; /* Removed border for cleaner look */
     background: #fff;
+    text-align: center;
 }
 
 .ybc-btn {
-    display: block;
-    width: 100%;
-    text-align: center;
+    display: inline-block;
+    width: 90%; /* Design Polish: 90% Width */
     padding: 10px 0;
     background: var(--yardlii-blue, #0073aa);
     color: #fff;
-    border-radius: 4px;
+    border-radius: 4px; /* Design Polish: Softer corners */
     font-weight: 600;
     font-size: 14px;
     text-decoration: none;
@@ -107,9 +108,9 @@
     color: #fff;
 }
 
-/* --- Instant Search Bar --- */
+/* --- Instant Search Bar (Fixed Selectors) --- */
 .yardlii-dir-search-container {
-    margin-bottom: 30px;
+    margin-bottom: 10px; /* Reduced margin to sit closer to helper text */
     max-width: 600px;
     position: relative;
 }
@@ -120,22 +121,34 @@
     top: 50%;
     transform: translateY(-50%);
     color: var(--yardlii-blue, #0073aa);
-    pointer-events: none; /* Let clicks pass through to input */
+    pointer-events: none;
+    z-index: 2; /* Ensure icon stays on top */
 }
 
-#yardlii-dir-search {
+/* FIX: Targeted the CLASS, not the ID, to apply padding */
+.yardlii-dir-search-input {
     width: 100%;
-    padding: 12px 12px 12px 45px; /* Left padding makes room for icon */
+    padding: 12px 12px 12px 45px; /* Room for icon */
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 16px;
     transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box; /* Prevents padding from breaking width */
 }
 
-#yardlii-dir-search:focus {
+.yardlii-dir-search-input:focus {
     border-color: var(--yardlii-blue, #0073aa);
     box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1);
     outline: none;
+}
+
+/* Helper Text */
+.yardlii-dir-helper {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 30px;
+    margin-left: 5px;
+    font-style: italic;
 }
 
 /* No Results Handling */
