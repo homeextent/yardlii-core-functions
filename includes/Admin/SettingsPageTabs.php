@@ -17,7 +17,7 @@ final class SettingsPageTabs
     /** Group keys (rendered via settings_errors where applicable) */
     private const GROUP_DEBUG          = 'yardlii_debug_group';
     private const GROUP_FEATURE_FLAGS  = 'yardlii_feature_flags_group';
-
+    private const GROUP_DIRECTORY = 'yardlii_directory_group'; // New
     private const GROUP_SEARCH         = 'yardlii_search_group';
     private const GROUP_GOOGLE_MAP     = 'yardlii_google_map_group';
     private const GROUP_FEATURED_IMAGE = 'yardlii_featured_image_group';
@@ -243,6 +243,13 @@ final class SettingsPageTabs
             'yardlii_enable_wpuf_geocoding',
             ['sanitize_callback' => static fn($v) => (bool)$v]
         );
+
+	// === User Directory Mapping ===
+$N = self::success_notifier(self::GROUP_DIRECTORY);
+register_setting(self::GROUP_DIRECTORY, 'yardlii_dir_map_image',    ['sanitize_callback' => $N]);
+register_setting(self::GROUP_DIRECTORY, 'yardlii_dir_map_title',    ['sanitize_callback' => $N]);
+register_setting(self::GROUP_DIRECTORY, 'yardlii_dir_map_badge',    ['sanitize_callback' => $N]);
+register_setting(self::GROUP_DIRECTORY, 'yardlii_dir_map_location', ['sanitize_callback' => $N]);
 
         // Role Control (main group)
         $this->register_role_control_settings();
@@ -510,6 +517,8 @@ body.settings_page_yardlii-core-settings .update-nag {
                 <button type="button" class="yardlii-tab"        data-gsection="fimg" aria-selected="false">🖼️ Featured Image Automation</button>
                 <button type="button" class="yardlii-tab"        data-gsection="home" aria-selected="false">🔍 Homepage Search</button>
                 <button type="button" class="yardlii-tab"        data-gsection="wpuf" aria-selected="false">🔧 WPUF Customisations</button>
+
+<button type="button" class="yardlii-tab" data-gsection="dir" aria-selected="false">📂 User Directory</button>
             </nav>
 
             <details class="yardlii-section" id="gsec-gmap" data-gsection="gmap" open>
@@ -550,6 +559,13 @@ body.settings_page_yardlii-core-settings .update-nag {
                     <?php include __DIR__ . '/views/partials/wpuf-customizations.php'; ?>
                 </div>
             </details>
+
+<details class="yardlii-section" id="gsec-dir" data-gsection="dir">
+    <summary>📂 User Directory</summary>
+    <div class="yardlii-section-content">
+        <?php include __DIR__ . '/views/partials/user-directory.php'; ?>
+    </div>
+</details>
         </section>
 
         <section id="yardlii-tab-role-control"
