@@ -1,28 +1,47 @@
 <?php
 /**
- * Partial: General -> User Directory Configuration (Role-Based Repeater)
+ * Partial: General -> User Directory Configuration
  */
 defined('ABSPATH') || exit;
 
-// Fetch saved config
+// Fetch options
 $configs = get_option('yardlii_directory_role_config', []);
 if (!is_array($configs)) $configs = [];
 
-// Fetch all available roles for the dropdown
-$editable_roles = array_reverse(get_editable_roles()); // Reverse to put custom roles usually at top
+$trade_field = get_option('yardlii_dir_trade_field', 'primary_trade'); // Default to likely name
+
+$editable_roles = array_reverse(get_editable_roles());
 ?>
 
 <div class="yardlii-card">
-    <h2 style="margin-top:0;">📂 Role-Based Directory Mapping</h2>
+    <h2 style="margin-top:0;">📂 Directory Configuration</h2>
+    
+    <div style="background:#f9f9f9; padding:15px; border:1px solid #ddd; border-radius:4px; margin-bottom:20px;">
+        <h3 style="margin-top:0;">Global Search Filters</h3>
+        <form method="post" action="options.php">
+            <?php settings_fields('yardlii_directory_group'); ?>
+            
+            <table class="form-table" role="presentation" style="margin-top:0;">
+                <tr>
+                    <th scope="row"><label for="yardlii_dir_trade_field">Trade Dropdown Source</label></th>
+                    <td>
+                        <input name="yardlii_dir_trade_field" type="text" id="yardlii_dir_trade_field" value="<?php echo esc_attr($trade_field); ?>" class="regular-text">
+                        <p class="description">
+                            Enter the <strong>ACF Field Name</strong> (e.g., <code>primary_trade</code>) used for the Trade selection.<br>
+                            The directory will automatically pull the choices (e.g., "Plumber", "Electrician") from this field definition.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+            
+            </div>
+
+    <h3 style="margin-top:0;">Role-Based Card Mapping</h3>
     <p class="description">
         Configure how the "Business Card" looks for each specific user role.
-        <br>The shortcode <code>[yardlii_directory role="contractor"]</code> will look for the "contractor" row below.
     </p>
 
-    <form method="post" action="options.php">
-        <?php settings_fields('yardlii_directory_group'); ?>
-        
-        <table class="widefat striped" id="yardlii-dir-repeater" style="margin-top:15px; border:1px solid #ddd;">
+    <table class="widefat striped" id="yardlii-dir-repeater" style="margin-top:15px; border:1px solid #ddd;">
             <thead>
                 <tr>
                     <th style="width: 20%;">User Role</th>
@@ -35,11 +54,9 @@ $editable_roles = array_reverse(get_editable_roles()); // Reverse to put custom 
             </thead>
             <tbody id="yardlii-dir-rows">
                 <?php 
-                // Ensure at least one empty row if none exist
                 if (empty($configs)) {
                     $configs = [['role' => '', 'image' => '', 'title' => '', 'badge' => '', 'location' => '']];
                 }
-                
                 foreach ($configs as $index => $row): 
                 ?>
                 <tr class="yardlii-dir-row">
@@ -53,21 +70,11 @@ $editable_roles = array_reverse(get_editable_roles()); // Reverse to put custom 
                             <?php endforeach; ?>
                         </select>
                     </td>
-                    <td>
-                        <input type="text" name="yardlii_directory_role_config[<?php echo $index; ?>][image]" value="<?php echo esc_attr($row['image'] ?? ''); ?>" placeholder="e.g. business_logo" style="width:100%">
-                    </td>
-                    <td>
-                        <input type="text" name="yardlii_directory_role_config[<?php echo $index; ?>][title]" value="<?php echo esc_attr($row['title'] ?? ''); ?>" placeholder="e.g. company_name" style="width:100%">
-                    </td>
-                    <td>
-                        <input type="text" name="yardlii_directory_role_config[<?php echo $index; ?>][badge]" value="<?php echo esc_attr($row['badge'] ?? ''); ?>" placeholder="e.g. primary_trade" style="width:100%">
-                    </td>
-                    <td>
-                        <input type="text" name="yardlii_directory_role_config[<?php echo $index; ?>][location]" value="<?php echo esc_attr($row['location'] ?? ''); ?>" placeholder="e.g. billing_city" style="width:100%">
-                    </td>
-                    <td>
-                        <button type="button" class="button yardlii-remove-row" aria-label="Remove Row">&times;</button>
-                    </td>
+                    <td><input type="text" name="yardlii_directory_role_config[<?php echo $index; ?>][image]" value="<?php echo esc_attr($row['image'] ?? ''); ?>" style="width:100%"></td>
+                    <td><input type="text" name="yardlii_directory_role_config[<?php echo $index; ?>][title]" value="<?php echo esc_attr($row['title'] ?? ''); ?>" style="width:100%"></td>
+                    <td><input type="text" name="yardlii_directory_role_config[<?php echo $index; ?>][badge]" value="<?php echo esc_attr($row['badge'] ?? ''); ?>" style="width:100%"></td>
+                    <td><input type="text" name="yardlii_directory_role_config[<?php echo $index; ?>][location]" value="<?php echo esc_attr($row['location'] ?? ''); ?>" style="width:100%"></td>
+                    <td><button type="button" class="button yardlii-remove-row">&times;</button></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -75,14 +82,13 @@ $editable_roles = array_reverse(get_editable_roles()); // Reverse to put custom 
 
         <div style="margin-top: 10px; display:flex; gap:10px;">
             <button type="button" id="yardlii-add-row" class="button button-secondary">Add Configuration</button>
-            <?php submit_button('Save Mappings', 'primary', 'submit', false); ?>
+            <?php submit_button('Save Directory Settings'); ?>
         </div>
     </form>
 </div>
 
 <script>
 (function($) {
-    // Simple Repeater Logic
     const container = document.getElementById('yardlii-dir-rows');
     const addBtn    = document.getElementById('yardlii-add-row');
 
@@ -90,29 +96,18 @@ $editable_roles = array_reverse(get_editable_roles()); // Reverse to put custom 
         const rows = container.querySelectorAll('tr');
         const clone = rows[0].cloneNode(true);
         const newIndex = rows.length;
-
-        // Reset values and update names
         const inputs = clone.querySelectorAll('input, select');
         inputs.forEach(input => {
             input.value = '';
-            // Update index in name="yardlii_directory_role_config[X][field]"
-            if (input.name) {
-                input.name = input.name.replace(/\[\d+\]/, '[' + newIndex + ']');
-            }
+            if (input.name) input.name = input.name.replace(/\[\d+\]/, '[' + newIndex + ']');
         });
-
         container.appendChild(clone);
     });
 
-    // Delegation for Remove
     container.addEventListener('click', function(e) {
         if (e.target.classList.contains('yardlii-remove-row')) {
-            if (container.querySelectorAll('tr').length > 1) {
-                e.target.closest('tr').remove();
-            } else {
-                // Clear inputs if it's the last row
-                e.target.closest('tr').querySelectorAll('input, select').forEach(i => i.value = '');
-            }
+            if (container.querySelectorAll('tr').length > 1) e.target.closest('tr').remove();
+            else e.target.closest('tr').querySelectorAll('input, select').forEach(i => i.value = '');
         }
     });
 })(jQuery);
