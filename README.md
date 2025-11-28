@@ -130,6 +130,12 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## [3.21.0] - 2025-11-28
+### Added
+- **Dual-Filter Search:** Directory now supports filtering by "Trade" (Dropdown) AND "Location" (Text) simultaneously.
+- **Dynamic Trade Source:** New Global Setting allows admins to define which ACF Field populates the Trade dropdown automatically.
+- **UI Polish:** Fixed search icon overlap issues and moved helper text into the input placeholder.
+
 ## [3.20.0] - 2025-11-28
 ### Added
 - **Dynamic User Directory:** New module to display user grids with instant search.
