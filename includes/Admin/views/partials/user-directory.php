@@ -1,6 +1,6 @@
 <?php
 /**
- * Partial: General -> User Directory Configuration (Smart Builder UI)
+ * Partial: General -> User Directory Configuration (Smart Builder UI - Fixed Persistence)
  */
 defined('ABSPATH') || exit;
 
@@ -29,7 +29,6 @@ $editable_roles = array_reverse(get_editable_roles());
                     <input name="yardlii_dir_trade_field" type="text" id="yardlii_dir_trade_field" value="<?php echo esc_attr($trade_field); ?>" class="regular-text code" style="width:100%">
                     <p class="description">ACF Field Name (e.g. <code>primary_trade</code>).</p>
                 </div>
-
                 <div>
                     <label for="yardlii_dir_default_trigger"><strong>Default Search Behavior:</strong></label>
                     <select name="yardlii_dir_default_trigger" id="yardlii_dir_default_trigger" style="width:100%">
@@ -38,7 +37,6 @@ $editable_roles = array_reverse(get_editable_roles());
                     </select>
                     <p class="description">Can be overridden per shortcode.</p>
                 </div>
-
                 <div>
                     <label for="yardlii_dir_default_width"><strong>Default Card Min-Width (px):</strong></label>
                     <input name="yardlii_dir_default_width" type="number" id="yardlii_dir_default_width" value="<?php echo esc_attr($def_width); ?>" class="regular-text" style="width:100%">
@@ -55,6 +53,10 @@ $editable_roles = array_reverse(get_editable_roles());
             $configs = [['role' => '', 'image' => '', 'title' => '', 'badge' => '', 'location' => '']];
         }
         foreach ($configs as $index => $row): 
+            // Load saved UI states
+            $ui_decoupled = !empty($row['ui_decoupled']);
+            $ui_button    = !empty($row['ui_button']);
+            $ui_width     = $row['ui_width'] ?? '';
         ?>
         <div class="yardlii-dir-repeater-container">
             <button type="button" class="yardlii-remove-row-btn" title="Remove Configuration">&times;</button>
@@ -93,18 +95,23 @@ $editable_roles = array_reverse(get_editable_roles());
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <strong><span class="dashicons dashicons-shortcode"></span> Shortcode Generator</strong>
                     <label style="font-size:12px;">
-                        <input type="checkbox" class="yardlii-toggle-decoupled"> Use Decoupled Mode (Split Search & Grid)
+                        <input type="checkbox" 
+                               name="yardlii_directory_role_config[<?php echo $index; ?>][ui_decoupled]" 
+                               value="1" 
+                               class="yardlii-toggle-decoupled"
+                               <?php checked($ui_decoupled); ?>> 
+                        Use Decoupled Mode (Split Search & Grid)
                     </label>
                 </div>
 
-                <div class="yardlii-builder-standard">
+                <div class="yardlii-builder-standard" style="<?php echo $ui_decoupled ? 'display:none' : ''; ?>">
                     <div style="display:flex; gap:10px;">
                         <input type="text" readonly class="yardlii-shortcode-preview sc-standard" value="..." style="width:100%;">
                         <button type="button" class="button button-small yardlii-copy-btn">Copy</button>
                     </div>
                 </div>
 
-                <div class="yardlii-builder-decoupled" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed #bce0ed;">
+                <div class="yardlii-builder-decoupled" style="<?php echo $ui_decoupled ? '' : 'display:none'; ?>; margin-top:10px; padding-top:10px; border-top:1px dashed #bce0ed;">
                     <p style="margin:0 0 5px 0; font-size:11px; color:#666;">Step 1: Place Search Bar (e.g. Hero)</p>
                     <div style="display:flex; gap:10px; margin-bottom:10px;">
                         <input type="text" readonly class="yardlii-shortcode-preview sc-search" value="..." style="width:100%;">
@@ -119,8 +126,23 @@ $editable_roles = array_reverse(get_editable_roles());
                 </div>
                 
                 <div style="margin-top:10px; font-size:11px; display:flex; gap:15px; color:#555;">
-                    <label><input type="checkbox" class="yardlii-opt-button"> Force Button Search</label>
-                    <label>Width: <input type="number" class="yardlii-opt-width" placeholder="280" style="width:50px; padding:0 5px; height:20px; font-size:11px;"></label>
+                    <label>
+                        <input type="checkbox" 
+                               name="yardlii_directory_role_config[<?php echo $index; ?>][ui_button]" 
+                               value="1" 
+                               class="yardlii-opt-button"
+                               <?php checked($ui_button); ?>> 
+                        Force Button Search
+                    </label>
+                    <label>
+                        Width: 
+                        <input type="number" 
+                               name="yardlii_directory_role_config[<?php echo $index; ?>][ui_width]" 
+                               value="<?php echo esc_attr($ui_width); ?>" 
+                               class="yardlii-opt-width" 
+                               placeholder="280" 
+                               style="width:50px; padding:0 5px; height:20px; font-size:11px;">
+                    </label>
                 </div>
             </div>
         </div>
@@ -145,12 +167,10 @@ $editable_roles = array_reverse(get_editable_roles());
             const roleSelect = row.querySelector('.yardlii-role-select');
             const roleSlug   = roleSelect.value || 'ROLE_SLUG';
             
-            // Options
             const useButton  = row.querySelector('.yardlii-opt-button').checked;
             const widthVal   = row.querySelector('.yardlii-opt-width').value;
             const useDecoupled = row.querySelector('.yardlii-toggle-decoupled').checked;
 
-            // Build Attributes
             let atts = `role="${roleSlug}"`;
             if(useButton) atts += ` trigger="button"`;
             if(widthVal)  atts += ` card_width="${widthVal}"`;
@@ -162,7 +182,7 @@ $editable_roles = array_reverse(get_editable_roles());
             // 2. Decoupled
             const scSearch = row.querySelector('.sc-search');
             const scGrid   = row.querySelector('.sc-grid');
-            const uniqueId = 'dir-' + roleSlug; // Simple ID generation based on role
+            const uniqueId = 'dir-' + roleSlug; 
 
             let searchAtts = `target="${uniqueId}"`;
             if(useButton) searchAtts += ` trigger="button"`;
@@ -187,9 +207,8 @@ $editable_roles = array_reverse(get_editable_roles());
     }
 
     if(addBtn && container) {
-        // Init Listeners
         container.addEventListener('change', updateBuilders);
-        container.addEventListener('input', updateBuilders); // For number input
+        container.addEventListener('input', updateBuilders);
 
         addBtn.addEventListener('click', function() {
             const rows = container.querySelectorAll('.yardlii-dir-repeater-container');
@@ -198,8 +217,6 @@ $editable_roles = array_reverse(get_editable_roles());
             
             clone.querySelectorAll('input[type="text"]').forEach(i => i.value = '');
             clone.querySelector('select').selectedIndex = 0;
-            
-            // Reset builder state
             clone.querySelector('.yardlii-toggle-decoupled').checked = false;
             clone.querySelector('.yardlii-opt-button').checked = false;
             clone.querySelector('.yardlii-opt-width').value = '';
@@ -212,7 +229,6 @@ $editable_roles = array_reverse(get_editable_roles());
             updateBuilders();
         });
 
-        // Copy / Remove
         container.addEventListener('click', function(e) {
             if (e.target.classList.contains('yardlii-remove-row-btn')) {
                 if (container.querySelectorAll('.yardlii-dir-repeater-container').length > 1) e.target.closest('.yardlii-dir-repeater-container').remove();

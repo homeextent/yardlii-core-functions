@@ -155,3 +155,34 @@
     text-align: center;
     border-radius: 4px;
 }
+
+/* --- Search Button Styling (New) --- */
+.yardlii-filter-action {
+    display: flex;
+    align-items: center;
+}
+
+.yardlii-dir-submit {
+    width: 100%;
+    height: 48px; /* Match input height */
+    padding: 0 25px;
+    background-color: var(--yardlii-blue, #0073aa);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    line-height: 1; /* Center text vertically */
+}
+
+.yardlii-dir-submit:hover {
+    background-color: #005a8c;
+    color: #ffffff;
+}
+
+/* Ensure decoupled wrapper handles flex properly */
+.yardlii-standalone-search {
+    width: 100%;
+}

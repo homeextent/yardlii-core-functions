@@ -1,9 +1,9 @@
 /**
- * YARDLII Directory - Dual Filter Logic (Auto-Discovery + Trigger Modes)
+ * YARDLII Directory - Fixed Button Logic (v3.23)
  */
 document.addEventListener('DOMContentLoaded', function() {
     
-    // 1. Handle Bundled Wrappers (Search and Grid together)
+    // 1. Bundled Wrappers
     const wrappers = document.querySelectorAll('.yardlii-directory-wrapper');
     if (wrappers.length > 0) {
         wrappers.forEach(function(wrapper) {
@@ -11,9 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const locInput    = wrapper.querySelector('.yardlii-filter-location');
             const submitBtn   = wrapper.querySelector('.yardlii-dir-submit');
             const grid        = wrapper.querySelector('.yardlii-directory-grid');
-            
-            // Get Trigger Mode (default instant)
-            const trigger = wrapper.getAttribute('data-trigger') || 'instant';
+            const trigger     = wrapper.getAttribute('data-trigger') || 'instant';
             
             if (grid && (tradeSelect || locInput)) {
                 setupFilterLogic(tradeSelect, locInput, submitBtn, grid, trigger);
@@ -21,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 2. Handle Standalone Search Bars (Decoupled)
+    // 2. Decoupled Search Bars
     const remoteBars = document.querySelectorAll('.yardlii-standalone-search');
     if (remoteBars.length > 0) {
         remoteBars.forEach(function(bar) {
@@ -29,14 +27,10 @@ document.addEventListener('DOMContentLoaded', function() {
             let grid = null;
 
             if (targetId) {
-                // Explicit Targeting
                 grid = document.getElementById(targetId);
             } else {
-                // AUTO-DISCOVERY: Find the first grid on the page
+                // Auto-discovery
                 grid = document.querySelector('.yardlii-directory-grid');
-                if (grid) {
-                    console.log('[YARDLII] Auto-discovered directory grid for search bar.');
-                }
             }
 
             if (!grid) return;
@@ -50,9 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    /**
-     * Shared Filter Logic
-     */
     function setupFilterLogic(tradeSelect, locInput, submitBtn, grid, trigger) {
         const cards = grid.getElementsByClassName('yardlii-business-card');
 
@@ -83,16 +74,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        if (trigger === 'button' && submitBtn) {
-            // Button Mode: Only fire on click or Enter key
-            submitBtn.addEventListener('click', runFilter);
-            if (locInput) {
-                locInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') runFilter();
+        if (trigger === 'button') {
+            // STRICT BUTTON MODE
+            // 1. Click Listener on Button
+            if (submitBtn) {
+                submitBtn.addEventListener('click', function(e) {
+                    e.preventDefault(); // Prevent form sub if inside form
+                    runFilter();
                 });
             }
+            // 2. Enter Key Listener on Text Input (Standard UX)
+            if (locInput) {
+                locInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        runFilter();
+                    }
+                });
+            }
+            // NOTE: We intentionally DO NOT listen to 'change' on select here.
         } else {
-            // Instant Mode: Fire on change/keyup
+            // INSTANT MODE
             if (tradeSelect) tradeSelect.addEventListener('change', runFilter);
             if (locInput)    locInput.addEventListener('keyup', runFilter);
         }
