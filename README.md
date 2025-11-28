@@ -130,6 +130,14 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## [3.22.0] - 2025-11-28
+### Added
+- **User Directory System (Final):** Complete overhaul of the directory module.
+- **Google Places Autocomplete:** Location input now suggests valid cities to prevent typos (Requires Google Maps Key).
+- **Search Reset:** Added a "Clear" button that appears when filters are active to reset the grid.
+- **Decoupled Architecture:** Search bar and Grid can now be placed in different page sections (e.g., Hero vs Body).
+- **Admin UI Builder:** New "User Directory" settings tab with a smart shortcode generator and role-based field mapping.
+
 ## [3.21.0] - 2025-11-28
 ### Added
 - **Dual-Filter Search:** Directory now supports filtering by "Trade" (Dropdown) AND "Location" (Text) simultaneously.
