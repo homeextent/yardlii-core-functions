@@ -206,7 +206,7 @@ final class SettingsPageTabs
             'default'           => false,
         ]);
 
-	// WPUF: Dynamic Form Switching IDs
+        // WPUF: Dynamic Form Switching IDs
         register_setting(self::GROUP_GENERAL, 'yardlii_posting_logic_pro_form', [
             'sanitize_callback' => 'absint',
             'default'           => 0,
@@ -278,10 +278,16 @@ final class SettingsPageTabs
         register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_trust_verification', ['sanitize_callback' => self::success_notifier(self::GROUP_FEATURE_FLAGS, static fn($v)=>(bool)$v)]);
         register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_role_control',       ['sanitize_callback' => self::success_notifier(self::GROUP_FEATURE_FLAGS, static fn($v)=>(bool)$v)]);
 
-        // === FIX: Moved INSIDE the function ===
         register_setting(
             self::GROUP_FEATURE_FLAGS,
             'yardlii_enable_media_cleanup',
+            ['sanitize_callback' => static fn($v) => (bool)$v]
+        );
+
+        // === Feature: Business Directory ===
+        register_setting(
+            self::GROUP_FEATURE_FLAGS,
+            'yardlii_enable_business_directory',
             ['sanitize_callback' => static fn($v) => (bool)$v]
         );
     }
