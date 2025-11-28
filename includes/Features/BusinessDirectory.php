@@ -93,11 +93,8 @@ class BusinessDirectory {
             <i class="fas fa-search yardlii-dir-search-icon" aria-hidden="true"></i>
             <input type="text" 
                    class="yardlii-dir-search-input" 
-                   placeholder="Search..." 
+                   placeholder="Search by Company Name, Trade, or City..." 
                    aria-label="Search">
-        </div>
-        <div class="yardlii-dir-helper">
-            Search by Company Name, Trade, or City.
         </div>
 
         <div class="yardlii-directory-grid role-<?php echo esc_attr($role_slug); ?>">
@@ -108,7 +105,7 @@ class BusinessDirectory {
 
             // Image
             $logo_id = $this->fetch_dynamic_value($user, $config['image'] ?? '');
-            $avatar  = get_avatar_url($user_id, ['size' => 300]); // Increased size for crispness
+            $avatar  = get_avatar_url($user_id, ['size' => 300]); 
 
             // Text Data
             $company = (string) $this->fetch_dynamic_value($user, $config['title'] ?? '');
