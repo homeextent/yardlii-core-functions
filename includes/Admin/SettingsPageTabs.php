@@ -203,10 +203,10 @@ final class SettingsPageTabs
         ['sanitize_callback' => 'sanitize_text_field']
     );
 
-    // === User Directory (Role-Based Repeater) ===
-    register_setting(
-        self::GROUP_DIRECTORY, 
-        'yardlii_directory_role_config', 
+    // === User Directory (Role-Based Config) ===
+        register_setting(
+            self::GROUP_DIRECTORY, 
+            'yardlii_directory_role_config', 
             [
                 'sanitize_callback' => static function ($input) {
                     if (!is_array($input)) return [];
@@ -217,6 +217,10 @@ final class SettingsPageTabs
                             'title'    => sanitize_text_field($row['title'] ?? ''),
                             'badge'    => sanitize_text_field($row['badge'] ?? ''),
                             'location' => sanitize_text_field($row['location'] ?? ''),
+                            // NEW: Persist UI Preferences
+                            'ui_decoupled' => isset($row['ui_decoupled']) ? '1' : '0',
+                            'ui_button'    => isset($row['ui_button']) ? '1' : '0',
+                            'ui_width'     => sanitize_text_field($row['ui_width'] ?? ''),
                         ];
                     }, $input);
                 }
