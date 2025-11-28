@@ -54,10 +54,8 @@ class BusinessDirectory {
         wp_enqueue_style('yardlii-business-directory');
         wp_enqueue_script('yardlii-business-directory-js');
 
-        // Load Role Configs safely
         $loadedConfigs = get_option('yardlii_directory_role_config', []);
         if (is_array($loadedConfigs)) {
-            // PHPStan-friendly assignment: We trust sanitization ensures this structure
             /** @var array<int, array<string, string>> $loadedConfigs */
             $this->roleConfigs = $loadedConfigs;
         }
@@ -70,7 +68,6 @@ class BusinessDirectory {
         $role_slug = sanitize_key($a['role']);
         $limit     = (int) $a['limit'];
 
-        // Find Config for this Role
         $config = $this->findConfigForRole($role_slug);
 
         $args = [
@@ -94,7 +91,13 @@ class BusinessDirectory {
         ?>
         <div class="yardlii-dir-search-container">
             <i class="fas fa-search yardlii-dir-search-icon" aria-hidden="true"></i>
-            <input type="text" class="yardlii-dir-search-input" placeholder="Search..." aria-label="Search">
+            <input type="text" 
+                   class="yardlii-dir-search-input" 
+                   placeholder="Search..." 
+                   aria-label="Search">
+        </div>
+        <div class="yardlii-dir-helper">
+            Search by Company Name, Trade, or City.
         </div>
 
         <div class="yardlii-directory-grid role-<?php echo esc_attr($role_slug); ?>">
@@ -103,21 +106,17 @@ class BusinessDirectory {
         foreach ($users as $user) {
             $user_id = $user->ID;
 
-            // --- 1. Fetch Dynamic Values based on Config ---
-            
             // Image
             $logo_id = $this->fetch_dynamic_value($user, $config['image'] ?? '');
-            $avatar  = get_avatar_url($user_id, ['size' => 150]);
+            $avatar  = get_avatar_url($user_id, ['size' => 300]); // Increased size for crispness
 
-            // Title
+            // Text Data
             $company = (string) $this->fetch_dynamic_value($user, $config['title'] ?? '');
             $d_company = !empty($company) ? $company : $user->display_name;
 
-            // Badge
             $trade = (string) $this->fetch_dynamic_value($user, $config['badge'] ?? '');
             $d_trade = !empty($trade) ? $trade : ucwords(str_replace('_', ' ', $role_slug));
 
-            // Location
             $d_city = (string) $this->fetch_dynamic_value($user, $config['location'] ?? '');
             
             $link = get_author_posts_url($user_id);
@@ -126,9 +125,9 @@ class BusinessDirectory {
             <div class="yardlii-business-card" data-search="<?php echo esc_attr($search_terms); ?>">
                 <div class="ybc-header">
                     <?php if (is_numeric($logo_id) && $logo_id > 0): ?>
-                        <?php echo wp_get_attachment_image((int)$logo_id, 'thumbnail', false, ['class' => 'ybc-logo']); ?>
+                        <?php echo wp_get_attachment_image((int)$logo_id, 'medium', false, ['class' => 'ybc-logo']); ?>
                     <?php elseif (!empty($logo_id) && is_string($logo_id) && filter_var($logo_id, FILTER_VALIDATE_URL)): ?>
-                         <img src="<?php echo esc_url($logo_id); ?>" class="ybc-logo" alt="" />
+                        <img src="<?php echo esc_url($logo_id); ?>" class="ybc-logo" alt="" />
                     <?php elseif ($avatar): ?>
                         <img src="<?php echo esc_url($avatar); ?>" class="ybc-logo" alt="" />
                     <?php else: ?>
@@ -172,7 +171,7 @@ class BusinessDirectory {
                 return $cfg;
             }
         }
-        return []; // Empty config triggers fallbacks
+        return [];
     }
 
     /**
@@ -181,17 +180,14 @@ class BusinessDirectory {
     private function fetch_dynamic_value(WP_User $user, string $key) {
         if (empty($key)) return '';
 
-        // 1. Try ACF
         if (function_exists('get_field')) {
             $val = get_field($key, 'user_' . $user->ID);
             if (!empty($val)) return $val;
         }
 
-        // 2. Try User Meta
         $meta = get_user_meta($user->ID, $key, true);
         if (!empty($meta)) return $meta;
 
-        // 3. Try Object Property
         if (isset($user->$key)) {
             return $user->$key;
         }
