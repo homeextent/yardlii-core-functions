@@ -167,7 +167,10 @@ class BusinessDirectory {
         return []; // Empty config triggers fallbacks
     }
 
-    private function fetch_dynamic_value(WP_User $user, string $key): mixed {
+    /**
+     * @return mixed
+     */
+    private function fetch_dynamic_value(WP_User $user, string $key) {
         if (empty($key)) return '';
 
         // 1. Try ACF
