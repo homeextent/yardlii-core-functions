@@ -16,11 +16,8 @@ class BusinessDirectory {
     private string $coreUrl;
     private string $coreVersion;
 
-    // Config keys
-    private string $keyImage;
-    private string $keyTitle;
-    private string $keyBadge;
-    private string $keyLocation;
+    /** @var array<int, array<string, string>> */
+    private array $roleConfigs = [];
 
     public function __construct(string $coreUrl, string $coreVersion)
     {
@@ -57,11 +54,13 @@ class BusinessDirectory {
         wp_enqueue_style('yardlii-business-directory');
         wp_enqueue_script('yardlii-business-directory-js');
 
-        // Load Mapping Config (Defaults to previous hardcoded values)
-        $this->keyImage    = get_option('yardlii_dir_map_image', 'yardlii_business_logo');
-        $this->keyTitle    = get_option('yardlii_dir_map_title', 'yardlii_company_name');
-        $this->keyBadge    = get_option('yardlii_dir_map_badge', 'yardlii_primary_trade');
-        $this->keyLocation = get_option('yardlii_dir_map_location', 'billing_city');
+        // Load Role Configs safely
+        $loadedConfigs = get_option('yardlii_directory_role_config', []);
+        if (is_array($loadedConfigs)) {
+            // PHPStan-friendly assignment: We trust sanitization ensures this structure
+            /** @var array<int, array<string, string>> $loadedConfigs */
+            $this->roleConfigs = $loadedConfigs;
+        }
 
         $a = shortcode_atts([
             'role'  => 'verified_business', 
@@ -70,6 +69,9 @@ class BusinessDirectory {
 
         $role_slug = sanitize_key($a['role']);
         $limit     = (int) $a['limit'];
+
+        // Find Config for this Role
+        $config = $this->findConfigForRole($role_slug);
 
         $args = [
             'role'    => $role_slug,
@@ -84,7 +86,7 @@ class BusinessDirectory {
         $users = $user_query->get_results();
 
         if (empty($users)) {
-            return '<div class="yardlii-no-results">No profiles found.</div>';
+            return '<div class="yardlii-no-results">No profiles found for this category.</div>';
         }
 
         ob_start();
@@ -101,22 +103,22 @@ class BusinessDirectory {
         foreach ($users as $user) {
             $user_id = $user->ID;
 
-            // --- 1. Fetch Dynamic Values ---
+            // --- 1. Fetch Dynamic Values based on Config ---
             
-            // Image Logic: Try Mapped Key -> Fallback to Avatar
-            $logo_id = $this->fetch_dynamic_value($user, $this->keyImage);
+            // Image
+            $logo_id = $this->fetch_dynamic_value($user, $config['image'] ?? '');
             $avatar  = get_avatar_url($user_id, ['size' => 150]);
 
-            // Title Logic: Try Mapped Key -> Fallback to Display Name
-            $company = (string) $this->fetch_dynamic_value($user, $this->keyTitle);
+            // Title
+            $company = (string) $this->fetch_dynamic_value($user, $config['title'] ?? '');
             $d_company = !empty($company) ? $company : $user->display_name;
 
-            // Badge Logic: Try Mapped Key -> Fallback to Role Name
-            $trade = (string) $this->fetch_dynamic_value($user, $this->keyBadge);
+            // Badge
+            $trade = (string) $this->fetch_dynamic_value($user, $config['badge'] ?? '');
             $d_trade = !empty($trade) ? $trade : ucwords(str_replace('_', ' ', $role_slug));
 
-            // Location Logic: Try Mapped Key -> Empty fallback
-            $d_city = (string) $this->fetch_dynamic_value($user, $this->keyLocation);
+            // Location
+            $d_city = (string) $this->fetch_dynamic_value($user, $config['location'] ?? '');
             
             $link = get_author_posts_url($user_id);
             $search_terms = strtolower($d_company . ' ' . $d_trade . ' ' . $d_city);
@@ -160,12 +162,23 @@ class BusinessDirectory {
     }
 
     /**
-     * Smart Value Fetcher
-     * 1. Checks ACF (user_{id})
-     * 2. Checks User Meta
-     * 3. Checks WP_User object properties (user_email, etc)
+     * @param string $role
+     * @return array<string, string>
      */
-    private function fetch_dynamic_value(WP_User $user, string $key): mixed {
+    private function findConfigForRole(string $role): array
+    {
+        foreach ($this->roleConfigs as $cfg) {
+            if (isset($cfg['role']) && $cfg['role'] === $role) {
+                return $cfg;
+            }
+        }
+        return []; // Empty config triggers fallbacks
+    }
+
+    /**
+     * @return mixed
+     */
+    private function fetch_dynamic_value(WP_User $user, string $key) {
         if (empty($key)) return '';
 
         // 1. Try ACF
@@ -178,7 +191,7 @@ class BusinessDirectory {
         $meta = get_user_meta($user->ID, $key, true);
         if (!empty($meta)) return $meta;
 
-        // 3. Try Object Property (e.g. 'user_email')
+        // 3. Try Object Property
         if (isset($user->$key)) {
             return $user->$key;
         }
