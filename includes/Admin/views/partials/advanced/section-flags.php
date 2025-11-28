@@ -115,32 +115,6 @@ if ($acf_sync_locked) {
 
 <div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
     <?php
-    $bd_val = (bool) get_option('yardlii_enable_business_directory', false);
-    $bd_locked = defined('YARDLII_ENABLE_BUSINESS_DIRECTORY');
-    if ($bd_locked) {
-        $bd_val = (bool) constant('YARDLII_ENABLE_BUSINESS_DIRECTORY');
-    }
-    ?>
-    <input type="hidden" name="yardlii_enable_business_directory" value="0" />
-    <input
-        type="checkbox"
-        id="yardlii_enable_business_directory"
-        name="yardlii_enable_business_directory"
-        value="1"
-        <?php checked($bd_val); ?>
-        <?php disabled($bd_locked); ?>
-    />
-    <strong><?php esc_html_e('Business Directory Shortcode', 'yardlii-core'); ?></strong>
-    <?php if ($bd_locked) : ?>
-        <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
-    <?php endif; ?>
-</div>
-<p class="description" style="margin-left: 24px; margin-top: 0; color: #666;">
-    Enables the <code>[yardlii_business_directory]</code> shortcode for listing verified businesses.
-</p>
-
-<div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
-    <?php
         // Define variables for this scope
         $geo_val = (bool) get_option('yardlii_enable_wpuf_geocoding', false);
         $geo_locked = defined('YARDLII_ENABLE_WPUF_GEOCODING');

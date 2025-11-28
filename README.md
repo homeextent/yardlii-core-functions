@@ -130,6 +130,14 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+### 3.19.0 - 2025-11-26
+* **UI Overhaul:** Completely redesigned the Verification Requests admin screen to match native WordPress standards while retaining custom Yardlii functionality.
+* **Feature:** "Search Requests" toolbar. Replaces the default WordPress search with a dedicated engine that supports searching by **User Email**, **User Login**, **Display Name**, and **Request ID**.
+* **UX:** Moved the "Send me a copy" toggle to the filter bar for better visibility.
+* **Logic:** Fixed persistent search filtering issues. Clicking "All", "Pending", etc., now correctly resets the active search query.
+* **Dev:** Implemented strict typing (PHPStan Level 6) across all Admin Column classes.
+* **Style:** Applied Yardlii branding (Action Orange/Trust Blue) to search buttons and status badges.
+
 ### 3.18.4 - 2025-11-25
 * **Fix:** Resolved "Spinning Wheel" crash in SmartFormOverrides by handling WPUF AJAX array responses correctly.
 * **Fix:** Added strict 1-post limit check to SmartFormOverrides to prevent duplicate "Pending" listings.
@@ -350,6 +358,10 @@ DEV: Refactored EmployerVouchService to remove hardcoded constants and utilize t
 * Added YARDLII-branded UI styling.
 
 ## **🔮 Future Roadmap (Lifecycle Verification)**
+
+* **Architectural Separation (Planned)**:
+  * **Goal:** Decouple the "Trust & Verification" module into a standalone plugin (`yardlii-trust-verification`).
+  * **Reason:** As the logic for verification, employer vouching, and email automation grows, it warrants its own lifecycle separate from the Core utility functions (Maps, Search, etc.).
 
 * **Automated Re-verification**: 
   * Integration with Action Scheduler to query employers every 6 months to confirm the employee is still active.
