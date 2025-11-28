@@ -8,7 +8,7 @@ use WP_User;
 use WP_User_Query;
 
 /**
- * Feature: Dynamic User Directory (v3.22)
+ * Feature: Dynamic User Directory (v3.22.1)
  * Usage: [yardlii_directory role="verified_business" limit="100"]
  */
 class BusinessDirectory {
@@ -55,7 +55,7 @@ class BusinessDirectory {
     /**
      * Standalone Search Bar Shortcode
      * Usage: [yardlii_directory_search target="my-grid-1"]
-     * * @param array<string, mixed>|string|null $atts
+     * @param array<string, mixed>|string|null $atts
      * @return string
      */
     public function render_search_bar_only($atts): string {
@@ -95,7 +95,7 @@ class BusinessDirectory {
 
     /**
      * Main Directory Shortcode
-     * * @param array<string, mixed>|string|null $atts
+     * @param array<string, mixed>|string|null $atts
      * @return string
      */
     public function render_directory($atts): string {
