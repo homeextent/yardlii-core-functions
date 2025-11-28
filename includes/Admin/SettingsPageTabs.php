@@ -184,6 +184,18 @@ final class SettingsPageTabs
             ['sanitize_callback' => static fn($v) => (bool)$v]
         );
 
+// === User Directory (Global Config) ===
+        register_setting(
+            self::GROUP_DIRECTORY, 
+            'yardlii_dir_default_trigger', 
+            ['sanitize_callback' => 'sanitize_key']
+        );
+        register_setting(
+            self::GROUP_DIRECTORY, 
+            'yardlii_dir_default_width', 
+            ['sanitize_callback' => 'absint']
+        );
+
         // === User Directory (Global Config) ===
     register_setting(
         self::GROUP_DIRECTORY,
