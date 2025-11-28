@@ -14,40 +14,46 @@ class Assets
 
     public function enqueue_admin_assets(): void
     {
-        // 1. Screen Check: Only load on YARDLII Core settings page
         $screen = get_current_screen();
+
+        // 1. Screen Check
         if (empty($screen) || strpos($screen->id, 'yardlii-core') === false) {
             return;
         }
 
-        // 2. Global CSS
+        // 2. PHPStan Safe Constants (Fix for CI errors)
+        // We define local variables with fallbacks so static analysis doesn't crash
+        $coreUrl  = defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL : '';
+        $coreVer  = defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0.0';
+        $coreFile = defined('YARDLII_CORE_FILE') ? YARDLII_CORE_FILE : __FILE__;
+
+        // 3. Global CSS
         // Core Admin CSS
         wp_enqueue_style(
             'yardlii-admin',
-            plugins_url('/assets/css/admin.css', YARDLII_CORE_FILE),
+            plugins_url('/assets/css/admin.css', $coreFile),
             [],
-            YARDLII_CORE_VERSION
+            $coreVer
         );
 
         // Directory Settings CSS (Card Layout)
         wp_enqueue_style(
             'yardlii-admin-directory',
-            YARDLII_CORE_URL . 'assets/admin/css/admin-directory.css',
+            $coreUrl . 'assets/admin/css/admin-directory.css',
             [],
-            YARDLII_CORE_VERSION
+            $coreVer
         );
 
-        // 3. Global JS (Tabs & UI)
+        // 4. Global JS
         wp_enqueue_script(
-            'yardlii-admin', // Handle: matches wp_localize_script below
-            plugins_url('/assets/js/admin.js', YARDLII_CORE_FILE),
+            'yardlii-admin',
+            plugins_url('/assets/js/admin.js', $coreFile),
             ['jquery'],
-            YARDLII_CORE_VERSION,
+            $coreVer,
             true
         );
 
-        // 4. Data Localization (Diagnostics & ACF)
-        // This block is critical for the "Advanced -> Diagnostics" tab to function.
+        // 5. Data Localization (Diagnostics & ACF)
         if (class_exists('\Yardlii\Core\Features\ACFUserSync')) {
             $acf_sync = new \Yardlii\Core\Features\ACFUserSync();
             $registered_handlers = $acf_sync->get_registered_special_handlers();
@@ -66,25 +72,23 @@ class Assets
             ]);
         }
 
-        // 5. Trust & Verification Assets (Conditional)
-        // Only load heavy TV assets if we are actually on that tab
+        // 6. Trust & Verification Assets (Conditional)
         if (isset($_GET['tab']) && $_GET['tab'] === 'trust-verification') {
             wp_enqueue_style(
                 'yardlii-admin-tv',
-                YARDLII_CORE_URL . 'assets/admin/css/trust-verification.css',
+                $coreUrl . 'assets/admin/css/trust-verification.css',
                 ['yardlii-admin'],
-                YARDLII_CORE_VERSION
+                $coreVer
             );
 
             wp_enqueue_script(
                 'yardlii-admin-tv-js',
-                YARDLII_CORE_URL . 'assets/admin/js/admin-tv.js',
-                ['jquery', 'yardlii-admin'], // Depend on core admin JS
-                YARDLII_CORE_VERSION,
+                $coreUrl . 'assets/admin/js/admin-tv.js',
+                ['jquery', 'yardlii-admin'],
+                $coreVer,
                 true
             );
 
-            // Localize data specific to the TV App
             wp_localize_script('yardlii-admin-tv-js', 'yardliiTv', [
                 'ajaxurl'      => admin_url('admin-ajax.php'),
                 'noncePreview' => wp_create_nonce('yardlii_tv_preview_email'),
