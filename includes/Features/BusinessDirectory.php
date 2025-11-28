@@ -8,8 +8,8 @@ use WP_User;
 use WP_User_Query;
 
 /**
- * Feature: Dynamic User Directory (v3.22.1)
- * Usage: [yardlii_directory role="verified_business" limit="100"]
+ * Feature: Dynamic User Directory (v3.23)
+ * Usage: [yardlii_directory role="verified_business" trigger="button"]
  */
 class BusinessDirectory {
 
@@ -26,13 +26,9 @@ class BusinessDirectory {
     }
 
     public function register(): void {
-        // Main Directory Grid
         add_shortcode('yardlii_directory', [$this, 'render_directory']);
         add_shortcode('yardlii_business_directory', [$this, 'render_directory']);
-        
-        // Standalone Search Bar
         add_shortcode('yardlii_directory_search', [$this, 'render_search_bar_only']);
-
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
     }
 
@@ -54,7 +50,6 @@ class BusinessDirectory {
 
     /**
      * Standalone Search Bar Shortcode
-     * Usage: [yardlii_directory_search target="my-grid-1"]
      * @param array<string, mixed>|string|null $atts
      * @return string
      */
@@ -62,32 +57,24 @@ class BusinessDirectory {
         wp_enqueue_style('yardlii-business-directory');
         wp_enqueue_script('yardlii-business-directory-js');
 
-        // Cast to array safely for shortcode_atts
         $safe_atts = (array) $atts;
-
         $a = shortcode_atts([
-            'target' => '', // ID of the grid to control
+            'target'  => '', 
+            'trigger' => 'instant', // 'instant' or 'button'
         ], $safe_atts);
 
-        $target = sanitize_html_class($a['target']);
+        $target  = sanitize_html_class($a['target']);
+        $trigger = sanitize_key($a['trigger']); // Safe string
+        
         $tradesList = $this->getTradesList();
 
         ob_start();
         ?>
-        <div class="yardlii-dir-filters yardlii-standalone-search" data-target="<?php echo esc_attr($target); ?>">
-            <div class="yardlii-filter-group">
-                <select class="yardlii-filter-trade">
-                    <option value="">Select a Trade...</option>
-                    <?php if (!empty($tradesList)): ?>
-                        <?php foreach ($tradesList as $key => $label): ?>
-                            <option value="<?php echo esc_attr((string)$label); ?>"><?php echo esc_html((string)$label); ?></option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </select>
-            </div>
-            <div class="yardlii-filter-group">
-                <input type="text" class="yardlii-filter-location" placeholder="Location (City)...">
-            </div>
+        <div class="yardlii-dir-filters yardlii-standalone-search" 
+             data-target="<?php echo esc_attr($target); ?>"
+             data-trigger="<?php echo esc_attr($trigger); ?>">
+             
+            <?php $this->render_filter_inputs($tradesList, $trigger); ?>
         </div>
         <?php
         return (string) ob_get_clean();
@@ -108,15 +95,14 @@ class BusinessDirectory {
             $this->roleConfigs = $loadedConfigs;
         }
 
-        // Cast to array safely
         $safe_atts = (array) $atts;
-
         $a = shortcode_atts([
             'role'        => 'verified_business', 
             'limit'       => '100',
             'hide_search' => 'false',
-            'id'          => '',    // Custom ID for targeting
-            'card_width'  => '280'  // Grid layout control
+            'id'          => '',    
+            'card_width'  => '280',
+            'trigger'     => 'instant' // New Attribute
         ], $safe_atts);
 
         $role_slug   = sanitize_key($a['role']);
@@ -124,8 +110,8 @@ class BusinessDirectory {
         $hide_search = filter_var($a['hide_search'], FILTER_VALIDATE_BOOLEAN);
         $custom_id   = sanitize_html_class($a['id']);
         $card_width  = (int) $a['card_width'];
+        $trigger     = sanitize_key($a['trigger']);
 
-        // Ensure valid width
         if ($card_width < 150) $card_width = 150;
 
         $config = $this->findConfigForRole($role_slug);
@@ -149,30 +135,17 @@ class BusinessDirectory {
         $tradesList = $this->getTradesList();
 
         ob_start();
-        echo '<div class="yardlii-directory-wrapper">';
+        // Pass trigger mode to wrapper data attribute
+        echo '<div class="yardlii-directory-wrapper" data-trigger="' . esc_attr($trigger) . '">';
         
-        // Render Internal Search (if not hidden)
         if (!$hide_search) {
             ?>
             <div class="yardlii-dir-filters">
-                <div class="yardlii-filter-group">
-                    <select class="yardlii-filter-trade">
-                        <option value="">Select a Trade...</option>
-                        <?php if (!empty($tradesList)): ?>
-                            <?php foreach ($tradesList as $key => $label): ?>
-                                <option value="<?php echo esc_attr((string)$label); ?>"><?php echo esc_html((string)$label); ?></option>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </select>
-                </div>
-                <div class="yardlii-filter-group">
-                    <input type="text" class="yardlii-filter-location" placeholder="Location (City)...">
-                </div>
+                <?php $this->render_filter_inputs($tradesList, $trigger); ?>
             </div>
             <?php
         }
 
-        // Apply ID and CSS Variable for Width
         $id_attr = $custom_id ? 'id="' . esc_attr($custom_id) . '"' : '';
         $style_attr = 'style="--yardlii-card-width: ' . $card_width . 'px;"';
 
@@ -240,6 +213,34 @@ class BusinessDirectory {
         echo '</div></div>';
 
         return (string) ob_get_clean();
+    }
+
+    /**
+     * Helper to render inputs + optional button
+     * @param array<string, string> $tradesList
+     * @param string $triggerMode
+     */
+    private function render_filter_inputs(array $tradesList, string $triggerMode): void {
+        ?>
+        <div class="yardlii-filter-group">
+            <select class="yardlii-filter-trade">
+                <option value="">Select a Trade...</option>
+                <?php if (!empty($tradesList)): ?>
+                    <?php foreach ($tradesList as $key => $label): ?>
+                        <option value="<?php echo esc_attr((string)$label); ?>"><?php echo esc_html((string)$label); ?></option>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </select>
+        </div>
+        <div class="yardlii-filter-group">
+            <input type="text" class="yardlii-filter-location" placeholder="Location (City)...">
+        </div>
+        <?php if ($triggerMode === 'button'): ?>
+            <div class="yardlii-filter-group yardlii-filter-action">
+                <button type="button" class="yardlii-dir-submit button">Search</button>
+            </div>
+        <?php endif; ?>
+        <?php
     }
 
     /**
