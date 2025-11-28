@@ -13,6 +13,15 @@ use WP_User_Query;
  */
 class BusinessDirectory {
 
+    private string $coreUrl;
+    private string $coreVersion;
+
+    public function __construct(string $coreUrl, string $coreVersion)
+    {
+        $this->coreUrl = $coreUrl;
+        $this->coreVersion = $coreVersion;
+    }
+
     public function register(): void {
         add_shortcode('yardlii_business_directory', [$this, 'render_directory']);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
@@ -22,18 +31,18 @@ class BusinessDirectory {
         // Register Styles
         wp_register_style(
             'yardlii-business-directory',
-            YARDLII_CORE_URL . 'assets/css/business-directory.css',
+            $this->coreUrl . 'assets/css/business-directory.css',
             [],
-            YARDLII_CORE_VERSION
+            $this->coreVersion
         );
 
-        // Register JS (Dependent on styles usually, but here independent)
+        // Register JS
         wp_register_script(
             'yardlii-business-directory-js',
-            YARDLII_CORE_URL . 'assets/js/business-directory.js',
-            [], // No heavy dependencies like jQuery needed for vanilla JS
-            YARDLII_CORE_VERSION,
-            true // Load in footer
+            $this->coreUrl . 'assets/js/business-directory.js',
+            [], 
+            $this->coreVersion,
+            true 
         );
     }
 
@@ -41,16 +50,14 @@ class BusinessDirectory {
      * @param array<string, mixed>|string $atts
      */
     public function render_directory($atts): string {
-        // Enqueue assets only when shortcode is used
         wp_enqueue_style('yardlii-business-directory');
         wp_enqueue_script('yardlii-business-directory-js');
 
         $a = shortcode_atts([
             'role'  => 'verified_business',
-            'limit' => '100', // Default limit for performance 
+            'limit' => '100', 
         ], $atts);
 
-        // 1. Query Verified Businesses
         $args = [
             'role'    => sanitize_text_field($a['role']),
             'orderby' => 'display_name',
@@ -68,8 +75,6 @@ class BusinessDirectory {
         }
 
         ob_start();
-
-        // --- A. THE SEARCH BAR ---
         ?>
         <div class="yardlii-dir-search-container">
             <i class="fas fa-search yardlii-dir-search-icon" aria-hidden="true"></i>
@@ -82,18 +87,16 @@ class BusinessDirectory {
         <div class="yardlii-directory-grid" id="yardlii-dir-grid">
         <?php
 
-        // --- B. THE LOOP ---
         foreach ($users as $user) {
             $user_id = $user->ID;
             $acf_id  = 'user_' . $user_id;
 
-            // Fetch Data
             /** @var int|false $logo_id */
-            $logo_id = get_field('yardlii_business_logo', $acf_id);
+            $logo_id = $this->safelyGetAcf('yardlii_business_logo', $acf_id);
             /** @var string $company */
-            $company = get_field('yardlii_company_name', $acf_id);
+            $company = $this->safelyGetAcf('yardlii_company_name', $acf_id);
             /** @var string $trade */
-            $trade   = get_field('yardlii_primary_trade', $acf_id);
+            $trade   = $this->safelyGetAcf('yardlii_primary_trade', $acf_id);
             /** @var string $city */
             $city    = get_user_meta($user_id, 'billing_city', true); 
 
@@ -103,7 +106,6 @@ class BusinessDirectory {
             $d_city    = !empty($city) ? $city : '';
             $link      = get_author_posts_url($user_id);
 
-            // Search Keywords: Combine all text into lowercase string 
             $search_terms = strtolower($d_company . ' ' . $d_trade . ' ' . $d_city);
             ?>
             <div class="yardlii-business-card" data-search="<?php echo esc_attr($search_terms); ?>">
@@ -141,8 +143,21 @@ class BusinessDirectory {
             </div>
             <?php
         }
-        echo '</div>'; // End Grid
+        echo '</div>'; 
 
         return (string) ob_get_clean();
+    }
+
+    /**
+     * Helper to wrap ACF calls so PHPStan doesn't fail if ACF isn't loaded in CI.
+     * * @param string $key
+     * @param string|int $post_id
+     * @return mixed
+     */
+    private function safelyGetAcf(string $key, $post_id) {
+        if (function_exists('get_field')) {
+            return get_field($key, $post_id);
+        }
+        return false;
     }
 }

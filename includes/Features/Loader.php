@@ -86,25 +86,29 @@ final class Loader
             (new FeaturedImage())->register();
         }
 
-// Feature: Business Directory
-$directory_enabled = (bool) get_option('yardlii_enable_business_directory', false);
-if (defined('YARDLII_ENABLE_BUSINESS_DIRECTORY')) {
-    $directory_enabled = (bool) YARDLII_ENABLE_BUSINESS_DIRECTORY;
-}
+        // Feature: Business Directory
+        $directory_enabled = (bool) get_option('yardlii_enable_business_directory', false);
+        if (defined('YARDLII_ENABLE_BUSINESS_DIRECTORY')) {
+            $directory_enabled = (bool) YARDLII_ENABLE_BUSINESS_DIRECTORY;
+        }
 
-if ($directory_enabled && class_exists(__NAMESPACE__ . '\\BusinessDirectory')) {
-    (new BusinessDirectory())->register();
-}
+        if ($directory_enabled && class_exists(__NAMESPACE__ . '\\BusinessDirectory')) {
+            // FIX: Inject constants safely to satisfy PHPStan
+            $coreUrl = defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL : plugin_dir_url(__DIR__ . '/../');
+            $coreVer = defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0.0';
+            
+            (new BusinessDirectory($coreUrl, $coreVer))->register();
+        }
 
-	// Feature: Automated Media Cleanup
-$media_cleanup_enabled = (bool) get_option('yardlii_enable_media_cleanup', false);
-if (defined('YARDLII_ENABLE_MEDIA_CLEANUP')) {
-    $media_cleanup_enabled = (bool) YARDLII_ENABLE_MEDIA_CLEANUP;
-}
+        // Feature: Automated Media Cleanup
+        $media_cleanup_enabled = (bool) get_option('yardlii_enable_media_cleanup', false);
+        if (defined('YARDLII_ENABLE_MEDIA_CLEANUP')) {
+            $media_cleanup_enabled = (bool) YARDLII_ENABLE_MEDIA_CLEANUP;
+        }
 
-if ($media_cleanup_enabled && class_exists(__NAMESPACE__ . '\\MediaCleanup')) {
-    (new MediaCleanup())->register();
-}
+        if ($media_cleanup_enabled && class_exists(__NAMESPACE__ . '\\MediaCleanup')) {
+            (new MediaCleanup())->register();
+        }
 
         // === Homepage Search ===
         if (class_exists(__NAMESPACE__ . '\\HomepageSearch')) {
@@ -131,8 +135,6 @@ if ($media_cleanup_enabled && class_exists(__NAMESPACE__ . '\\MediaCleanup')) {
         if (defined('YARDLII_ENABLE_WPUF_GEOCODING')) {
             $geo_enabled = (bool) constant('YARDLII_ENABLE_WPUF_GEOCODING');
         }
-
-        
 
         // [DEBUG] Force log to verify loader
         if ($geo_enabled) {
