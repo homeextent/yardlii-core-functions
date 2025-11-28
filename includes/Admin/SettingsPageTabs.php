@@ -184,10 +184,17 @@ final class SettingsPageTabs
             ['sanitize_callback' => static fn($v) => (bool)$v]
         );
 
-        // === User Directory (Role-Based Config) ===
-        register_setting(
-            self::GROUP_DIRECTORY, 
-            'yardlii_directory_role_config', 
+        // === User Directory (Global Config) ===
+    register_setting(
+        self::GROUP_DIRECTORY,
+        'yardlii_dir_trade_field', // New Setting
+        ['sanitize_callback' => 'sanitize_text_field']
+    );
+
+    // === User Directory (Role-Based Repeater) ===
+    register_setting(
+        self::GROUP_DIRECTORY, 
+        'yardlii_directory_role_config', 
             [
                 'sanitize_callback' => static function ($input) {
                     if (!is_array($input)) return [];

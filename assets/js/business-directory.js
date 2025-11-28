@@ -1,40 +1,66 @@
 /**
- * YARDLII Directory - Instant Search (Dynamic)
- * Supports multiple directory instances per page.
+ * YARDLII Directory - Dual Filter Logic (Trade + Location)
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Find all search inputs on the page by class 
-    const searchInputs = document.querySelectorAll('.yardlii-dir-search-input');
+    
+    // Find all Directory Wrappers on the page
+    const wrappers = document.querySelectorAll('.yardlii-directory-wrapper');
 
-    if (searchInputs.length === 0) {
-        return;
-    }
+    if (wrappers.length === 0) return;
 
-    searchInputs.forEach(function(input) {
-        input.addEventListener('keyup', function(e) {
-            const filterText = e.target.value.toLowerCase();
-            
-            // Find the parent wrapper to ensure we only filter the correct grid
-            const wrapper = input.closest('.yardlii-directory-wrapper');
-            if (!wrapper) return;
+    wrappers.forEach(function(wrapper) {
+        
+        const tradeSelect = wrapper.querySelector('.yardlii-filter-trade');
+        const locInput    = wrapper.querySelector('.yardlii-filter-location');
+        const grid        = wrapper.querySelector('.yardlii-directory-grid');
+        
+        if (!grid) return; // Safety check
 
-            // Find the grid within this specific wrapper
-            const grid = wrapper.querySelector('.yardlii-directory-grid');
-            if (!grid) return;
+        const cards = grid.getElementsByClassName('yardlii-business-card');
 
-            const cards = grid.getElementsByClassName('yardlii-business-card');
+        // The Filter Function
+        function runFilter() {
+            // Get values
+            const tradeVal = tradeSelect ? tradeSelect.value.toLowerCase() : '';
+            const locVal   = locInput ? locInput.value.toLowerCase().trim() : '';
 
-            // Loop through cards in this specific grid
             for (let i = 0; i < cards.length; i++) {
                 const card = cards[i];
-                const searchTerms = card.getAttribute('data-search');
+                
+                // Get Card Data
+                const cardTrade = card.getAttribute('data-trade') || '';
+                const cardLoc   = card.getAttribute('data-location') || '';
 
-                if (searchTerms && searchTerms.indexOf(filterText) > -1) {
-                    card.style.display = ""; // Show
+                // Logic:
+                // 1. Trade Match: If dropdown is empty, match everything. Else match exact string.
+                // 2. Loc Match: If input is empty, match everything. Else match partial string (indexOf).
+                
+                let tradeMatch = true;
+                if (tradeVal !== '') {
+                    // Check if card trade contains the selected value
+                    tradeMatch = cardTrade.indexOf(tradeVal) > -1;
+                }
+
+                let locMatch = true;
+                if (locVal !== '') {
+                    locMatch = cardLoc.indexOf(locVal) > -1;
+                }
+
+                // Show if BOTH match
+                if (tradeMatch && locMatch) {
+                    card.style.display = "";
                 } else {
-                    card.style.display = "none"; // Hide
+                    card.style.display = "none";
                 }
             }
-        });
+        }
+
+        // Attach Listeners
+        if (tradeSelect) {
+            tradeSelect.addEventListener('change', runFilter);
+        }
+        if (locInput) {
+            locInput.addEventListener('keyup', runFilter);
+        }
     });
 });

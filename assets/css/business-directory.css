@@ -1,4 +1,44 @@
-/* --- Directory Grid Container --- */
+/* --- Filters Container --- */
+.yardlii-dir-filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    max-width: 800px;
+}
+
+.yardlii-filter-group {
+    flex: 1; /* Equal width columns */
+}
+
+/* Dropdown & Input Styling */
+.yardlii-filter-trade,
+.yardlii-filter-location {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    background-color: #fff;
+    box-sizing: border-box;
+    height: 48px; /* Force equal height */
+}
+
+.yardlii-filter-trade:focus,
+.yardlii-filter-location:focus {
+    border-color: var(--yardlii-blue, #0073aa);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1);
+}
+
+/* Mobile Responsive: Stack them */
+@media (max-width: 600px) {
+    .yardlii-dir-filters {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+/* --- Grid & Card Styles (Keep existing) --- */
 .yardlii-directory-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -6,7 +46,6 @@
     padding: 20px 0;
 }
 
-/* --- Card Styling --- */
 .yardlii-business-card {
     background: #ffffff;
     border: 1px solid #E0E0E0;
@@ -23,7 +62,7 @@
     border-color: var(--yardlii-blue, #0073aa);
 }
 
-/* --- Header (Logo Area) --- */
+/* Header */
 .ybc-header {
     background: #F9F9F9;
     padding: 15px;
@@ -46,7 +85,7 @@
     color: #ccc;
 }
 
-/* --- Body Content --- */
+/* Body */
 .ybc-body {
     padding: 20px;
     flex-grow: 1;
@@ -81,7 +120,7 @@
     letter-spacing: 0.5px;
 }
 
-/* --- Footer Button --- */
+/* Footer */
 .ybc-footer {
     padding: 10px 0 20px 0; 
     border-top: none; 
@@ -107,41 +146,7 @@
     color: #fff;
 }
 
-/* --- Instant Search Bar (Overlap Fix) --- */
-.yardlii-dir-search-container {
-    margin-bottom: 30px; /* Restored margin since helper text is gone */
-    max-width: 600px;
-    position: relative;
-}
-
-.yardlii-dir-search-icon {
-    position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--yardlii-blue, #0073aa);
-    pointer-events: none;
-    z-index: 2; 
-}
-
-/* FIX: Added !important to force padding over theme defaults */
-.yardlii-dir-search-input {
-    width: 100%;
-    padding: 12px 12px 12px 45px !important; /* Force padding */
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 16px;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    box-sizing: border-box;
-}
-
-.yardlii-dir-search-input:focus {
-    border-color: var(--yardlii-blue, #0073aa);
-    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1);
-    outline: none;
-}
-
-/* No Results Handling */
+/* No Results */
 .yardlii-no-results {
     padding: 20px;
     background: #f9f9f9;

@@ -8,7 +8,7 @@ use WP_User;
 use WP_User_Query;
 
 /**
- * Feature: Dynamic User Directory
+ * Feature: Dynamic User Directory (v3.21)
  * Usage: [yardlii_directory role="verified_business" limit="100"]
  */
 class BusinessDirectory {
@@ -18,6 +18,8 @@ class BusinessDirectory {
 
     /** @var array<int, array<string, string>> */
     private array $roleConfigs = [];
+
+    // Removed hardcoded $tradesList. Will fetch dynamically.
 
     public function __construct(string $coreUrl, string $coreVersion)
     {
@@ -62,11 +64,13 @@ class BusinessDirectory {
 
         $a = shortcode_atts([
             'role'  => 'verified_business', 
-            'limit' => '100', 
+            'limit' => '100',
+            'hide_search' => 'false' 
         ], $atts);
 
         $role_slug = sanitize_key($a['role']);
         $limit     = (int) $a['limit'];
+        $hide_search = filter_var($a['hide_search'], FILTER_VALIDATE_BOOLEAN);
 
         $config = $this->findConfigForRole($role_slug);
 
@@ -86,40 +90,72 @@ class BusinessDirectory {
             return '<div class="yardlii-no-results">No profiles found for this category.</div>';
         }
 
+        // Fetch Dynamic Trades List
+        $tradesList = $this->getTradesList();
+
         ob_start();
         echo '<div class="yardlii-directory-wrapper">';
-        ?>
-        <div class="yardlii-dir-search-container">
-            <i class="fas fa-search yardlii-dir-search-icon" aria-hidden="true"></i>
-            <input type="text" 
-                   class="yardlii-dir-search-input" 
-                   placeholder="Search by Company Name, Trade, or City..." 
-                   aria-label="Search">
-        </div>
+        
+        if (!$hide_search) {
+            ?>
+            <div class="yardlii-dir-filters">
+                <div class="yardlii-filter-group">
+                    <select class="yardlii-filter-trade">
+                        <option value="">Select a Trade...</option>
+                        <?php if (!empty($tradesList)): ?>
+                            <?php foreach ($tradesList as $key => $label): ?>
+                                <option value="<?php echo esc_attr((string)$label); ?>"><?php echo esc_html((string)$label); ?></option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                </div>
 
-        <div class="yardlii-directory-grid role-<?php echo esc_attr($role_slug); ?>">
-        <?php
+                <div class="yardlii-filter-group">
+                    <input type="text" 
+                           class="yardlii-filter-location" 
+                           placeholder="Location (City)...">
+                </div>
+            </div>
+            <?php
+        }
+
+        echo '<div class="yardlii-directory-grid role-' . esc_attr($role_slug) . '">';
 
         foreach ($users as $user) {
             $user_id = $user->ID;
 
-            // Image
+            // Fetch Visuals
             $logo_id = $this->fetch_dynamic_value($user, $config['image'] ?? '');
             $avatar  = get_avatar_url($user_id, ['size' => 300]); 
 
-            // Text Data
+            // Fetch Text
             $company = (string) $this->fetch_dynamic_value($user, $config['title'] ?? '');
             $d_company = !empty($company) ? $company : $user->display_name;
 
-            $trade = (string) $this->fetch_dynamic_value($user, $config['badge'] ?? '');
-            $d_trade = !empty($trade) ? $trade : ucwords(str_replace('_', ' ', $role_slug));
+            // Fetch Trade
+            $trade_raw = (string) $this->fetch_dynamic_value($user, $config['badge'] ?? '');
+            
+            // Resolve Display Label if we have the list
+            $d_trade_display = $trade_raw;
+            if (isset($tradesList[$trade_raw])) {
+                $d_trade_display = (string) $tradesList[$trade_raw];
+            } elseif (empty($trade_raw)) {
+                $d_trade_display = ucwords(str_replace('_', ' ', $role_slug));
+            }
 
             $d_city = (string) $this->fetch_dynamic_value($user, $config['location'] ?? '');
             
             $link = get_author_posts_url($user_id);
-            $search_terms = strtolower($d_company . ' ' . $d_trade . ' ' . $d_city);
+
+            // Filters
+            $filter_trade = strtolower(strip_tags($d_trade_display));
+            $filter_loc   = strtolower(strip_tags($d_city));
+            
             ?>
-            <div class="yardlii-business-card" data-search="<?php echo esc_attr($search_terms); ?>">
+            <div class="yardlii-business-card" 
+                 data-trade="<?php echo esc_attr($filter_trade); ?>"
+                 data-location="<?php echo esc_attr($filter_loc); ?>">
+                 
                 <div class="ybc-header">
                     <?php if (is_numeric($logo_id) && $logo_id > 0): ?>
                         <?php echo wp_get_attachment_image((int)$logo_id, 'medium', false, ['class' => 'ybc-logo']); ?>
@@ -137,12 +173,18 @@ class BusinessDirectory {
                         <a href="<?php echo esc_url((string)$link); ?>"><?php echo esc_html($d_company); ?></a>
                     </h3>
                     <div class="ybc-meta">
-                        <?php if(!empty($d_trade)): ?>
-                            <span class="ybc-badge"><i class="fas fa-hammer"></i> <?php echo esc_html($d_trade); ?></span>
+                        <?php if(!empty($d_trade_display)): ?>
+                            <span class="ybc-badge">
+                                <i class="fas fa-hammer" aria-hidden="true"></i> 
+                                <?php echo esc_html($d_trade_display); ?>
+                            </span>
                         <?php endif; ?>
                         
                         <?php if ($d_city): ?>
-                            <span class="ybc-location"><i class="fas fa-map-marker-alt"></i> <?php echo esc_html($d_city); ?></span>
+                            <span class="ybc-location">
+                                <i class="fas fa-map-marker-alt" aria-hidden="true"></i> 
+                                <?php echo esc_html($d_city); ?>
+                            </span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -155,6 +197,25 @@ class BusinessDirectory {
         echo '</div></div>';
 
         return (string) ob_get_clean();
+    }
+
+    /**
+     * Fetch Trade Choices dynamically from ACF
+     * @return array<string, string>
+     */
+    private function getTradesList(): array
+    {
+        $field_name = get_option('yardlii_dir_trade_field', 'primary_trade');
+        
+        if (function_exists('acf_get_field')) {
+            $field = acf_get_field($field_name);
+            if (is_array($field) && isset($field['choices']) && is_array($field['choices'])) {
+                // PHPStan: Ensure it's string=>string
+                /** @var array<string, string> */
+                return $field['choices'];
+            }
+        }
+        return [];
     }
 
     /**
@@ -179,6 +240,10 @@ class BusinessDirectory {
 
         if (function_exists('get_field')) {
             $val = get_field($key, 'user_' . $user->ID);
+            // Handle array returns (like select fields sometimes do)
+            if (is_array($val)) {
+                return isset($val['label']) ? $val['label'] : (string) reset($val);
+            }
             if (!empty($val)) return $val;
         }
 
