@@ -38,10 +38,11 @@
     }
 }
 
-/* --- Grid & Card Styles (Keep existing) --- */
+/* --- Directory Grid Container --- */
 .yardlii-directory-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    /* FIX: Use CSS Variable for width, default to 280px */
+    grid-template-columns: repeat(auto-fill, minmax(var(--yardlii-card-width, 280px), 1fr));
     gap: 20px;
     padding: 20px 0;
 }
