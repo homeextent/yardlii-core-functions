@@ -55,6 +55,7 @@ class BusinessDirectory {
     /**
      * Standalone Search Bar Shortcode
      * Usage: [yardlii_directory_search target="my-grid-1"]
+     * * @param array<string, mixed>|string $atts
      */
     public function render_search_bar_only($atts): string {
         wp_enqueue_style('yardlii-business-directory');
@@ -90,6 +91,7 @@ class BusinessDirectory {
 
     /**
      * Main Directory Shortcode
+     * * @param array<string, mixed>|string $atts
      */
     public function render_directory($atts): string {
         wp_enqueue_style('yardlii-business-directory');
@@ -232,6 +234,9 @@ class BusinessDirectory {
         return (string) ob_get_clean();
     }
 
+    /**
+     * @return array<string, string>
+     */
     private function getTradesList(): array
     {
         $field_name = get_option('yardlii_dir_trade_field', 'primary_trade');
@@ -245,6 +250,10 @@ class BusinessDirectory {
         return [];
     }
 
+    /**
+     * @param string $role
+     * @return array<string, string>
+     */
     private function findConfigForRole(string $role): array
     {
         foreach ($this->roleConfigs as $cfg) {
@@ -255,6 +264,11 @@ class BusinessDirectory {
         return [];
     }
 
+    /**
+     * @param WP_User $user
+     * @param string $key
+     * @return mixed
+     */
     private function fetch_dynamic_value(WP_User $user, string $key) {
         if (empty($key)) return '';
         if (function_exists('get_field')) {
