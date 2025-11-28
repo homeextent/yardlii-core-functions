@@ -54,9 +54,13 @@ class BusinessDirectory {
         wp_enqueue_style('yardlii-business-directory');
         wp_enqueue_script('yardlii-business-directory-js');
 
-        // Load Role Configs
-        $this->roleConfigs = get_option('yardlii_directory_role_config', []);
-        if (!is_array($this->roleConfigs)) $this->roleConfigs = [];
+        // Load Role Configs safely
+        $loadedConfigs = get_option('yardlii_directory_role_config', []);
+        if (is_array($loadedConfigs)) {
+            // PHPStan-friendly assignment: We trust sanitization ensures this structure
+            /** @var array<int, array<string, string>> $loadedConfigs */
+            $this->roleConfigs = $loadedConfigs;
+        }
 
         $a = shortcode_atts([
             'role'  => 'verified_business', 
@@ -157,6 +161,10 @@ class BusinessDirectory {
         return (string) ob_get_clean();
     }
 
+    /**
+     * @param string $role
+     * @return array<string, string>
+     */
     private function findConfigForRole(string $role): array
     {
         foreach ($this->roleConfigs as $cfg) {
