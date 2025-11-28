@@ -31,15 +31,14 @@
     justify-content: center;
     align-items: center;
     border-bottom: 1px solid #eee;
-    height: 140px; /* Slight increase for better spacing */
+    height: 140px; 
 }
 
-/* Fix: Ensure image is never cut off */
 .ybc-logo {
     max-height: 100px;
     width: auto;
     max-width: 100%;
-    object-fit: contain; /* Shows full logo without cropping */
+    object-fit: contain; 
 }
 
 .ybc-logo-placeholder {
@@ -82,21 +81,21 @@
     letter-spacing: 0.5px;
 }
 
-/* --- Footer Button (Polished) --- */
+/* --- Footer Button --- */
 .ybc-footer {
-    padding: 10px 0 20px 0; /* Add bottom padding */
-    border-top: none; /* Removed border for cleaner look */
+    padding: 10px 0 20px 0; 
+    border-top: none; 
     background: #fff;
     text-align: center;
 }
 
 .ybc-btn {
     display: inline-block;
-    width: 90%; /* Design Polish: 90% Width */
+    width: 90%; 
     padding: 10px 0;
     background: var(--yardlii-blue, #0073aa);
     color: #fff;
-    border-radius: 4px; /* Design Polish: Softer corners */
+    border-radius: 4px; 
     font-weight: 600;
     font-size: 14px;
     text-decoration: none;
@@ -108,9 +107,9 @@
     color: #fff;
 }
 
-/* --- Instant Search Bar (Fixed Selectors) --- */
+/* --- Instant Search Bar (Overlap Fix) --- */
 .yardlii-dir-search-container {
-    margin-bottom: 10px; /* Reduced margin to sit closer to helper text */
+    margin-bottom: 30px; /* Restored margin since helper text is gone */
     max-width: 600px;
     position: relative;
 }
@@ -122,33 +121,24 @@
     transform: translateY(-50%);
     color: var(--yardlii-blue, #0073aa);
     pointer-events: none;
-    z-index: 2; /* Ensure icon stays on top */
+    z-index: 2; 
 }
 
-/* FIX: Targeted the CLASS, not the ID, to apply padding */
+/* FIX: Added !important to force padding over theme defaults */
 .yardlii-dir-search-input {
     width: 100%;
-    padding: 12px 12px 12px 45px; /* Room for icon */
+    padding: 12px 12px 12px 45px !important; /* Force padding */
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 16px;
     transition: border-color 0.2s, box-shadow 0.2s;
-    box-sizing: border-box; /* Prevents padding from breaking width */
+    box-sizing: border-box;
 }
 
 .yardlii-dir-search-input:focus {
     border-color: var(--yardlii-blue, #0073aa);
     box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1);
     outline: none;
-}
-
-/* Helper Text */
-.yardlii-dir-helper {
-    font-size: 13px;
-    color: #888;
-    margin-bottom: 30px;
-    margin-left: 5px;
-    font-style: italic;
 }
 
 /* No Results Handling */
