@@ -55,15 +55,19 @@ class BusinessDirectory {
     /**
      * Standalone Search Bar Shortcode
      * Usage: [yardlii_directory_search target="my-grid-1"]
-     * * @param array<string, mixed>|string $atts
+     * * @param array<string, mixed>|string|null $atts
+     * @return string
      */
     public function render_search_bar_only($atts): string {
         wp_enqueue_style('yardlii-business-directory');
         wp_enqueue_script('yardlii-business-directory-js');
 
+        // Cast to array safely for shortcode_atts
+        $safe_atts = (array) $atts;
+
         $a = shortcode_atts([
             'target' => '', // ID of the grid to control
-        ], $atts);
+        ], $safe_atts);
 
         $target = sanitize_html_class($a['target']);
         $tradesList = $this->getTradesList();
@@ -91,7 +95,8 @@ class BusinessDirectory {
 
     /**
      * Main Directory Shortcode
-     * * @param array<string, mixed>|string $atts
+     * * @param array<string, mixed>|string|null $atts
+     * @return string
      */
     public function render_directory($atts): string {
         wp_enqueue_style('yardlii-business-directory');
@@ -103,13 +108,16 @@ class BusinessDirectory {
             $this->roleConfigs = $loadedConfigs;
         }
 
+        // Cast to array safely
+        $safe_atts = (array) $atts;
+
         $a = shortcode_atts([
             'role'        => 'verified_business', 
             'limit'       => '100',
             'hide_search' => 'false',
             'id'          => '',    // Custom ID for targeting
             'card_width'  => '280'  // Grid layout control
-        ], $atts);
+        ], $safe_atts);
 
         $role_slug   = sanitize_key($a['role']);
         $limit       = (int) $a['limit'];
