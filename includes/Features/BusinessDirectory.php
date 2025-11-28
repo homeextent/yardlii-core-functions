@@ -58,13 +58,17 @@ class BusinessDirectory {
         wp_enqueue_script('yardlii-business-directory-js');
 
         $safe_atts = (array) $atts;
+        
+        // Fetch Global Default
+        $default_trigger = get_option('yardlii_dir_default_trigger', 'instant');
+
         $a = shortcode_atts([
             'target'  => '', 
-            'trigger' => 'instant', // 'instant' or 'button'
+            'trigger' => $default_trigger, 
         ], $safe_atts);
 
         $target  = sanitize_html_class($a['target']);
-        $trigger = sanitize_key($a['trigger']); // Safe string
+        $trigger = sanitize_key($a['trigger']); 
         
         $tradesList = $this->getTradesList();
 
@@ -95,14 +99,18 @@ class BusinessDirectory {
             $this->roleConfigs = $loadedConfigs;
         }
 
+        // Fetch Global Defaults
+        $default_trigger = get_option('yardlii_dir_default_trigger', 'instant');
+        $default_width   = get_option('yardlii_dir_default_width', '280');
+
         $safe_atts = (array) $atts;
         $a = shortcode_atts([
             'role'        => 'verified_business', 
             'limit'       => '100',
             'hide_search' => 'false',
             'id'          => '',    
-            'card_width'  => '280',
-            'trigger'     => 'instant' // New Attribute
+            'card_width'  => $default_width,
+            'trigger'     => $default_trigger
         ], $safe_atts);
 
         $role_slug   = sanitize_key($a['role']);
