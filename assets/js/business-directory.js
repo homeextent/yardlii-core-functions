@@ -1,32 +1,40 @@
 /**
- * YARDLII Business Directory - Instant Search
- * Filters the grid based on data-search attributes.
+ * YARDLII Directory - Instant Search (Dynamic)
+ * Supports multiple directory instances per page.
  */
 document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('yardlii-dir-search');
-    const gridContainer = document.getElementById('yardlii-dir-grid');
+    // Find all search inputs on the page by class 
+    const searchInputs = document.querySelectorAll('.yardlii-dir-search-input');
 
-    // Safety check: ensure elements exist before running
-    if (!searchInput || !gridContainer) {
+    if (searchInputs.length === 0) {
         return;
     }
 
-    const cards = gridContainer.getElementsByClassName('yardlii-business-card');
+    searchInputs.forEach(function(input) {
+        input.addEventListener('keyup', function(e) {
+            const filterText = e.target.value.toLowerCase();
+            
+            // Find the parent wrapper to ensure we only filter the correct grid
+            const wrapper = input.closest('.yardlii-directory-wrapper');
+            if (!wrapper) return;
 
-    searchInput.addEventListener('keyup', function(e) {
-        const filterText = e.target.value.toLowerCase();
+            // Find the grid within this specific wrapper
+            const grid = wrapper.querySelector('.yardlii-directory-grid');
+            if (!grid) return;
 
-        // Loop through all cards and toggle visibility
-        for (let i = 0; i < cards.length; i++) {
-            const card = cards[i];
-            // We search against the pre-compiled keyword string in the data attribute
-            const searchTerms = card.getAttribute('data-search');
+            const cards = grid.getElementsByClassName('yardlii-business-card');
 
-            if (searchTerms && searchTerms.indexOf(filterText) > -1) {
-                card.style.display = ""; // Show
-            } else {
-                card.style.display = "none"; // Hide
+            // Loop through cards in this specific grid
+            for (let i = 0; i < cards.length; i++) {
+                const card = cards[i];
+                const searchTerms = card.getAttribute('data-search');
+
+                if (searchTerms && searchTerms.indexOf(filterText) > -1) {
+                    card.style.display = ""; // Show
+                } else {
+                    card.style.display = "none"; // Hide
+                }
             }
-        }
+        });
     });
 });

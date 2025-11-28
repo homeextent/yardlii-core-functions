@@ -8,8 +8,8 @@ use WP_User;
 use WP_User_Query;
 
 /**
- * Feature: Verified Business Directory with Instant Search
- * Usage: [yardlii_business_directory limit="100"]
+ * Feature: Dynamic User Directory
+ * Usage: [yardlii_directory role="verified_business" limit="100"]
  */
 class BusinessDirectory {
 
@@ -23,12 +23,15 @@ class BusinessDirectory {
     }
 
     public function register(): void {
+        // New generic shortcode [cite: 3]
+        add_shortcode('yardlii_directory', [$this, 'render_directory']);
+        // Alias for backward compatibility
         add_shortcode('yardlii_business_directory', [$this, 'render_directory']);
+        
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
     }
 
     public function enqueue_assets(): void {
-        // Register Styles
         wp_register_style(
             'yardlii-business-directory',
             $this->coreUrl . 'assets/css/business-directory.css',
@@ -36,7 +39,6 @@ class BusinessDirectory {
             $this->coreVersion
         );
 
-        // Register JS
         wp_register_script(
             'yardlii-business-directory-js',
             $this->coreUrl . 'assets/js/business-directory.js',
@@ -53,16 +55,22 @@ class BusinessDirectory {
         wp_enqueue_style('yardlii-business-directory');
         wp_enqueue_script('yardlii-business-directory-js');
 
+        // Extract Attributes (Defaults) [cite: 6]
         $a = shortcode_atts([
-            'role'  => 'verified_business',
+            'role'  => 'verified_business', // Default role
             'limit' => '100', 
         ], $atts);
 
+        // Sanitize
+        $role_slug = sanitize_key($a['role']);
+        $limit     = (int) $a['limit'];
+
+        // 1. Query Users (Dynamic Role) [cite: 9]
         $args = [
-            'role'    => sanitize_text_field($a['role']),
+            'role'    => $role_slug,
             'orderby' => 'display_name',
             'order'   => 'ASC',
-            'number'  => (int) $a['limit'],
+            'number'  => $limit,
         ];
         
         $user_query = new WP_User_Query($args);
@@ -71,22 +79,29 @@ class BusinessDirectory {
         $users = $user_query->get_results();
 
         if (empty($users)) {
-            return '<div class="yardlii-no-results">No verified businesses found.</div>';
+            return '<div class="yardlii-no-results">No profiles found for this category.</div>';
         }
 
         ob_start();
+        
+        // Wrapper for JS scoping (Instance isolation)
+        echo '<div class="yardlii-directory-wrapper">';
+
+        // --- Search Bar ---
+        // Note: Using class 'yardlii-dir-search-input' for JS targeting 
         ?>
         <div class="yardlii-dir-search-container">
             <i class="fas fa-search yardlii-dir-search-icon" aria-hidden="true"></i>
             <input type="text" 
-                   id="yardlii-dir-search" 
-                   placeholder="Search by Company, Trade, or City..." 
-                   aria-label="Search Verified Businesses">
+                   class="yardlii-dir-search-input" 
+                   placeholder="Search..." 
+                   aria-label="Search Directory">
         </div>
 
-        <div class="yardlii-directory-grid" id="yardlii-dir-grid">
+        <div class="yardlii-directory-grid role-<?php echo esc_attr($role_slug); ?>">
         <?php
 
+        // --- The Loop ---
         foreach ($users as $user) {
             $user_id = $user->ID;
             $acf_id  = 'user_' . $user_id;
@@ -102,7 +117,7 @@ class BusinessDirectory {
 
             // Fallbacks
             $d_company = !empty($company) ? $company : $user->display_name;
-            $d_trade   = !empty($trade) ? $trade : 'Verified Pro';
+            $d_trade   = !empty($trade) ? $trade : ucwords(str_replace('_', ' ', $role_slug));
             $d_city    = !empty($city) ? $city : '';
             $link      = get_author_posts_url($user_id);
 
@@ -112,6 +127,8 @@ class BusinessDirectory {
                 <div class="ybc-header">
                     <?php if ($logo_id): ?>
                         <?php echo wp_get_attachment_image($logo_id, 'thumbnail', false, ['class' => 'ybc-logo']); ?>
+                    <?php elseif ($avatar = get_avatar_url($user_id, ['size' => 150])): ?>
+                        <img src="<?php echo esc_url($avatar); ?>" class="ybc-logo" alt="<?php echo esc_attr($d_company); ?>" />
                     <?php else: ?>
                         <div class="ybc-logo-placeholder"><i class="fas fa-building" aria-hidden="true"></i></div>
                     <?php endif; ?>
@@ -143,7 +160,8 @@ class BusinessDirectory {
             </div>
             <?php
         }
-        echo '</div>'; 
+        echo '</div>'; // End Grid
+        echo '</div>'; // End Wrapper
 
         return (string) ob_get_clean();
     }

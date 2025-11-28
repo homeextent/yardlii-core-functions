@@ -156,13 +156,13 @@ if ($acf_sync_locked) {
         <?php checked($bd_val); ?>
         <?php disabled($bd_locked); ?>
     />
-    <strong><?php esc_html_e('Business Directory Shortcode', 'yardlii-core'); ?></strong>
+    <strong><?php esc_html_e('Dynamic Directory Shortcode', 'yardlii-core'); ?></strong>
     <?php if ($bd_locked) : ?>
         <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
     <?php endif; ?>
 </div>
 <p class="description" style="margin-left: 24px; margin-top: 0; color: #666;">
-    Enables the <code>[yardlii_business_directory]</code> shortcode for listing verified businesses.
+    Enables the <code>[yardlii_directory]</code> shortcode for listing users by role (e.g., businesses, contractors).
 </p>
       
       <p style="margin-top:1rem;">
