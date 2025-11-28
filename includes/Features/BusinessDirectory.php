@@ -8,7 +8,7 @@ use WP_User;
 use WP_User_Query;
 
 /**
- * Feature: Dynamic User Directory (v3.23)
+ * Feature: Dynamic User Directory (v3.24)
  * Usage: [yardlii_directory role="verified_business" trigger="button"]
  */
 class BusinessDirectory {
@@ -33,6 +33,9 @@ class BusinessDirectory {
     }
 
     public function enqueue_assets(): void {
+        global $post;
+        
+        // 1. Core Styles & Scripts
         wp_register_style(
             'yardlii-business-directory',
             $this->coreUrl . 'assets/css/business-directory.css',
@@ -46,6 +49,21 @@ class BusinessDirectory {
             $this->coreVersion,
             true 
         );
+
+        // 2. Google Places Autocomplete
+        // Only load if a Key is present in settings
+        $apiKey = get_option('yardlii_google_map_key', '');
+        
+        if (!empty($apiKey)) {
+            // We use 'async' and 'defer' strategies handled by WP 6.3+ or manually
+            wp_register_script(
+                'yardlii-google-places',
+                'https://maps.googleapis.com/maps/api/js?key=' . esc_attr($apiKey) . '&libraries=places&loading=async',
+                [],
+                null,
+                true
+            );
+        }
     }
 
     /**
@@ -54,8 +72,7 @@ class BusinessDirectory {
      * @return string
      */
     public function render_search_bar_only($atts): string {
-        wp_enqueue_style('yardlii-business-directory');
-        wp_enqueue_script('yardlii-business-directory-js');
+        $this->load_dependencies();
 
         $safe_atts = (array) $atts;
         
@@ -90,8 +107,7 @@ class BusinessDirectory {
      * @return string
      */
     public function render_directory($atts): string {
-        wp_enqueue_style('yardlii-business-directory');
-        wp_enqueue_script('yardlii-business-directory-js');
+        $this->load_dependencies();
 
         $loadedConfigs = get_option('yardlii_directory_role_config', []);
         if (is_array($loadedConfigs)) {
@@ -224,6 +240,18 @@ class BusinessDirectory {
     }
 
     /**
+     * Helper to load scripts only when shortcode is used
+     */
+    private function load_dependencies(): void {
+        wp_enqueue_style('yardlii-business-directory');
+        wp_enqueue_script('yardlii-business-directory-js');
+        // Only enqueue Google Places if it was registered (i.e. Key exists)
+        if (wp_script_is('yardlii-google-places', 'registered')) {
+            wp_enqueue_script('yardlii-google-places');
+        }
+    }
+
+    /**
      * Helper to render inputs + optional button
      * @param array<string, string> $tradesList
      * @param string $triggerMode
@@ -240,14 +268,20 @@ class BusinessDirectory {
                 <?php endif; ?>
             </select>
         </div>
-        <div class="yardlii-filter-group">
-            <input type="text" class="yardlii-filter-location" placeholder="Location (City)...">
+        <div class="yardlii-filter-group" style="position:relative;">
+            <input type="text" class="yardlii-filter-location" placeholder="Location (City)..." autocomplete="off">
         </div>
         <?php if ($triggerMode === 'button'): ?>
             <div class="yardlii-filter-group yardlii-filter-action">
                 <button type="button" class="yardlii-dir-submit button">Search</button>
             </div>
         <?php endif; ?>
+        
+        <div class="yardlii-filter-group yardlii-filter-reset">
+            <button type="button" class="yardlii-dir-reset button" title="Clear Filters" style="display:none;">
+                &times; Clear
+            </button>
+        </div>
         <?php
     }
 

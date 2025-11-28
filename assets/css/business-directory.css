@@ -186,3 +186,28 @@
 .yardlii-standalone-search {
     width: 100%;
 }
+/* --- Reset Button --- */
+.yardlii-dir-reset {
+    background-color: #f0f0f1;
+    color: #50575e;
+    border: 1px solid #ccd0d4;
+    border-radius: 6px;
+    padding: 0 15px;
+    height: 48px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.yardlii-dir-reset:hover {
+    background-color: #e5e5e5;
+    color: #1d2327;
+    border-color: #8c8f94;
+}
+
+/* Ensure Google Autocomplete Dropdown sits on top */
+.pac-container {
+    z-index: 9999 !important;
+}
