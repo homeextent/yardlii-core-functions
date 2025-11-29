@@ -132,11 +132,12 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## [3.25.0] - 2025-11-29
 ### Added
-- **Custom User Dashboard:** New `[yardlii_user_dashboard]` shortcode replaces the rigid WPUF dashboard. Features card-style layout, status badges, and custom action buttons.
+- **Custom User Dashboard:** New `[yardlii_user_dashboard]` shortcode replaces the rigid WPUF dashboard. Features card-style layout, color-coded status badges, adaptive image sizing, and custom action buttons.
+- **Secure Logout:** Added `[yardlii_logout]` shortcode to generate nonce-protected logout buttons with optional redirect support.
 - **Smart Submit Wrapper:** New `[yardlii_submit_listing]` shortcode dynamically renders the correct form (Basic vs Pro) based on user role.
 - **Profile Form Wrapper:** New `[yardlii_edit_profile]` shortcode forces the correct profile form based on the "Dynamic Profile Map".
 - **Deep Linking Engine:** Added JS logic to allow direct linking to specific Elementor Dashboard tabs via URL parameters (e.g., `?tab=2`).
-- **Documentation:** Added Deep Linking guide to the WPUF Customisations admin tab.
+- **Documentation:** Added Deep Linking and Logout guides to the WPUF Customisations admin tab.
 
 ## [3.24.0] - 2025-11-28
 ### Changed
