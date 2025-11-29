@@ -10,8 +10,8 @@ namespace Yardlii\Core\Features;
  */
 class GoogleMapKey {
 
-    private const OPTION_KEY = 'yardlii_google_map_key';
-    private const API_HANDLE = 'google-maps-api';
+    public const OPTION_KEY = 'yardlii_google_map_key';
+    public const API_HANDLE = 'google-maps-api';
 
     public function register(): void {
         add_action('acf/init', [$this, 'apply_api_key']);
