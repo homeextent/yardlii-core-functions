@@ -283,6 +283,24 @@ final class SettingsPageTabs
         register_setting(self::GROUP_SEARCH, 'yardlii_location_facet',        ['sanitize_callback' => $N]);
         register_setting(self::GROUP_SEARCH, 'yardlii_location_label',        ['sanitize_callback' => $N]);
         register_setting(self::GROUP_SEARCH, 'yardlii_enable_location_search',['sanitize_callback' => self::success_notifier(self::GROUP_SEARCH, static fn($v)=>(bool)$v)]);
+	register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_trust_verification', ['sanitize_callback' => static fn($v)=>(bool)$v]);
+        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_role_control',       ['sanitize_callback' => static fn($v)=>(bool)$v]);
+        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_media_cleanup',      ['sanitize_callback' => static fn($v) => (bool)$v]);
+        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_business_directory', ['sanitize_callback' => static fn($v) => (bool)$v]);
+
+        // NEW: Universal Location Engine
+        register_setting(
+            self::GROUP_FEATURE_FLAGS,
+            'yardlii_enable_wpuf_city_autocomplete',
+            ['sanitize_callback' => static fn($v) => (bool)$v]
+        );
+
+        // NEW: Elementor Query Mods
+        register_setting(
+            self::GROUP_FEATURE_FLAGS,
+            'yardlii_enable_elementor_query_mods',
+            ['sanitize_callback' => static fn($v) => (bool)$v]
+        );
     }
 
     private function register_google_map_settings(): void

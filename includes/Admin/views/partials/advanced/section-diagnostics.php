@@ -229,6 +229,23 @@ if (defined('YARDLII_ENABLE_ROLE_CONTROL')) {
           'yardlii_enable_wpuf_geocoding',
           'YARDLII_ENABLE_WPUF_GEOCODING'
       );
+      
+      // === NEW FEATURES (v3.25.1) ===
+      yardlii_diag_flag_status_row(
+          'Business Directory',
+          'yardlii_enable_business_directory',
+          'YARDLII_ENABLE_BUSINESS_DIRECTORY'
+      );
+      yardlii_diag_flag_status_row(
+          'Universal Location Engine',
+          'yardlii_enable_wpuf_city_autocomplete',
+          'YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE'
+      );
+      yardlii_diag_flag_status_row(
+          'Elementor Query Mods',
+          'yardlii_enable_elementor_query_mods',
+          'YARDLII_ENABLE_ELEMENTOR_QUERY_MODS'
+      );
       ?>
     </tbody>
   </table>

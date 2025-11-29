@@ -223,6 +223,30 @@ final class Loader
         if ($badge_enabled && class_exists(__NAMESPACE__ . '\\RoleControlBadgeAssignment')) {
             (new RoleControlBadgeAssignment())->register();
         }
+
+	// === WPUF City Autocomplete (Universal Location) ===
+        $loc_enabled = (bool) get_option('yardlii_enable_wpuf_city_autocomplete', false);
+        if (defined('YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE')) {
+            $loc_enabled = (bool) YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE;
+        }
+
+        if ($loc_enabled && class_exists(__NAMESPACE__ . '\\WpufCityAutocomplete')) {
+            // PHPStan Safe Definitions
+            $coreUrl = defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL : plugin_dir_url(__DIR__ . '/../');
+            $coreVer = defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0.0';
+
+            (new WpufCityAutocomplete($coreUrl, $coreVer))->register();
+        }
+
+        // === Elementor Query Mods ===
+        $el_enabled = (bool) get_option('yardlii_enable_elementor_query_mods', false);
+        if (defined('YARDLII_ENABLE_ELEMENTOR_QUERY_MODS')) {
+            $el_enabled = (bool) YARDLII_ENABLE_ELEMENTOR_QUERY_MODS;
+        }
+
+        if ($el_enabled && class_exists(__NAMESPACE__ . '\\ElementorQueryMods')) {
+            (new ElementorQueryMods())->register();
+        }
     }
 
     /**

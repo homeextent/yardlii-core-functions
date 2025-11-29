@@ -164,6 +164,58 @@ if ($acf_sync_locked) {
 <p class="description" style="margin-left: 24px; margin-top: 0; color: #666;">
     Enables the <code>[yardlii_directory]</code> shortcode for listing users by role (e.g., businesses, contractors).
 </p>
+
+<div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
+    <?php
+    $loc_val = (bool) get_option('yardlii_enable_wpuf_city_autocomplete', false);
+    $loc_locked = defined('YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE');
+    if ($loc_locked) {
+        $loc_val = (bool) constant('YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE');
+    }
+    ?>
+    <input type="hidden" name="yardlii_enable_wpuf_city_autocomplete" value="0" />
+    <input
+        type="checkbox"
+        id="yardlii_enable_wpuf_city_autocomplete"
+        name="yardlii_enable_wpuf_city_autocomplete"
+        value="1"
+        <?php checked($loc_val); ?>
+        <?php disabled($loc_locked); ?>
+    />
+    <strong><?php esc_html_e('Universal Location Engine', 'yardlii-core'); ?></strong>
+    <?php if ($loc_locked) : ?>
+        <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
+    <?php endif; ?>
+</div>
+<p class="description" style="margin-left: 24px; margin-top: 0; color: #666;">
+    Enables Google Places Autocomplete (Cities Only) on all forms with the <code>yardlii-city-autocomplete</code> class.
+</p>
+
+<div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
+    <?php
+    $el_val = (bool) get_option('yardlii_enable_elementor_query_mods', false);
+    $el_locked = defined('YARDLII_ENABLE_ELEMENTOR_QUERY_MODS');
+    if ($el_locked) {
+        $el_val = (bool) constant('YARDLII_ENABLE_ELEMENTOR_QUERY_MODS');
+    }
+    ?>
+    <input type="hidden" name="yardlii_enable_elementor_query_mods" value="0" />
+    <input
+        type="checkbox"
+        id="yardlii_enable_elementor_query_mods"
+        name="yardlii_enable_elementor_query_mods"
+        value="1"
+        <?php checked($el_val); ?>
+        <?php disabled($el_locked); ?>
+    />
+    <strong><?php esc_html_e('Elementor Query Utilities', 'yardlii-core'); ?></strong>
+    <?php if ($el_locked) : ?>
+        <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
+    <?php endif; ?>
+</div>
+<p class="description" style="margin-left: 24px; margin-top: 0; color: #666;">
+    Enables custom query IDs like <code>yardlii_author_listings</code> for Elementor Loop Grids.
+</p>
       
       <p style="margin-top:1rem;">
         <button class="button button-primary" type="submit">
