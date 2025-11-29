@@ -37,7 +37,6 @@ class UserDashboard {
             [],
             $this->coreVersion
         );
-        // We don't need the directory JS (search) for the dashboard, just CSS
     }
 
     public function handle_delete_action(): void {
@@ -60,6 +59,10 @@ class UserDashboard {
         }
     }
 
+    /**
+     * @param array<string, mixed>|string|null $atts
+     * @return string
+     */
     public function render_dashboard($atts): string {
         if (!is_user_logged_in()) {
             return '<div class="yardlii-alert">Please log in to view your dashboard.</div>';
@@ -98,11 +101,13 @@ class UserDashboard {
 
             // Edit Link (Standard WPUF Edit Page or Custom)
             // We use the WPUF edit page endpoint if available, or generic
-            $edit_url = add_query_arg(['pid' => $post_id], site_url('/edit/')); // Adjust slug as needed
-            // Ideally, grab the "Edit Page" from WPUF settings:
-            $edit_page_id = (int) wpuf_get_option('edit_page_id', 'wpuf_frontend_posting');
+            $edit_url = add_query_arg(['pid' => $post_id], site_url('/edit/')); 
+            
+            // Safely get the edit page ID
+            $edit_page_id = $this->get_wpuf_option('edit_page_id', 'wpuf_frontend_posting');
+            
             if ($edit_page_id) {
-                $edit_url = add_query_arg(['pid' => $post_id], get_permalink($edit_page_id));
+                $edit_url = add_query_arg(['pid' => $post_id], get_permalink((int)$edit_page_id));
             }
 
             $delete_url = wp_nonce_url(
@@ -146,5 +151,18 @@ class UserDashboard {
         echo '</div>';
 
         return (string) ob_get_clean();
+    }
+
+    /**
+     * Safe wrapper for wpuf_get_option to prevent PHPStan errors if WPUF is missing.
+     * @param string $option
+     * @param string $section
+     * @return mixed
+     */
+    private function get_wpuf_option(string $option, string $section) {
+        if (function_exists('wpuf_get_option')) {
+            return wpuf_get_option($option, $section);
+        }
+        return false;
     }
 }
