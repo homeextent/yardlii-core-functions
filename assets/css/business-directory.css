@@ -279,37 +279,52 @@
     width: 100%;
 }
 
-/* --- User Dashboard Specifics (From Custom Dashboard Feature) --- */
+/* --- User Dashboard Specifics --- */
 
-/* Card Header: Fixed container */
-.dashboard-card .ybc-header {
-    position: relative;
-    padding: 0;
-    height: 200px; /* Fixed height */
-    overflow: hidden;
+/* 1. Lock the Container Height */
+.yardlii-business-card.dashboard-card .ybc-header {
+    position: relative !important;
+    height: 200px !important;
+    overflow: hidden !important;
+    padding: 0 !important;
     background: #eee;
-    display: block;
+    display: block !important;
 }
 
-/* Force image to fill container absolutely */
-.dashboard-card .ybc-header img.ybc-logo {
-    position: absolute !important; /* Force absolute */
+/* 2. Force Image to Fill (The Nuclear Option) */
+.yardlii-business-card.dashboard-card .ybc-header img.ybc-logo {
+    /* Positioning */
+    position: absolute !important;
     top: 0 !important;
     left: 0 !important;
+    
+    /* Sizing */
     width: 100% !important;
     height: 100% !important;
-    object-fit: cover !important; /* Forces crop to fill */
-    object-position: center !important;
+    max-width: none !important;  /* Overrides WordPress/Theme 100% max-width limits */
+    min-width: 100% !important;
+    min-height: 100% !important;
+    
+    /* Scaling */
+    object-fit: cover !important;
+    object-position: center center !important;
+    
+    /* Reset Borders/Margins */
     border-radius: 0 !important;
     margin: 0 !important;
-    max-width: none !important; /* Override WP default max-width constraints */
+    padding: 0 !important;
+    
+    /* Reset standard image behaviors */
+    display: block !important;
+    transform: none !important;
 }
 
-/* Status Badge */
-.ybc-status-pill {
+/* 3. Ensure Status Pill stays on top */
+.yardlii-business-card.dashboard-card .ybc-status-pill {
     position: absolute;
     top: 10px;
     right: 10px;
+    z-index: 10; /* High Z-Index to sit above the image */
     padding: 4px 10px;
     border-radius: 12px;
     font-size: 11px;
@@ -317,7 +332,6 @@
     text-transform: uppercase;
     color: #fff;
     background: #666;
-    z-index: 5;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
