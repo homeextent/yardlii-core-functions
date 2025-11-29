@@ -334,14 +334,22 @@ final class SettingsPageTabs
         ]);
     }
 
+   /* =========================================
+     * Menu + Page
+     * =======================================*/
     public function add_menu(): void
     {
-        add_options_page(
-            __('YARDLII Core Settings', 'yardlii-core'),
-            __('YARDLII Core', 'yardlii-core'),
-            'manage_options',
-            'yardlii-core-settings',
-            [$this, 'render_page']
+        // OLD: add_options_page(...) -> Hidden under Settings
+        
+        // NEW: Top Level Menu Item
+        add_menu_page(
+            __('YARDLII Core Settings', 'yardlii-core'), // Page Title
+            __('YARDLII', 'yardlii-core'),               // Menu Title (Short)
+            'manage_options',                            // Capability
+            'yardlii-core-settings',                     // Menu Slug
+            [$this, 'render_page'],                      // Callback Function
+            'dashicons-shield',                          // Icon (Shield = Trust/Verification)
+            50                                           // Position (50 = Below Comments/Products)
         );
     }
 
