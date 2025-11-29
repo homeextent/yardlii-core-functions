@@ -2,15 +2,13 @@
 /**
  * Yardlii Admin Settings → General Tab → WPUF Customisations
  * -----------------------------------------------------------
- * Configuration for WPUF frontend styling and listing logic.
- *
- * @since 3.10.0
+ * Configuration for WPUF frontend styling, listing logic, and profile mapping.
  */
 ?>
 
 <h2>🔧 WPUF Customisations</h2>
 <p class="description">
-  Configure front-end listing form behavior and listing status logic.
+  Configure front-end listing form behavior, listing status logic, and profile mapping.
 </p>
 
 <form method="post" action="options.php" class="yardlii-settings-form">
@@ -157,7 +155,7 @@
       </td>
     </tr>
 
-<tr><td colspan="2"><hr style="border: 0; border-top: 1px solid #ddd;"></td></tr>
+    <tr><td colspan="2"><hr style="border: 0; border-top: 1px solid #ddd;"></td></tr>
 
     <tr valign="top">
       <th scope="row">
@@ -197,27 +195,18 @@
         </div>
       </td>
     </tr>
-
-
-
-
   </table>
 
-  <?php submit_button('Save WPUF Settings'); ?>
+    <hr style="margin: 30px 0;">
 
-</form>
-<hr style="margin: 30px 0;">
+    <div class="yardlii-card">
+        <h3 style="margin-top:0;">👤 Dynamic Profile Form Mapping</h3>
+        <p class="description">
+            Map specific <strong>User Roles</strong> to specific <strong>WPUF Profile Forms</strong>.
+            <br>The system checks these rules from top to bottom. The first matching role determines the form.
+        </p>
 
-<div class="yardlii-card">
-    <h3 style="margin-top:0;">👤 Dynamic Profile Form Mapping</h3>
-    <p class="description">
-        Map specific <strong>User Roles</strong> to specific <strong>WPUF Profile Forms</strong>.
-        <br>The system checks these rules from top to bottom. The first matching role determines the form.
-    </p>
-
-    <form method="post" action="options.php">
         <?php 
-        settings_fields('yardlii_general_group'); 
         $map = get_option('yardlii_profile_form_map', []);
         if (empty($map) || !is_array($map)) {
             $map = [['role' => '', 'form_id' => '']];
@@ -259,11 +248,12 @@
 
         <div style="margin-top: 10px; display:flex; gap:10px;">
             <button type="button" id="yardlii-add-profile-row" class="button button-secondary">Add Role Rule</button>
-            <?php submit_button('Save Mapping Rules', 'primary', 'submit', false); ?>
         </div>
-    </form>
-</div>
+    </div>
 
+    <?php submit_button('Save All WPUF Settings'); ?>
+
+</form>
 <script>
 (function($) {
     const container = document.getElementById('yardlii-profile-rows');
