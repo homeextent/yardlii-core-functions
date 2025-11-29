@@ -25,6 +25,8 @@ class ProfileFormSwitcher {
     /**
      * Renders the correct WPUF profile form for the current user.
      * Usage: [yardlii_edit_profile]
+     * * @param array<string, mixed>|string|null $atts
+     * @return string
      */
     public function render_smart_profile_form($atts): string {
         // 1. Calculate the correct ID for this user
@@ -39,7 +41,7 @@ class ProfileFormSwitcher {
         }
 
         // 3. Render the WPUF Shortcode with the dynamic ID
-        // We use the standard [wpuf_profile] shortcode which handles assets/scripts properly.
+        // We explicitly use type="profile" to ensure this is an EDIT form, not registration.
         return do_shortcode('[wpuf_profile id="' . $form_id . '" type="profile"]');
     }
 
