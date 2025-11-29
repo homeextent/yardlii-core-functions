@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Yardlii\Core\Features;
 
 /**
- * Feature: Dynamic Profile Form Switcher
- * Swaps the WPUF Edit Profile Form ID based on user roles.
+ * Feature: Dynamic Profile Form Switcher (v2 - Repeater Logic)
  */
 class ProfileFormSwitcher {
 
     public function register(): void {
-        add_filter('wpuf_edit_profile_form_id', [$this, 'switch_form_by_role'], 20, 1);
+        // FIX: Bump priority to 999 to ensure we override any other defaults
+        add_filter('wpuf_edit_profile_form_id', [$this, 'switch_form_by_role'], 999, 1);
     }
 
     /**
@@ -19,41 +19,33 @@ class ProfileFormSwitcher {
      * @return int
      */
     public function switch_form_by_role($original_form_id) {
-        $user = wp_get_current_user();
-        if (empty($user->roles)) {
+        if (!is_user_logged_in()) {
             return $original_form_id;
         }
 
-        $roles = (array) $user->roles;
+        $user = wp_get_current_user();
+        $user_roles = (array) $user->roles;
 
-        // 1. Administrator
-        if (in_array('administrator', $roles, true)) {
-            $id = (int) get_option('yardlii_profile_form_admin');
-            return $id > 0 ? $id : $original_form_id;
+        // Fetch the repeater map
+        $map = get_option('yardlii_profile_form_map', []);
+        if (empty($map) || !is_array($map)) {
+            return $original_form_id;
         }
 
-        // 2. Verified Business
-        if (in_array('verified_business', $roles, true)) {
-            $id = (int) get_option('yardlii_profile_form_business');
-            return $id > 0 ? $id : $original_form_id;
+        // Iterate through rules. First match wins.
+        foreach ($map as $rule) {
+            $role_slug = $rule['role'] ?? '';
+            $target_id = (int) ($rule['form_id'] ?? 0);
+
+            if ($role_slug && $target_id > 0) {
+                // Check if user has this role
+                if (in_array($role_slug, $user_roles, true)) {
+                    return $target_id;
+                }
+            }
         }
 
-        // 3. Contractor Group (Contractor, Pending, Employee)
-        $contractor_group = ['verified_contractor', 'pending_verification', 'verified_pro_employee'];
-        if (array_intersect($contractor_group, $roles)) {
-            $id = (int) get_option('yardlii_profile_form_contractor');
-            return $id > 0 ? $id : $original_form_id;
-        }
-
-        // 4. Supplier
-        if (in_array('verified_supplier', $roles, true)) {
-            $id = (int) get_option('yardlii_profile_form_supplier');
-            return $id > 0 ? $id : $original_form_id;
-        }
-
-        // 5. Basic / Default
-        // If they are a subscriber OR if they didn't match any above
-        $id = (int) get_option('yardlii_profile_form_basic');
-        return $id > 0 ? $id : $original_form_id;
+        // Fallback: If no rule matches, return original
+        return $original_form_id;
     }
 }

@@ -196,15 +196,22 @@ final class SettingsPageTabs
             ['sanitize_callback' => 'absint']
         );
 
-	// === Profile Form Switching Map ===
-        $sanitize_int = static function ($v) { return (int) $v; };
-        $N = self::success_notifier(self::GROUP_GENERAL);
-
-        register_setting(self::GROUP_GENERAL, 'yardlii_profile_form_basic',      ['sanitize_callback' => $sanitize_int]);
-        register_setting(self::GROUP_GENERAL, 'yardlii_profile_form_contractor', ['sanitize_callback' => $sanitize_int]);
-        register_setting(self::GROUP_GENERAL, 'yardlii_profile_form_business',   ['sanitize_callback' => $sanitize_int]);
-        register_setting(self::GROUP_GENERAL, 'yardlii_profile_form_admin',      ['sanitize_callback' => $sanitize_int]);
-        register_setting(self::GROUP_GENERAL, 'yardlii_profile_form_supplier',   ['sanitize_callback' => $sanitize_int]);
+	// === Dynamic Profile Form Map (Repeater) ===
+        register_setting(
+            self::GROUP_GENERAL, 
+            'yardlii_profile_form_map', 
+            [
+                'sanitize_callback' => static function ($input) {
+                    if (!is_array($input)) return [];
+                    return array_map(function($row) {
+                        return [
+                            'role'    => sanitize_text_field($row['role'] ?? ''),
+                            'form_id' => absint($row['form_id'] ?? 0),
+                        ];
+                    }, $input);
+                }
+            ]
+        );
 
         // === User Directory (Global Config) ===
     register_setting(
