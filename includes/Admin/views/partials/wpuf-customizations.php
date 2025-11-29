@@ -279,6 +279,21 @@
         <code>[yardlii_user_dashboard]</code>
     </div>
 </div>
+<div style="background:#f0f6fc; border:1px solid #cce5ff; padding:15px; border-radius:4px; margin-top:20px;">
+    <h4 style="margin-top:0; color:#004085;">🔗 Deep Linking (Smart Navigation)</h4>
+    <p class="description">
+        You can link users directly to specific tabs on your custom dashboard using URL parameters.
+        <br><em>Requires the <strong>Elementor Tabs</strong> widget to have the CSS ID: <code>yardlii-dashboard-tabs</code>.</em>
+    </p>
+    <ul style="list-style:disc; margin-left:20px; margin-top:10px; font-size:13px; color:#444;">
+        <li><strong>Link to Tab 1 (Dashboard):</strong> <code>/dashboard/?tab=1</code></li>
+        <li><strong>Link to Tab 2 (Edit Profile):</strong> <code>/dashboard/?tab=2</code></li>
+        <li><strong>Link to Tab 3 (Submit Post):</strong> <code>/dashboard/?tab=3</code></li>
+    </ul>
+    <p class="description" style="margin-top:10px;">
+        <em>Use these links in your Header Menu (e.g., "Edit Profile") to route users to the exact right spot.</em>
+    </p>
+</div>
 <script>
 (function($) {
     const container = document.getElementById('yardlii-profile-rows');
