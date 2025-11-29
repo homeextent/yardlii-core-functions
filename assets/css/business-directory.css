@@ -382,3 +382,73 @@
     opacity: 0.9;
     transform: translateY(-1px);
 }
+
+/* ... (Previous content remains the same) ... */
+
+/* --- Logout Button --- */
+.ybc-btn.btn-logout {
+    background-color: #f0f0f1;
+    color: #333;
+    border: 1px solid #ccc;
+    width: auto;
+    display: inline-block;
+    padding: 10px 25px;
+}
+.ybc-btn.btn-logout:hover {
+    background-color: #e5e5e5;
+    color: #000;
+}
+
+/* =========================================
+   ELEMENTOR SIDEBAR NAVIGATION STYLES
+   ========================================= */
+
+/* Container Tweaks */
+.e-n-tabs {
+    gap: 40px !important; /* Space between Sidebar and Content */
+}
+
+/* Tab Headers (The Sidebar Menu) */
+.e-n-tabs-heading {
+    background-color: #ffffff !important;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    padding: 20px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    width: 280px !important; /* Fixed width for sidebar */
+    min-height: 500px; /* Ensure it looks substantial */
+}
+
+/* Individual Tab Items */
+.e-n-tab-title {
+    justify-content: flex-start !important; /* Align text left */
+    padding: 15px 20px !important;
+    color: #555 !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease;
+    margin-bottom: 5px !important;
+    border: none !important; /* Remove default borders */
+}
+
+/* Hover State */
+.e-n-tab-title:hover {
+    background-color: #f9f9f9 !important;
+    color: #0073aa !important;
+    transform: translateX(5px); /* Subtle slide effect */
+}
+
+/* Active State (Selected Tab) */
+.e-n-tab-title[aria-selected="true"] {
+    background-color: #0073aa !important; /* Yardlii Blue */
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(0, 115, 170, 0.3);
+}
+
+/* Content Area (Right Side) */
+.e-n-tabs-content {
+    padding: 0 !important; /* Remove default padding */
+    border: none !important;
+    background: transparent !important;
+}

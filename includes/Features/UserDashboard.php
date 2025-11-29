@@ -8,8 +8,8 @@ use WP_Query;
 
 /**
  * Feature: Custom User Dashboard
- * Renders a "My Listings" grid using the Yardlii Card style.
- * Usage: [yardlii_user_dashboard]
+ * Renders a "My Listings" grid and dashboard utilities.
+ * Usage: [yardlii_user_dashboard], [yardlii_logout]
  */
 class UserDashboard {
 
@@ -24,9 +24,9 @@ class UserDashboard {
 
     public function register(): void {
         add_shortcode('yardlii_user_dashboard', [$this, 'render_dashboard']);
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
+        add_shortcode('yardlii_logout', [$this, 'render_logout_button']); 
         
-        // Handle Delete Action
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('init', [$this, 'handle_delete_action']);
     }
 
@@ -36,6 +36,41 @@ class UserDashboard {
             $this->coreUrl . 'assets/css/business-directory.css',
             [],
             $this->coreVersion
+        );
+    }
+
+    /**
+     * Renders a secure Logout Button.
+     * Usage: [yardlii_logout label="Log Out" redirect="/login"]
+     * @param array<string, mixed>|string|null $atts
+     * @return string
+     */
+    public function render_logout_button($atts): string {
+        if (!is_user_logged_in()) {
+            return '';
+        }
+
+        $safe_atts = (array) $atts;
+        $a = shortcode_atts([
+            'label'    => 'Log Out',
+            'redirect' => home_url(), // Default to Homepage
+            'class'    => 'ybc-btn btn-logout' // Default class
+        ], $safe_atts);
+
+        $redirect_url = sanitize_text_field($a['redirect']);
+        // Ensure it is an absolute URL if user passed a relative one
+        if (strpos($redirect_url, 'http') !== 0) {
+            $redirect_url = site_url($redirect_url);
+        }
+
+        // Generates a nonce-protected URL
+        $logout_url = wp_logout_url($redirect_url);
+
+        return sprintf(
+            '<a href="%s" class="%s">%s</a>',
+            esc_url($logout_url),
+            esc_attr($a['class']),
+            esc_html($a['label'])
         );
     }
 
@@ -128,7 +163,7 @@ class UserDashboard {
                 'yardlii_delete_' . $post_id
             );
 
-            // Visuals
+            // Visuals - 'full' for high res
             $image_url = get_the_post_thumbnail_url($post_id, 'full');
             ?>
             <div class="yardlii-business-card dashboard-card">
