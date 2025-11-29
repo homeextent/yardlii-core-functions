@@ -130,6 +130,10 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## [3.24.0] - 2025-11-28
+### Changed
+- **Admin UX:** Moved "YARDLII Core" from the Settings submenu to the Top-Level Admin Menu for easier access.
+
 ## [3.23.0] - 2025-11-28
 ### Added
 - **Universal Location Engine:** New global system for Google Places Autocomplete.
