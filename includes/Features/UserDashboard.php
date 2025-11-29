@@ -129,7 +129,7 @@ class UserDashboard {
             );
 
             // Visuals
-            $image_url = get_the_post_thumbnail_url($post_id, 'medium');
+            $image_url = get_the_post_thumbnail_url($post_id, 'full');
             ?>
             <div class="yardlii-business-card dashboard-card">
                 <div class="ybc-header">

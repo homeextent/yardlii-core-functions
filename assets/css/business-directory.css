@@ -281,7 +281,7 @@
 
 /* --- User Dashboard Specifics (From Custom Dashboard Feature) --- */
 
-/* Card Header: Strict container */
+/* Card Header: Fixed container */
 .dashboard-card .ybc-header {
     position: relative;
     padding: 0;
@@ -293,16 +293,16 @@
 
 /* Force image to fill container absolutely */
 .dashboard-card .ybc-header img.ybc-logo {
-    position: absolute;
-    top: 0;
-    left: 0;
+    position: absolute !important; /* Force absolute */
+    top: 0 !important;
+    left: 0 !important;
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important; /* Forces crop to fill */
-    object-position: center;
-    border-radius: 0;
-    margin: 0;
-    max-width: none; /* Override WP default max-width */
+    object-position: center !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    max-width: none !important; /* Override WP default max-width constraints */
 }
 
 /* Status Badge */
