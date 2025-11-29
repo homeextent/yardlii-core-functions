@@ -245,10 +245,11 @@ class BusinessDirectory {
     private function load_dependencies(): void {
         wp_enqueue_style('yardlii-business-directory');
         wp_enqueue_script('yardlii-business-directory-js');
-        // Only enqueue Google Places if it was registered (i.e. Key exists)
-        if (wp_script_is('yardlii-google-places', 'registered')) {
-            wp_enqueue_script('yardlii-google-places');
-        }
+        
+        // We rely on GoogleMapKey.php to load the API globally or via its hook.
+        // But if we want to be safe, we can check if it's enqueued.
+        // Since GoogleMapKey loads it on wp_enqueue_scripts priority 20, 
+        // it should be available.
     }
 
     /**

@@ -20,42 +20,27 @@ class WpufCityAutocomplete {
     }
 
     public function register(): void {
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_assets'], 30); // Load AFTER GoogleMapKey
     }
 
     public function enqueue_assets(): void {
-        // 1. Only load if WPUF is potentially active
         if (!class_exists('WPUF_Main')) {
             return;
         }
 
-        // 2. Reuse API Key from Core Settings
-        $api_key = get_option('yardlii_google_map_key', '');
-        if (empty($api_key)) {
-            return;
-        }
+        // Depend on the master handle defined in GoogleMapKey.php
+        $handle = 'google-maps-api';
 
-        // 3. Register Google Maps (if not already by BusinessDirectory or others)
-        if (!wp_script_is('yardlii-google-places', 'registered')) {
-            wp_register_script(
-                'yardlii-google-places', 
-                "https://maps.googleapis.com/maps/api/js?key={$api_key}&libraries=places&loading=async", 
-                [], 
-                null, 
-                true
-            );
-        }
-
-        // 4. Register Our Logic using injected properties
+        // Register Our Logic
         wp_register_script(
             'yardlii-wpuf-autocomplete',
             $this->coreUrl . 'assets/js/wpuf-city-autocomplete.js',
-            ['yardlii-google-places'], 
+            [$handle], // Dependency ensures Maps loads first
             $this->coreVersion,
             true
         );
 
-        // 5. Enqueue
+        // Enqueue
         wp_enqueue_script('yardlii-wpuf-autocomplete');
     }
 }
