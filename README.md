@@ -130,6 +130,13 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## [3.23.0] - 2025-11-28
+### Added
+- **Universal Location Engine:** New global system for Google Places Autocomplete.
+- **Global Router:** Implemented `google-maps-router.js` to manage API dependencies and prevent race conditions between Directory, FacetWP, and Elementor.
+- **Smart Autocomplete:** Any text input with the CSS class `yardlii-city-autocomplete` will now automatically attach a "Cities Only" dropdown.
+- **User Directory Polish:** Directory search bar now auto-detects location inputs and applies autocomplete logic without manual configuration.
+
 ## [3.22.1] - 2025-11-28
 ### Added
 - **Elementor Utility:** Added `ElementorQueryMods` class to handle custom query modifications.
