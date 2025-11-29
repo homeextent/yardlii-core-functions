@@ -20,7 +20,8 @@ class WpufCityAutocomplete {
     }
 
     public function register(): void {
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_assets'], 30); // Load AFTER GoogleMapKey
+        // Run slightly later (30) to ensure other assets are queued
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_assets'], 30); 
     }
 
     public function enqueue_assets(): void {
@@ -35,9 +36,9 @@ class WpufCityAutocomplete {
         wp_register_script(
             'yardlii-wpuf-autocomplete',
             $this->coreUrl . 'assets/js/wpuf-city-autocomplete.js',
-            [$handle], // Dependency ensures Maps loads first
+            [$handle], 
             $this->coreVersion,
-            true
+            false // FIX: Load in HEADER (false) so function is defined before Google callback fires
         );
 
         // Enqueue
