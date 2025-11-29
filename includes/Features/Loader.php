@@ -141,6 +141,11 @@ final class Loader
             $geo_enabled = (bool) constant('YARDLII_ENABLE_WPUF_GEOCODING');
         }
 
+	// === Profile Form Switcher ===
+        if (class_exists(__NAMESPACE__ . '\\ProfileFormSwitcher')) {
+            (new ProfileFormSwitcher())->register();
+        }
+
 	
 
         // === WPUF City Autocomplete (Helper) ===

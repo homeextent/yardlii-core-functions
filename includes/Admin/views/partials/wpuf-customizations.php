@@ -199,7 +199,63 @@
     </tr>
 
 
+
+
   </table>
 
   <?php submit_button('Save WPUF Settings'); ?>
+
+<hr style="margin: 30px 0;">
+
+<div class="yardlii-card">
+    <h3 style="margin-top:0;">👤 Dynamic Profile Form Mapping</h3>
+    <p class="description">
+        By default, WPUF uses one global form for "Edit Profile". 
+        Use these settings to override that ID based on the user's role.
+    </p>
+
+    <table class="form-table" role="presentation">
+        <tr>
+            <th scope="row"><label for="yardlii_profile_form_admin">Administrator Form ID</label></th>
+            <td>
+                <input name="yardlii_profile_form_admin" type="number" id="yardlii_profile_form_admin" value="<?php echo esc_attr(get_option('yardlii_profile_form_admin')); ?>" class="regular-text">
+                <p class="description">Usually the "Master" form with all fields.</p>
+            </td>
+        </tr>
+
+        <tr>
+            <th scope="row"><label for="yardlii_profile_form_business">Verified Business Form ID</label></th>
+            <td>
+                <input name="yardlii_profile_form_business" type="number" id="yardlii_profile_form_business" value="<?php echo esc_attr(get_option('yardlii_profile_form_business')); ?>" class="regular-text">
+                <p class="description">Target Role: <code>verified_business</code></p>
+            </td>
+        </tr>
+
+        <tr>
+            <th scope="row"><label for="yardlii_profile_form_contractor">Contractor / Pending Form ID</label></th>
+            <td>
+                <input name="yardlii_profile_form_contractor" type="number" id="yardlii_profile_form_contractor" value="<?php echo esc_attr(get_option('yardlii_profile_form_contractor')); ?>" class="regular-text">
+                <p class="description">Target Roles: <code>verified_contractor</code>, <code>pending_verification</code>, <code>verified_pro_employee</code></p>
+            </td>
+        </tr>
+
+        <tr>
+            <th scope="row"><label for="yardlii_profile_form_supplier">Supplier Form ID</label></th>
+            <td>
+                <input name="yardlii_profile_form_supplier" type="number" id="yardlii_profile_form_supplier" value="<?php echo esc_attr(get_option('yardlii_profile_form_supplier')); ?>" class="regular-text">
+                <p class="description">Target Role: <code>verified_supplier</code></p>
+            </td>
+        </tr>
+
+        <tr>
+            <th scope="row"><label for="yardlii_profile_form_basic">Basic Member Form ID</label></th>
+            <td>
+                <input name="yardlii_profile_form_basic" type="number" id="yardlii_profile_form_basic" value="<?php echo esc_attr(get_option('yardlii_profile_form_basic')); ?>" class="regular-text">
+                <p class="description">Target Roles: <code>subscriber</code> (and anyone else not matched above).</p>
+            </td>
+        </tr>
+    </table>
+    
+    <?php submit_button('Save Mapping Settings'); ?>
+</div>
 </form>
