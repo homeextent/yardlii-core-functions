@@ -1,13 +1,17 @@
 /**
- * YARDLII: WPUF City Autocomplete (Async-Safe)
- * Enhances standard text inputs with Google Places (Cities only).
+ * YARDLII: WPUF City Autocomplete (Callback Strategy)
+ * Ensures init only happens exactly when Google Maps is ready.
  */
-document.addEventListener('DOMContentLoaded', function() {
+
+// 1. Define the Logic Function
+function yardliiAttachCityAutocomplete() {
+    const inputs = document.querySelectorAll('.yardlii-city-autocomplete input[type="text"]');
     
-    // 1. The Logic to Attach Autocomplete
-    const attachAutocomplete = (input) => {
-        if (input.dataset.yardliiCityInit) return; // Prevent double init
-        
+    if (inputs.length === 0) return;
+
+    inputs.forEach(input => {
+        if (input.dataset.yardliiCityInit) return;
+
         const options = {
             types: ['(cities)'],
             componentRestrictions: { country: ['ca', 'us'] },
@@ -19,32 +23,18 @@ document.addEventListener('DOMContentLoaded', function() {
         input.setAttribute('autocomplete', 'off');
         input.setAttribute('placeholder', 'Start typing your city...');
         input.dataset.yardliiCityInit = 'true';
+    });
+}
 
-        // Keep the input clean
-        autocomplete.addListener('place_changed', function() {
-            const place = autocomplete.getPlace();
-            // Optional: You can force the input to the formatted address here
-            // if (place.formatted_address) { input.value = place.formatted_address; }
-        });
-    };
+// 2. Define the Global Callback (Must match the PHP param)
+window.yardliiInitAutocomplete = function() {
+    console.log('[YARDLII] Google Maps Callback Fired.');
+    yardliiAttachCityAutocomplete();
+};
 
-    // 2. The Initializer
-    const init = () => {
-        const inputs = document.querySelectorAll('.yardlii-city-autocomplete input[type="text"]');
-        if (inputs.length > 0) {
-            inputs.forEach(attachAutocomplete);
-        }
-    };
-
-    // 3. The "Wait for Google" Loop
-    // Since the API loads async, we check every 100ms until it's ready.
-    const checkGoogle = setInterval(() => {
-        if (typeof google !== 'undefined' && typeof google.maps !== 'undefined' && typeof google.maps.places !== 'undefined') {
-            clearInterval(checkGoogle); // Stop checking
-            init(); // Run logic
-        }
-    }, 100);
-
-    // 4. Fallback: Stop trying after 10 seconds to save memory
-    setTimeout(() => clearInterval(checkGoogle), 10000);
+// 3. Fallback Safety (In case the API was already loaded by another plugin without our callback)
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof google !== 'undefined' && typeof google.maps !== 'undefined' && typeof google.maps.places !== 'undefined') {
+        yardliiAttachCityAutocomplete();
+    }
 });
