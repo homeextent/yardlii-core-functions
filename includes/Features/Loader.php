@@ -86,6 +86,11 @@ final class Loader
             (new FeaturedImage())->register();
         }
 
+	// === Elementor Query Mods (Author Archives, etc.) ===
+        if (class_exists(__NAMESPACE__ . '\\ElementorQueryMods')) {
+            (new ElementorQueryMods())->register();
+        }
+
         // === Feature: Business Directory ===
         $directory_enabled = (bool) get_option('yardlii_enable_business_directory', false);
         if (defined('YARDLII_ENABLE_BUSINESS_DIRECTORY')) {

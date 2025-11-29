@@ -156,6 +156,20 @@ $editable_roles = array_reverse(get_editable_roles());
     </form>
 </div>
 
+<hr style="margin: 30px 0;">
+
+    <h3>🧩 Elementor Integration</h3>
+    <div class="card" style="margin:0; max-width:none; background:#fff border-left:4px solid #0073aa;">
+        <h4 style="margin-top:0;">Author Archive Loop Fix</h4>
+        <p>To display a user's <strong>Listings</strong> on their Elementor Profile Template:</p>
+        <ol style="margin-left:20px; font-size:13px;">
+            <li>Add a <strong>Loop Grid</strong> widget to the Author Archive template.</li>
+            <li>Set <strong>Query Source</strong> to "Listings" (or Posts).</li>
+            <li>In the <strong>Query ID</strong> field, enter: <code>yardlii_author_listings</code></li>
+        </ol>
+        <p class="description">This forces the grid to show listings belonging <em>only</em> to the user currently being viewed.</p>
+    </div>
+
 <script>
 (function($) {
     const container = document.getElementById('yardlii-dir-repeater');
