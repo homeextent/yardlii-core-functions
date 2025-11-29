@@ -260,25 +260,36 @@
 <h3>📘 Dashboard Shortcode Reference</h3>
 <p class="description">Use these shortcodes to build your custom Elementor Dashboard tabs.</p>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    
     <div class="yardlii-card" style="margin:0;">
-        <h4 style="margin-top:0;">1. Dynamic Profile Form</h4>
+        <h4 style="margin-top:0;">1. My Listings Grid</h4>
+        <p>Displays the current user's listings as visual cards with Edit/Delete buttons (Replaces <code>[wpuf_dashboard]</code>).</p>
+        <code>[yardlii_user_dashboard]</code>
+    </div>
+
+    <div class="yardlii-card" style="margin:0;">
+        <h4 style="margin-top:0;">2. Dynamic Profile Form</h4>
         <p>Automatically renders the correct "Edit Profile" form (Basic vs Pro) based on the user's role mapping above.</p>
         <code>[yardlii_edit_profile]</code>
     </div>
 
     <div class="yardlii-card" style="margin:0;">
-        <h4 style="margin-top:0;">2. Dynamic Submission</h4>
+        <h4 style="margin-top:0;">3. Dynamic Submission</h4>
         <p>Renders the correct "Submit Listing" form. (Basic users get restricted form, Pros get full form).</p>
         <code>[yardlii_submit_listing]</code>
     </div>
 
     <div class="yardlii-card" style="margin:0;">
-        <h4 style="margin-top:0;">3. My Listings Grid</h4>
-        <p>Displays the current user's listings as visual cards with Edit/Delete buttons (Replalces <code>[wpuf_dashboard]</code>).</p>
-        <code>[yardlii_user_dashboard]</code>
+        <h4 style="margin-top:0;">4. Secure Logout Button</h4>
+        <p>Generates a secure, nonce-protected logout button. Prevents "Link Expired" errors.</p>
+        <code>[yardlii_logout label="Log Out" redirect="/"]</code>
+        <p class="description" style="margin-top:5px; font-size:12px;">
+            <strong>Tip:</strong> Place this in a dedicated "Log Out" tab to prevent accidental clicks.
+        </p>
     </div>
 </div>
+
 <div style="background:#f0f6fc; border:1px solid #cce5ff; padding:15px; border-radius:4px; margin-top:20px;">
     <h4 style="margin-top:0; color:#004085;">🔗 Deep Linking (Smart Navigation)</h4>
     <p class="description">
@@ -286,14 +297,13 @@
         <br><em>Requires the <strong>Elementor Tabs</strong> widget to have the CSS ID: <code>yardlii-dashboard-tabs</code>.</em>
     </p>
     <ul style="list-style:disc; margin-left:20px; margin-top:10px; font-size:13px; color:#444;">
-        <li><strong>Link to Tab 1 (Dashboard):</strong> <code>/dashboard/?tab=1</code></li>
+        <li><strong>Link to Tab 1 (My Listings):</strong> <code>/dashboard/?tab=1</code></li>
         <li><strong>Link to Tab 2 (Edit Profile):</strong> <code>/dashboard/?tab=2</code></li>
         <li><strong>Link to Tab 3 (Submit Post):</strong> <code>/dashboard/?tab=3</code></li>
     </ul>
-    <p class="description" style="margin-top:10px;">
-        <em>Use these links in your Header Menu (e.g., "Edit Profile") to route users to the exact right spot.</em>
-    </p>
 </div>
+
+
 <script>
 (function($) {
     const container = document.getElementById('yardlii-profile-rows');
