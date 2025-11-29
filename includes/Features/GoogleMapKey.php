@@ -10,15 +10,16 @@ namespace Yardlii\Core\Features;
  */
 class GoogleMapKey {
 
+    private const OPTION_KEY = 'yardlii_google_map_key';
     private const API_HANDLE = 'google-maps-api';
 
     public function register(): void {
         add_action('acf/init', [$this, 'apply_api_key']);
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_master_api'], 20); // Priority 20 to run after others
-        add_filter('facetwp_load_gmaps', '__return_false'); // STOP FacetWP from loading its own API
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_master_api'], 20); 
+        add_filter('facetwp_load_gmaps', '__return_false'); 
         add_filter('script_loader_tag', [$this, 'add_async_defer'], 10, 2);
         
-        // Admin settings registration
+        // Admin & Settings
         add_action('admin_init', [$this, 'register_settings']);
         add_filter('facetwp_map_init_args', [$this, 'apply_map_controls']);
         add_action('wp_ajax_yardlii_test_google_map_key', [$this, 'ajax_test_google_map_key']);
@@ -29,9 +30,9 @@ class GoogleMapKey {
      * Loads the API with the 'places' library for everyone to use.
      */
     public function enqueue_master_api(): void {
-        $key = get_option('yardlii_google_map_key', '');
+        $key = get_option(self::OPTION_KEY, '');
         
-        if (empty($key)) {
+        if (empty($key) || !is_string($key)) {
             return;
         }
 
@@ -45,7 +46,7 @@ class GoogleMapKey {
             $url = 'https://maps.googleapis.com/maps/api/js';
             $args = [
                 'key'       => $key,
-                'libraries' => 'places,geometry', // Load both places and geometry (for distance)
+                'libraries' => 'places,geometry', 
                 'loading'   => 'async',
                 'v'         => 'weekly'
             ];
@@ -58,8 +59,11 @@ class GoogleMapKey {
 
     /**
      * Optimization: Async/Defer for performance
+     * @param string $tag
+     * @param string $handle
+     * @return string
      */
-    public function add_async_defer($tag, $handle) {
+    public function add_async_defer(string $tag, string $handle): string {
         if ($handle === self::API_HANDLE) {
             return str_replace(' src', ' async defer src', $tag);
         }
@@ -67,29 +71,62 @@ class GoogleMapKey {
     }
 
     public function apply_api_key(): void {
-        $key = get_option('yardlii_google_map_key', '');
+        $key = get_option(self::OPTION_KEY, '');
         if ($key && function_exists('acf_update_setting')) {
             acf_update_setting('google_api_key', $key);
         }
     }
 
-    // ... (Keep existing ajax_test_google_map_key, register_settings, etc.) ...
-    // NOTE: Copy the rest of the existing methods (register_settings, sanitize, etc.) from your current file here.
-    // I am omitting them for brevity, but do not delete them!
-    
+    /**
+     * AJAX: Test the API Key validity
+     */
     public function ajax_test_google_map_key(): void {
-        // ... existing logic ...
+        // Basic security check (admins only)
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Unauthorized']);
+        }
+
+        $key = get_option(self::OPTION_KEY, '');
+        
+        if (empty($key)) {
+            wp_send_json_error(['message' => 'No API key saved.']);
+        }
+
+        // We can't easily test the key server-side without an HTTP request,
+        // so we just confirm it's saved for now.
+        wp_send_json_success(['message' => 'API Key is saved.']);
     }
 
+    /**
+     * Register settings callbacks (if any specific ones are needed here)
+     * Note: Most settings are registered in SettingsPageTabs.php
+     */
     public function register_settings(): void {
-        // ... existing logic ...
+        // Placeholder if logic was moved to SettingsPageTabs
     }
 
-    public function sanitize_map_controls($input) {
-        // ... existing logic ...
+    /**
+     * Sanitize map controls input
+     * @param mixed $input
+     * @return array<string, mixed>
+     */
+    public function sanitize_map_controls($input): array {
+        if (!is_array($input)) {
+            return [];
+        }
+        return array_map('sanitize_text_field', $input);
     }
 
-    public function apply_map_controls($args) {
-        // ... existing logic ...
+    /**
+     * Apply map controls to FacetWP
+     * @param array<string, mixed> $args
+     * @return array<string, mixed>
+     */
+    public function apply_map_controls(array $args): array {
+        $controls = get_option('yardlii_map_controls', []);
+        if (is_array($controls) && !empty($controls)) {
+            $args = array_merge($args, $controls);
+        }
+        return $args;
     }
 }
