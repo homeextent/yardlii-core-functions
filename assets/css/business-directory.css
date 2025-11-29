@@ -335,9 +335,26 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-.ybc-status-pill.status-publish { background-color: #46b450; } /* Green */
-.ybc-status-pill.status-pending { background-color: #ffb900; color:#333; } /* Orange */
-.ybc-status-pill.status-draft   { background-color: #999; }
+/* --- Status Pill Colors (High Specificity Override) --- */
+
+/* We chain the parent class to beat the default grey background */
+.yardlii-business-card.dashboard-card .ybc-status-pill.status-publish { 
+    background-color: #46b450 !important; /* Green */
+}
+
+.yardlii-business-card.dashboard-card .ybc-status-pill.status-pending { 
+    background-color: #ffb900 !important; 
+    color: #333 !important; /* Orange needs dark text */
+}
+
+.yardlii-business-card.dashboard-card .ybc-status-pill.status-draft,
+.yardlii-business-card.dashboard-card .ybc-status-pill.status-future { 
+    background-color: #999 !important; /* Grey */
+}
+
+.yardlii-business-card.dashboard-card .ybc-status-pill.status-trash { 
+    background-color: #dc3232 !important; /* Red */
+}
 
 /* Action Buttons */
 .dashboard-card .ybc-footer.actions {
