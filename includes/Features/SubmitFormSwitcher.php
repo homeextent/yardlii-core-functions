@@ -17,8 +17,7 @@ class SubmitFormSwitcher {
     }
 
     public function enqueue_tab_linker(): void {
-        // Only load if we are on the Dashboard page (ID 4965 based on your previous source code)
-        // Or simply load globally if lightweight. Let's load globally but defer.
+        // Load on Dashboard page (slug 'dashboard' or ID 4965)
         if (is_page('dashboard') || is_page(4965)) {
             wp_enqueue_script(
                 'yardlii-tab-linker',
@@ -32,6 +31,9 @@ class SubmitFormSwitcher {
 
     /**
      * Usage: [yardlii_submit_listing]
+     *
+     * @param array<string, mixed>|string|null $atts
+     * @return string
      */
     public function render_smart_submit_form($atts): string {
         if (!is_user_logged_in()) {
