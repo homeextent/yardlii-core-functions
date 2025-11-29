@@ -197,6 +197,15 @@ final class Loader
             $rc_master = (bool) YARDLII_ENABLE_ROLE_CONTROL;
         }
 
+	// === User Dashboard (My Listings) ===
+        if (class_exists(__NAMESPACE__ . '\\UserDashboard')) {
+            // Inject constants for assets
+            $coreUrl = defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL : plugin_dir_url(__DIR__ . '/../');
+            $coreVer = defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0.0';
+            
+            (new UserDashboard($coreUrl, $coreVer))->register();
+        }
+
         // Submit Access
         $rc_submit_enabled = $rc_master && (bool) get_option('yardlii_enable_role_control_submit', false);
         if ($rc_submit_enabled && class_exists(__NAMESPACE__ . '\\RoleControlSubmitAccess')) {
