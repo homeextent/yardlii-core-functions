@@ -141,6 +141,17 @@ final class Loader
             $geo_enabled = (bool) constant('YARDLII_ENABLE_WPUF_GEOCODING');
         }
 
+	
+
+        // === WPUF City Autocomplete (Helper) ===
+        if (class_exists(__NAMESPACE__ . '\\WpufCityAutocomplete')) {
+            // PHPStan Safe Definitions
+            $coreUrl = defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL : plugin_dir_url(__DIR__ . '/../');
+            $coreVer = defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0.0';
+
+            (new WpufCityAutocomplete($coreUrl, $coreVer))->register();
+        }
+
         // [DEBUG] Force log to verify loader
         if ($geo_enabled) {
              error_log('[YARDLII] Loader: Geocoding is ENABLED. Loading class...');
