@@ -29,17 +29,31 @@ class GoogleMapKey {
      * The Master Enqueue
      * Loads the API with the 'places' library for everyone to use.
      */
-    public function enqueue_master_api(): void {
+   public function enqueue_master_api(): void {
         $key = get_option(self::OPTION_KEY, '');
         
         if (empty($key) || !is_string($key)) {
             return;
         }
 
+        // 1. Register Router (HEADER - Priority)
+        if (!wp_script_is('yardlii-maps-router', 'registered')) {
+            wp_register_script(
+                'yardlii-maps-router',
+                defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL . 'assets/js/google-maps-router.js' : '', // Use constant
+                [], 
+                defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0', 
+                false // Load in Header
+            );
+            wp_enqueue_script('yardlii-maps-router');
+        }
+
+        // 2. Deregister conflicts... (existing code)
         if (wp_script_is('google-maps-places', 'enqueued')) {
             wp_dequeue_script('google-maps-places');
         }
         
+        // 3. Register API with Callback
         if (!wp_script_is(self::API_HANDLE, 'registered')) {
             $url = 'https://maps.googleapis.com/maps/api/js';
             $args = [
@@ -47,12 +61,13 @@ class GoogleMapKey {
                 'libraries' => 'places,geometry', 
                 'loading'   => 'async',
                 'v'         => 'weekly',
-                'callback'  => 'yardliiInitAutocomplete' // NEW: The secret sauce
+                'callback'  => 'yardliiInitAutocomplete' // Calls function in Router
             ];
             
             $final_url = add_query_arg($args, $url);
 
-            wp_enqueue_script(self::API_HANDLE, $final_url, [], null, true);
+            // Depend on Router so Router loads BEFORE API
+            wp_enqueue_script(self::API_HANDLE, $final_url, ['yardlii-maps-router'], null, true);
         }
     }
 

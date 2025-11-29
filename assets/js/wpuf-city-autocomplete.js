@@ -1,17 +1,12 @@
 /**
- * YARDLII: WPUF City Autocomplete (Callback Strategy)
- * Ensures init only happens exactly when Google Maps is ready.
+ * YARDLII: WPUF City Autocomplete
  */
-
-// 1. Define the Logic Function
-function yardliiAttachCityAutocomplete() {
-    const inputs = document.querySelectorAll('.yardlii-city-autocomplete input[type="text"]');
+document.addEventListener('yardliiGoogleMapsLoaded', function() {
+    console.log('[YARDLII] WPUF Autocomplete: API Ready. Attaching...');
     
-    if (inputs.length === 0) return;
-
-    inputs.forEach(input => {
+    const attachAutocomplete = (input) => {
         if (input.dataset.yardliiCityInit) return;
-
+        
         const options = {
             types: ['(cities)'],
             componentRestrictions: { country: ['ca', 'us'] },
@@ -19,22 +14,11 @@ function yardliiAttachCityAutocomplete() {
         };
 
         const autocomplete = new google.maps.places.Autocomplete(input, options);
-
         input.setAttribute('autocomplete', 'off');
         input.setAttribute('placeholder', 'Start typing your city...');
         input.dataset.yardliiCityInit = 'true';
-    });
-}
+    };
 
-// 2. Define the Global Callback (Must match the PHP param)
-window.yardliiInitAutocomplete = function() {
-    console.log('[YARDLII] Google Maps Callback Fired.');
-    yardliiAttachCityAutocomplete();
-};
-
-// 3. Fallback Safety (In case the API was already loaded by another plugin without our callback)
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof google !== 'undefined' && typeof google.maps !== 'undefined' && typeof google.maps.places !== 'undefined') {
-        yardliiAttachCityAutocomplete();
-    }
+    const inputs = document.querySelectorAll('.yardlii-city-autocomplete input[type="text"]');
+    inputs.forEach(attachAutocomplete);
 });

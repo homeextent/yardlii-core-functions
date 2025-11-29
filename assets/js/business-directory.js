@@ -48,20 +48,37 @@ document.addEventListener('DOMContentLoaded', function() {
     function setupFilterLogic(tradeSelect, locInput, submitBtn, resetBtn, grid, trigger) {
         const cards = grid.getElementsByClassName('yardlii-business-card');
 
-        // --- GOOGLE AUTOCOMPLETE ---
-        if (locInput && typeof google !== 'undefined' && google.maps && google.maps.places) {
+        // --- GOOGLE AUTOCOMPLETE (Event Listener Strategy) ---
+    if (locInput) {
+        // Function to init the autocomplete instance
+        const initDirAutocomplete = () => {
+            if (locInput.dataset.dirAutoInit) return; // Prevent double init
+            
+            // Check if Google is actually available
+            if (typeof google === 'undefined' || !google.maps || !google.maps.places) return;
+
             const autocomplete = new google.maps.places.Autocomplete(locInput, {
-                types: ['(cities)'] // Restrict to cities for cleaner results
+                types: ['(cities)'],
+                componentRestrictions: { country: ['ca', 'us'] }
             });
             
-            // When user selects a city, trigger filter
             autocomplete.addListener('place_changed', function() {
-                // If in instant mode, run immediately. If button mode, wait for click.
                 if (trigger !== 'button') {
                     runFilter();
                 }
             });
+            
+            locInput.dataset.dirAutoInit = 'true';
+        };
+
+        // Scenario A: Google is already loaded (e.g. cached or fast load)
+        if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+            initDirAutocomplete();
         }
+
+        // Scenario B: Wait for the Router Event
+        document.addEventListener('yardliiGoogleMapsLoaded', initDirAutocomplete);
+    }
 
         // --- FILTER FUNCTION ---
         function runFilter() {
