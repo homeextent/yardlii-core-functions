@@ -10,13 +10,21 @@ namespace Yardlii\Core\Features;
  */
 class WpufCityAutocomplete {
 
+    private string $coreUrl;
+    private string $coreVersion;
+
+    public function __construct(string $coreUrl, string $coreVersion)
+    {
+        $this->coreUrl = $coreUrl;
+        $this->coreVersion = $coreVersion;
+    }
+
     public function register(): void {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
     }
 
     public function enqueue_assets(): void {
-        // 1. Only load if WPUF is potentially active (we can't easily check for specific shortcodes 
-        // without parsing post content, so we load globally or check for WPUF class presence)
+        // 1. Only load if WPUF is potentially active
         if (!class_exists('WPUF_Main')) {
             return;
         }
@@ -28,7 +36,6 @@ class WpufCityAutocomplete {
         }
 
         // 3. Register Google Maps (if not already by BusinessDirectory or others)
-        // We use the same handle 'yardlii-google-places' to share resources
         if (!wp_script_is('yardlii-google-places', 'registered')) {
             wp_register_script(
                 'yardlii-google-places', 
@@ -39,12 +46,12 @@ class WpufCityAutocomplete {
             );
         }
 
-        // 4. Register Our Logic
+        // 4. Register Our Logic using injected properties
         wp_register_script(
             'yardlii-wpuf-autocomplete',
-            YARDLII_CORE_URL . 'assets/js/wpuf-city-autocomplete.js',
-            ['yardlii-google-places'], // Dependency ensures Maps loads first
-            YARDLII_CORE_VERSION,
+            $this->coreUrl . 'assets/js/wpuf-city-autocomplete.js',
+            ['yardlii-google-places'], 
+            $this->coreVersion,
             true
         );
 
