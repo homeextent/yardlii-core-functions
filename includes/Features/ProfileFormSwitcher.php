@@ -25,7 +25,8 @@ class ProfileFormSwitcher {
     /**
      * Renders the correct WPUF profile form for the current user.
      * Usage: [yardlii_edit_profile]
-     * * @param array<string, mixed>|string|null $atts
+     *
+     * @param array<string, mixed>|string|null $atts
      * @return string
      */
     public function render_smart_profile_form($atts): string {
