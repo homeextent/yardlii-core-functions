@@ -36,19 +36,18 @@ class GoogleMapKey {
             return;
         }
 
-        // Deregister conflicting handles if they exist
         if (wp_script_is('google-maps-places', 'enqueued')) {
             wp_dequeue_script('google-maps-places');
         }
         
-        // Register our Master Instance
         if (!wp_script_is(self::API_HANDLE, 'registered')) {
             $url = 'https://maps.googleapis.com/maps/api/js';
             $args = [
                 'key'       => $key,
                 'libraries' => 'places,geometry', 
                 'loading'   => 'async',
-                'v'         => 'weekly'
+                'v'         => 'weekly',
+                'callback'  => 'yardliiInitAutocomplete' // NEW: The secret sauce
             ];
             
             $final_url = add_query_arg($args, $url);
