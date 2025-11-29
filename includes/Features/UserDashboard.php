@@ -85,9 +85,17 @@ class UserDashboard {
             return '<div class="yardlii-no-results">You haven\'t posted any listings yet.</div>';
         }
 
+        // Status Label Map
+        $status_map = [
+            'publish' => 'Live',
+            'pending' => 'Under Review',
+            'draft'   => 'Draft',
+            'future'  => 'Scheduled',
+            'trash'   => 'Trash'
+        ];
+
         ob_start();
         
-        // Reuse the Grid Layout (CSS Variable for width handles responsiveness)
         echo '<div class="yardlii-directory-grid" style="--yardlii-card-width: 280px;">';
 
         while ($query->have_posts()) {
@@ -95,20 +103,25 @@ class UserDashboard {
             $post_id = get_the_ID();
             $status  = get_post_status();
             
-            // Status Badge Color
-            $status_label = ucfirst($status);
+            // Status Badge Logic
+            $status_label = isset($status_map[$status]) ? $status_map[$status] : ucfirst($status);
             $status_class = 'status-' . $status;
 
-            // Edit Link (Standard WPUF Edit Page or Custom)
-            // We use the WPUF edit page endpoint if available, or generic
-            $edit_url = add_query_arg(['pid' => $post_id], site_url('/edit/')); 
+            // Edit Link Logic
+            $base_edit_url = site_url('/edit/');
             
-            // Safely get the edit page ID
+            // Safely get the edit page ID from WPUF settings
             $edit_page_id = $this->get_wpuf_option('edit_page_id', 'wpuf_frontend_posting');
             
             if ($edit_page_id) {
-                $edit_url = add_query_arg(['pid' => $post_id], get_permalink((int)$edit_page_id));
+                $base_edit_url = get_permalink((int)$edit_page_id);
             }
+
+            // FIX: Add WPUF security nonce
+            $edit_url = add_query_arg([
+                'pid'      => $post_id,
+                '_wpnonce' => wp_create_nonce('wpuf_edit') 
+            ], $base_edit_url);
 
             $delete_url = wp_nonce_url(
                 add_query_arg(['action' => 'yardlii_delete_post', 'pid' => $post_id]),
@@ -121,7 +134,7 @@ class UserDashboard {
             <div class="yardlii-business-card dashboard-card">
                 <div class="ybc-header">
                     <?php if ($image_url): ?>
-                        <img src="<?php echo esc_url($image_url); ?>" class="ybc-logo" alt="" style="width:100%; height:100%; object-fit:cover;">
+                        <img src="<?php echo esc_url($image_url); ?>" class="ybc-logo" alt="" />
                     <?php else: ?>
                         <div class="ybc-logo-placeholder"><i class="fas fa-image"></i></div>
                     <?php endif; ?>
@@ -154,7 +167,7 @@ class UserDashboard {
     }
 
     /**
-     * Safe wrapper for wpuf_get_option to prevent PHPStan errors if WPUF is missing.
+     * Safe wrapper for wpuf_get_option
      * @param string $option
      * @param string $section
      * @return mixed
