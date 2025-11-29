@@ -8,8 +8,8 @@ use WP_Query;
 
 /**
  * Feature: Custom User Dashboard
- * Renders a "My Listings" grid using the Yardlii Card style.
- * Usage: [yardlii_user_dashboard]
+ * Renders a "My Listings" grid and dashboard utilities.
+ * Usage: [yardlii_user_dashboard], [yardlii_logout]
  */
 class UserDashboard {
 
@@ -24,9 +24,9 @@ class UserDashboard {
 
     public function register(): void {
         add_shortcode('yardlii_user_dashboard', [$this, 'render_dashboard']);
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
+        add_shortcode('yardlii_logout', [$this, 'render_logout_button']); // NEW
         
-        // Handle Delete Action
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('init', [$this, 'handle_delete_action']);
     }
 
@@ -36,6 +36,41 @@ class UserDashboard {
             $this->coreUrl . 'assets/css/business-directory.css',
             [],
             $this->coreVersion
+        );
+    }
+
+    /**
+     * Renders a secure Logout Button.
+     * Usage: [yardlii_logout label="Log Out" redirect="/login"]
+     * * @param array<string, mixed>|string|null $atts
+     * @return string
+     */
+    public function render_logout_button($atts): string {
+        if (!is_user_logged_in()) {
+            return '';
+        }
+
+        $safe_atts = (array) $atts;
+        $a = shortcode_atts([
+            'label'    => 'Log Out',
+            'redirect' => home_url(), // Default to Homepage
+            'class'    => 'ybc-btn btn-logout' // Default class
+        ], $safe_atts);
+
+        $redirect_url = sanitize_text_field($a['redirect']);
+        // Ensure it is an absolute URL if user passed a relative one
+        if (strpos($redirect_url, 'http') !== 0) {
+            $redirect_url = site_url($redirect_url);
+        }
+
+        // Generates a nonce-protected URL
+        $logout_url = wp_logout_url($redirect_url);
+
+        return sprintf(
+            '<a href="%s" class="%s">%s</a>',
+            esc_url($logout_url),
+            esc_attr($a['class']),
+            esc_html($a['label'])
         );
     }
 
@@ -53,7 +88,6 @@ class UserDashboard {
 
             wp_trash_post($post_id);
             
-            // Redirect to remove query args
             wp_redirect(remove_query_arg(['action', 'pid', '_wpnonce']));
             exit;
         }
@@ -85,7 +119,6 @@ class UserDashboard {
             return '<div class="yardlii-no-results">You haven\'t posted any listings yet.</div>';
         }
 
-        // Status Label Map
         $status_map = [
             'publish' => 'Live',
             'pending' => 'Under Review',
@@ -103,21 +136,17 @@ class UserDashboard {
             $post_id = get_the_ID();
             $status  = get_post_status();
             
-            // Status Badge Logic
             $status_label = isset($status_map[$status]) ? $status_map[$status] : ucfirst($status);
             $status_class = 'status-' . $status;
 
-            // Edit Link Logic
             $base_edit_url = site_url('/edit/');
             
-            // Safely get the edit page ID from WPUF settings
             $edit_page_id = $this->get_wpuf_option('edit_page_id', 'wpuf_frontend_posting');
             
             if ($edit_page_id) {
                 $base_edit_url = get_permalink((int)$edit_page_id);
             }
 
-            // FIX: Add WPUF security nonce
             $edit_url = add_query_arg([
                 'pid'      => $post_id,
                 '_wpnonce' => wp_create_nonce('wpuf_edit') 
@@ -128,7 +157,7 @@ class UserDashboard {
                 'yardlii_delete_' . $post_id
             );
 
-            // Visuals
+            // Use 'full' to ensure high resolution
             $image_url = get_the_post_thumbnail_url($post_id, 'full');
             ?>
             <div class="yardlii-business-card dashboard-card">
