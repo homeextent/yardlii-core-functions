@@ -186,6 +186,11 @@ final class Loader
             (new SmartFormOverrides())->register();
         }
 
+	// === Submit Form Switcher (Dashboard) ===
+        if (class_exists(__NAMESPACE__ . '\\SubmitFormSwitcher')) {
+            (new SubmitFormSwitcher())->register();
+        }
+
         // === Role Control (master + subfeatures) ===
         $rc_master = (bool) get_option('yardlii_enable_role_control', false);
         if (defined('YARDLII_ENABLE_ROLE_CONTROL')) {
