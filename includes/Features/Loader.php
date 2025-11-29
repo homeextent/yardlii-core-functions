@@ -141,6 +141,11 @@ final class Loader
             $geo_enabled = (bool) constant('YARDLII_ENABLE_WPUF_GEOCODING');
         }
 
+	// === WPUF City Autocomplete (Helper) ===
+        if (class_exists(__NAMESPACE__ . '\\WpufCityAutocomplete')) {
+            (new WpufCityAutocomplete())->register();
+        }
+
         // [DEBUG] Force log to verify loader
         if ($geo_enabled) {
              error_log('[YARDLII] Loader: Geocoding is ENABLED. Loading class...');
