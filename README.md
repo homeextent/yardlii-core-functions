@@ -130,6 +130,12 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## [3.22.1] - 2025-11-28
+### Added
+- **Elementor Utility:** Added `ElementorQueryMods` class to handle custom query modifications.
+- **Author Archive Fix:** Implemented `yardlii_author_listings` Query ID. Using this ID in an Elementor Loop Grid forces it to display listings belonging to the currently viewed author profile.
+- **Documentation:** Added usage instructions for Elementor Query IDs to the User Directory settings tab.
+
 ## [3.22.0] - 2025-11-28
 ### Added
 - **User Directory System (Final):** Complete overhaul of the directory module.
