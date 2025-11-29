@@ -1,5 +1,6 @@
 /**
- * YARDLII Directory - Dual Filter, Autocomplete & Reset (v3.24)
+ * YARDLII Directory - Dual Filter Logic (Simplified)
+ * Relies on global WPUF Autocomplete script for location logic.
  */
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -48,44 +49,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function setupFilterLogic(tradeSelect, locInput, submitBtn, resetBtn, grid, trigger) {
         const cards = grid.getElementsByClassName('yardlii-business-card');
 
-        // --- GOOGLE AUTOCOMPLETE (Event Listener Strategy) ---
-    if (locInput) {
-        // Function to init the autocomplete instance
-        const initDirAutocomplete = () => {
-            if (locInput.dataset.dirAutoInit) return; // Prevent double init
-            
-            // Check if Google is actually available
-            if (typeof google === 'undefined' || !google.maps || !google.maps.places) return;
-
-            const autocomplete = new google.maps.places.Autocomplete(locInput, {
-                types: ['(cities)'],
-                componentRestrictions: { country: ['ca', 'us'] }
-            });
-            
-            autocomplete.addListener('place_changed', function() {
-                if (trigger !== 'button') {
-                    runFilter();
-                }
-            });
-            
-            locInput.dataset.dirAutoInit = 'true';
-        };
-
-        // Scenario A: Google is already loaded (e.g. cached or fast load)
-        if (typeof google !== 'undefined' && google.maps && google.maps.places) {
-            initDirAutocomplete();
-        }
-
-        // Scenario B: Wait for the Router Event
-        document.addEventListener('yardliiGoogleMapsLoaded', initDirAutocomplete);
-    }
-
-        // --- FILTER FUNCTION ---
         function runFilter() {
             const tradeVal = tradeSelect ? tradeSelect.value.toLowerCase() : '';
             const locVal   = locInput ? locInput.value.toLowerCase().trim() : '';
 
-            // Toggle Reset Button Visibility
+            // Toggle Reset Button
             if (resetBtn) {
                 if (tradeVal !== '' || locVal !== '') {
                     resetBtn.style.display = 'inline-block';
@@ -94,7 +62,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Perform Filtering
             for (let i = 0; i < cards.length; i++) {
                 const card = cards[i];
                 const cardTrade = card.getAttribute('data-trade') || '';
@@ -118,12 +85,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // --- RESET FUNCTION ---
         if (resetBtn) {
             resetBtn.addEventListener('click', function() {
                 if (tradeSelect) tradeSelect.selectedIndex = 0;
                 if (locInput) locInput.value = '';
-                runFilter(); // Re-run to show all
+                runFilter(); 
             });
         }
 
@@ -144,8 +110,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         } else {
+            // Instant Mode
             if (tradeSelect) tradeSelect.addEventListener('change', runFilter);
-            if (locInput)    locInput.addEventListener('keyup', runFilter);
+            
+            // FIX: Listen for 'change' (fired by Autocomplete) AND 'keyup'
+            if (locInput) {
+                locInput.addEventListener('keyup', runFilter);
+                locInput.addEventListener('change', runFilter);
+            }
         }
     }
 });

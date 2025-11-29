@@ -252,7 +252,7 @@ class BusinessDirectory {
         // it should be available.
     }
 
-    /**
+   /**
      * Helper to render inputs + optional button
      * @param array<string, string> $tradesList
      * @param string $triggerMode
@@ -269,9 +269,11 @@ class BusinessDirectory {
                 <?php endif; ?>
             </select>
         </div>
-        <div class="yardlii-filter-group" style="position:relative;">
+        
+        <div class="yardlii-filter-group yardlii-city-autocomplete" style="position:relative;">
             <input type="text" class="yardlii-filter-location" placeholder="Location (City)..." autocomplete="off">
         </div>
+        
         <?php if ($triggerMode === 'button'): ?>
             <div class="yardlii-filter-group yardlii-filter-action">
                 <button type="button" class="yardlii-dir-submit button">Search</button>

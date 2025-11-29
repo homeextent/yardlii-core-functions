@@ -17,8 +17,15 @@ document.addEventListener('yardliiGoogleMapsLoaded', function() {
         input.setAttribute('autocomplete', 'off');
         input.setAttribute('placeholder', 'Start typing your city...');
         input.dataset.yardliiCityInit = 'true';
+
+        // FIX: Dispatch 'change' event on selection so Directory knows to filter
+        autocomplete.addListener('place_changed', function() {
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
     };
 
-    const inputs = document.querySelectorAll('.yardlii-city-autocomplete input[type="text"]');
+    // Target both WPUF forms AND Directory inputs
+    const selector = '.yardlii-city-autocomplete input[type="text"], input.yardlii-filter-location';
+    const inputs = document.querySelectorAll(selector);
     inputs.forEach(attachAutocomplete);
 });
