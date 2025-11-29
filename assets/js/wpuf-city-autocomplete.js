@@ -1,40 +1,50 @@
 /**
- * YARDLII: WPUF City Autocomplete
+ * YARDLII: WPUF City Autocomplete (Async-Safe)
  * Enhances standard text inputs with Google Places (Cities only).
  */
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Helper to init autocomplete on a specific input
+    // 1. The Logic to Attach Autocomplete
     const attachAutocomplete = (input) => {
         if (input.dataset.yardliiCityInit) return; // Prevent double init
         
-        // Configuration: Cities only to protect privacy (no street addresses)
         const options = {
             types: ['(cities)'],
-            componentRestrictions: { country: ['ca', 'us'] }, // Limit to relevant markets
+            componentRestrictions: { country: ['ca', 'us'] },
             fields: ['formatted_address', 'name', 'geometry']
         };
 
         const autocomplete = new google.maps.places.Autocomplete(input, options);
 
-        // UI enhancements
-        input.setAttribute('autocomplete', 'off'); // Stop browser history suggestions
+        input.setAttribute('autocomplete', 'off');
         input.setAttribute('placeholder', 'Start typing your city...');
         input.dataset.yardliiCityInit = 'true';
 
-        // Optional: Ensure the text stays clean
+        // Keep the input clean
         autocomplete.addListener('place_changed', function() {
             const place = autocomplete.getPlace();
-            // If user just typed text without selecting, place.geometry is undefined.
-            // We generally let the text stick, but you could enforce selection here.
+            // Optional: You can force the input to the formatted address here
+            // if (place.formatted_address) { input.value = place.formatted_address; }
         });
     };
 
-    // 1. Init on Load (for standard forms)
-    // WPUF applies the custom class to the <li> wrapper, not the input itself.
-    const inputs = document.querySelectorAll('.yardlii-city-autocomplete input[type="text"]');
-    inputs.forEach(attachAutocomplete);
+    // 2. The Initializer
+    const init = () => {
+        const inputs = document.querySelectorAll('.yardlii-city-autocomplete input[type="text"]');
+        if (inputs.length > 0) {
+            inputs.forEach(attachAutocomplete);
+        }
+    };
 
-    // 2. Observer (Optional) - In case WPUF loads steps dynamically/via AJAX
-    // For simple forms, the above is enough. For multi-step, we might need more logic later.
+    // 3. The "Wait for Google" Loop
+    // Since the API loads async, we check every 100ms until it's ready.
+    const checkGoogle = setInterval(() => {
+        if (typeof google !== 'undefined' && typeof google.maps !== 'undefined' && typeof google.maps.places !== 'undefined') {
+            clearInterval(checkGoogle); // Stop checking
+            init(); // Run logic
+        }
+    }, 100);
+
+    // 4. Fallback: Stop trying after 10 seconds to save memory
+    setTimeout(() => clearInterval(checkGoogle), 10000);
 });
