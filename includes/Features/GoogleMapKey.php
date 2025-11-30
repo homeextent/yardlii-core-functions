@@ -95,20 +95,48 @@ class GoogleMapKey {
      * AJAX: Test the API Key validity
      */
     public function ajax_test_google_map_key(): void {
-        // Basic security check (admins only)
+        // Security check
+        check_ajax_referer('yardlii_test_google_map_key', '_ajax_nonce');
+
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Unauthorized']);
+            wp_send_json_error(['message' => 'Unauthorized user.']);
         }
 
-        $key = get_option(self::OPTION_KEY, '');
+        $type = isset($_POST['key_type']) ? sanitize_text_field($_POST['key_type']) : 'frontend';
         
-        if (empty($key)) {
-            wp_send_json_error(['message' => 'No API key saved.']);
-        }
+        if ($type === 'backend') {
+            $key = get_option('yardlii_google_server_key', '');
+            if (empty($key)) {
+                wp_send_json_error(['message' => 'Backend Key is empty.']);
+            }
+            
+            // Test by geocoding a known static address (Niagara Falls)
+            $url = 'https://maps.googleapis.com/maps/api/geocode/json?address=Niagara+Falls&key=' . $key;
+            $response = wp_remote_get($url);
 
-        // We can't easily test the key server-side without an HTTP request,
-        // so we just confirm it's saved for now.
-        wp_send_json_success(['message' => 'API Key is saved.']);
+            if (is_wp_error($response)) {
+                wp_send_json_error(['message' => 'Connection Failed: ' . $response->get_error_message()]);
+            }
+
+            $body = json_decode(wp_remote_retrieve_body($response), true);
+            
+            if (isset($body['status']) && $body['status'] === 'OK') {
+                wp_send_json_success(['message' => '✅ Backend Key is Valid (Geocoding works).']);
+            } else {
+                $error = $body['error_message'] ?? $body['status'] ?? 'Unknown Error';
+                wp_send_json_error(['message' => '❌ Google API Error: ' . $error]);
+            }
+
+        } else {
+            // Frontend Key Test (Simple existence check)
+            // Ideally, frontend keys are tested by JS in the browser, not PHP.
+            // But we can check if it's saved.
+            $key = get_option('yardlii_google_map_key', '');
+            if (empty($key)) {
+                wp_send_json_error(['message' => 'Frontend Key is empty.']);
+            }
+            wp_send_json_success(['message' => '✅ Frontend Key is saved. (Check browser console for specific map errors).']);
+        }
     }
 
     /**
