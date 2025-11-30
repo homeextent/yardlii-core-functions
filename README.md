@@ -130,6 +130,12 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## [3.25.2] - 2025-11-30
+### Fixed
+- **Google Maps Loading:** Moved the API loader from Footer (Async) to Header (Synchronous).
+    - *Reason:* Resolves critical race condition with FacetWP v4.4+ which requires the `google` object to be defined immediately for `importLibrary` calls.
+    - *Note:* This slightly impacts PageSpeed but is required for stability.
+
 ## [3.25.1] - 2025-11-29
 ### Added
 - **Feature Flags:** Registered UI toggles for "Universal Location Engine" and "Elementor Query Utilities" in the Advanced settings tab.
