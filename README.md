@@ -130,6 +130,14 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## [3.25.1] - 2025-11-29
+### Added
+- **Feature Flags:** Registered UI toggles for "Universal Location Engine" and "Elementor Query Utilities" in the Advanced settings tab.
+- **Diagnostics:** Added runtime status checks for the new location and query modules in the Diagnostics panel.
+
+### Changed
+- **Maps Diagnostics:** Upgraded the Google Maps API testing tool to test Frontend (Browser) and Backend (Server) keys independently, preventing false negatives.
+
 ## [3.25.0] - 2025-11-29
 ### Added
 - **Custom User Dashboard:** New `[yardlii_user_dashboard]` shortcode replaces the rigid WPUF dashboard. Features card-style layout, color-coded status badges, adaptive image sizing, and custom action buttons.
