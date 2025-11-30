@@ -42,38 +42,56 @@
 
   <hr>
   <h3>🔍 Test & Diagnostics</h3>
-  <p>Use this tool to verify that your saved <strong>Frontend</strong> key is valid and reachable from this domain.</p>
+  <p>Verify that your keys are valid and have the correct permissions enabled.</p>
 
-  <button type="button" class="button button-secondary" id="yardlii-test-api-key">Test Frontend Key</button>
-  <div id="yardlii-test-result" style="margin-top:10px;font-weight:600;"></div>
+  <div style="display:flex; gap:10px; margin-bottom:10px;">
+      <button type="button" class="button button-secondary" id="yardlii-test-front-key">Test Frontend Key</button>
+      <button type="button" class="button button-secondary" id="yardlii-test-back-key">Test Backend Key</button>
+  </div>
+  
+  <div id="yardlii-test-result" style="margin-top:10px;font-weight:600; padding:10px; background:#fff; border:1px solid #ddd; display:none;"></div>
 
   <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const btn = document.getElementById('yardlii-test-api-key');
-    const result = document.getElementById('yardlii-test-result');
-    if (btn) {
-      btn.addEventListener('click', function() {
-        result.textContent = 'Testing API key...';
-        result.style.color = '#555';
+    const resultBox = document.getElementById('yardlii-test-result');
+    
+    function runTest(type) {
+        resultBox.style.display = 'block';
+        resultBox.textContent = 'Testing ' + type + ' key...';
+        resultBox.style.color = '#555';
+        resultBox.style.borderColor = '#ddd';
+
         fetch(ajaxurl, {
           method: 'POST',
           headers: {'Content-Type': 'application/x-www-form-urlencoded'},
           body: new URLSearchParams({
             action: 'yardlii_test_google_map_key',
+            key_type: type,
             _ajax_nonce: '<?php echo wp_create_nonce('yardlii_test_google_map_key'); ?>'
           })
         })
         .then(res => res.json())
         .then(data => {
-          result.textContent = data.message || 'Unknown response.';
-          result.style.color = data.success ? '#00a32a' : '#d63638';
+          resultBox.textContent = data.data.message || data.message || 'Unknown response.';
+          if(data.success) {
+              resultBox.style.color = '#00a32a';
+              resultBox.style.borderColor = '#00a32a';
+          } else {
+              resultBox.style.color = '#d63638';
+              resultBox.style.borderColor = '#d63638';
+          }
         })
-        .catch(() => {
-          result.textContent = '❌ AJAX request failed.';
-          result.style.color = '#d63638';
+        .catch(err => {
+          resultBox.textContent = '❌ Critical Error: ' + err;
+          resultBox.style.color = '#d63638';
         });
-      });
     }
+
+    const btnFront = document.getElementById('yardlii-test-front-key');
+    if (btnFront) btnFront.addEventListener('click', function() { runTest('frontend'); });
+
+    const btnBack = document.getElementById('yardlii-test-back-key');
+    if (btnBack) btnBack.addEventListener('click', function() { runTest('backend'); });
   });
   </script>
 </div>
