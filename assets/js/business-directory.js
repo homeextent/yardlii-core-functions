@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function setupFilterLogic(tradeSelect, locInput, submitBtn, resetBtn, grid, trigger) {
+   function setupFilterLogic(tradeSelect, locInput, submitBtn, resetBtn, grid, trigger) {
         const cards = grid.getElementsByClassName('yardlii-business-card');
 
         function runFilter() {
@@ -85,6 +85,42 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        // --- NEW: GOOGLE AUTOCOMPLETE INTEGRATION ---
+        if (locInput) {
+            const initDirAutocomplete = () => {
+                // Prevent double initialization
+                if (locInput.dataset.dirAutoInit) return; 
+                
+                // Safety Check: Is Google API actually ready?
+                if (typeof google === 'undefined' || !google.maps || !google.maps.places) return;
+
+                const autocomplete = new google.maps.places.Autocomplete(locInput, {
+                    types: ['(cities)'],
+                    componentRestrictions: { country: ['ca', 'us'] }
+                });
+                
+                // When a city is selected from the dropdown...
+                autocomplete.addListener('place_changed', function() {
+                    // If we are in "Instant Search" mode, trigger the filter immediately.
+                    // If in "Button" mode, do nothing (user must still click Search).
+                    if (trigger !== 'button') {
+                        runFilter();
+                    }
+                });
+                
+                locInput.dataset.dirAutoInit = 'true';
+            };
+
+            // Strategy A: Listen for the Global Router event (Async loading)
+            document.addEventListener('yardliiGoogleMapsLoaded', initDirAutocomplete);
+
+            // Strategy B: Check if Google is already loaded (Cached/Sync loading)
+            if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+                initDirAutocomplete();
+            }
+        }
+        // ---------------------------------------------
+
         if (resetBtn) {
             resetBtn.addEventListener('click', function() {
                 if (tradeSelect) tradeSelect.selectedIndex = 0;
@@ -113,9 +149,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Instant Mode
             if (tradeSelect) tradeSelect.addEventListener('change', runFilter);
             
-            // FIX: Listen for 'change' (fired by Autocomplete) AND 'keyup'
             if (locInput) {
+                // Listen for standard typing
                 locInput.addEventListener('keyup', runFilter);
+                // Listen for changes (like Autocomplete selection or paste)
                 locInput.addEventListener('change', runFilter);
             }
         }

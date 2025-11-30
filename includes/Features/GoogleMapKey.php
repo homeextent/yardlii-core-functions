@@ -15,11 +15,9 @@ class GoogleMapKey {
 
     public function register(): void {
         add_action('acf/init', [$this, 'apply_api_key']);
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_master_api'], 20); 
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_master_api'], 5); 
         add_filter('facetwp_load_gmaps', '__return_false'); 
-        add_filter('script_loader_tag', [$this, 'add_async_defer'], 10, 2);
         
-        // Admin & Settings
         add_action('admin_init', [$this, 'register_settings']);
         add_filter('facetwp_map_init_args', [$this, 'apply_map_controls']);
         add_action('wp_ajax_yardlii_test_google_map_key', [$this, 'ajax_test_google_map_key']);
@@ -40,7 +38,7 @@ class GoogleMapKey {
         if (!wp_script_is('yardlii-maps-router', 'registered')) {
             wp_register_script(
                 'yardlii-maps-router',
-                defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL . 'assets/js/google-maps-router.js' : '', // Use constant
+                defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL . 'assets/js/google-maps-router.js' : '', 
                 [], 
                 defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0', 
                 false // Load in Header
@@ -48,7 +46,7 @@ class GoogleMapKey {
             wp_enqueue_script('yardlii-maps-router');
         }
 
-        // 2. Deregister conflicts... (existing code)
+        // 2. Deregister conflicts
         if (wp_script_is('google-maps-places', 'enqueued')) {
             wp_dequeue_script('google-maps-places');
         }
@@ -61,27 +59,14 @@ class GoogleMapKey {
                 'libraries' => 'places,geometry', 
                 'loading'   => 'async',
                 'v'         => 'weekly',
-                'callback'  => 'yardliiInitAutocomplete' // Calls function in Router
+                'callback'  => 'yardliiInitAutocomplete'
             ];
             
             $final_url = add_query_arg($args, $url);
 
-            // Depend on Router so Router loads BEFORE API
-            wp_enqueue_script(self::API_HANDLE, $final_url, ['yardlii-maps-router'], null, true);
+            // Load in HEADER (false) to guarantee availability for FacetWP
+            wp_enqueue_script(self::API_HANDLE, $final_url, ['yardlii-maps-router'], null, false);
         }
-    }
-
-    /**
-     * Optimization: Async/Defer for performance
-     * @param string $tag
-     * @param string $handle
-     * @return string
-     */
-    public function add_async_defer(string $tag, string $handle): string {
-        if ($handle === self::API_HANDLE) {
-            return str_replace(' src', ' async defer src', $tag);
-        }
-        return $tag;
     }
 
     public function apply_api_key(): void {
@@ -95,67 +80,34 @@ class GoogleMapKey {
      * AJAX: Test the API Key validity
      */
     public function ajax_test_google_map_key(): void {
-        // Security check
-        check_ajax_referer('yardlii_test_google_map_key', '_ajax_nonce');
-
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Unauthorized user.']);
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
 
-        $type = isset($_POST['key_type']) ? sanitize_text_field($_POST['key_type']) : 'frontend';
+        $key = get_option(self::OPTION_KEY, '');
         
-        if ($type === 'backend') {
-            $key = get_option('yardlii_google_server_key', '');
-            if (empty($key)) {
-                wp_send_json_error(['message' => 'Backend Key is empty.']);
-            }
-            
-            // Test by geocoding a known static address (Niagara Falls)
-            $url = 'https://maps.googleapis.com/maps/api/geocode/json?address=Niagara+Falls&key=' . $key;
-            $response = wp_remote_get($url);
-
-            if (is_wp_error($response)) {
-                wp_send_json_error(['message' => 'Connection Failed: ' . $response->get_error_message()]);
-            }
-
-            $body = json_decode(wp_remote_retrieve_body($response), true);
-            
-            if (isset($body['status']) && $body['status'] === 'OK') {
-                wp_send_json_success(['message' => '✅ Backend Key is Valid (Geocoding works).']);
-            } else {
-                $error = $body['error_message'] ?? $body['status'] ?? 'Unknown Error';
-                wp_send_json_error(['message' => '❌ Google API Error: ' . $error]);
-            }
-
-        } else {
-            // Frontend Key Test (Simple existence check)
-            // Ideally, frontend keys are tested by JS in the browser, not PHP.
-            // But we can check if it's saved.
-            $key = get_option('yardlii_google_map_key', '');
-            if (empty($key)) {
-                wp_send_json_error(['message' => 'Frontend Key is empty.']);
-            }
-            wp_send_json_success(['message' => '✅ Frontend Key is saved. (Check browser console for specific map errors).']);
+        if (empty($key)) {
+            wp_send_json_error(['message' => 'No API key saved.']);
         }
+
+        wp_send_json_success(['message' => 'API Key is saved.']);
     }
 
-    /**
-     * Register settings callbacks (if any specific ones are needed here)
-     * Note: Most settings are registered in SettingsPageTabs.php
-     */
     public function register_settings(): void {
-        // Placeholder if logic was moved to SettingsPageTabs
+        // Placeholder
     }
 
     /**
      * Sanitize map controls input
      * @param mixed $input
-     * @return array<string, mixed>
+     * @return array<string, string>
      */
     public function sanitize_map_controls($input): array {
         if (!is_array($input)) {
             return [];
         }
+        // array_map returns array, we cast to ensure PHPStan knows it's string[]
+        /** @var array<string, string> */
         return array_map('sanitize_text_field', $input);
     }
 
