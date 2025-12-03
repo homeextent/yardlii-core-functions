@@ -130,6 +130,11 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.25.3 - 2025-12-03 
+* Fix: Solved Android/Mobile keyboard overlap issue on Google Autocomplete.
+* Update: Implemented "Phantom Spacer" pattern in Universal Location Engine.
+* Tweak: Increased z-index for autocomplete results to prevent hiding behind sticky footers.
+
 ## [3.25.2] - 2025-11-30
 ### Fixed
 - **Google Maps Loading:** Moved the API loader from Footer (Async) to Header (Synchronous).
