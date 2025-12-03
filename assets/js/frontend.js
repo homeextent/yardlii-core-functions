@@ -180,43 +180,58 @@ if (locateIcon && typeof google !== 'undefined' && google.maps) {
 /**
  * YARDLII: Global Mobile Viewport Fix (Universal Location Engine)
  * Context: Fixes Google Autocomplete hiding behind mobile keyboards.
- * Applies to: Homepage Search, FacetWP, WPUF, Elementor.
+ * Upgraded: v3.26.1 - Popup Awareness & Robust Selectors
  */
 (function() {
-    // We use 'focusin' because it bubbles up from any input on the page
     document.addEventListener('focusin', function(e) {
-        
-        // 1. Identify Target
         const target = e.target;
-        
-        // 2. Check if this is a Location Input (Global Selector List)
+
+        // 1. ROBUST IDENTIFICATION
+        // Use 'closest' to catch inputs inside wrappers (WPUF) 
+        // Use 'classList' for direct matches (FacetWP/Homepage)
         const isLocationInput = (
-            target.matches('.yardlii-city-autocomplete input') || // WPUF / Elementor
-            target.matches('.yardlii-location-input') ||          // Homepage Search
-            target.matches('.facetwp-location') ||                // FacetWP Standard
-            target.matches('.fwp-location-search') ||             // FacetWP Custom
-            target.id === 'fwp-location-search'                   // Fallback ID
+            target.closest('.yardlii-city-autocomplete') ||       // WPUF / User Dashboard
+            target.classList.contains('yardlii-location-input') || // Homepage Search
+            target.classList.contains('facetwp-location') ||       // FacetWP Standard
+            target.closest('.fwp-location-search') ||              // FacetWP Custom Wrapper
+            target.id === 'fwp-location-search'                    // Fallback ID
         );
 
         if (!isLocationInput) return;
 
-        // 3. Mobile Device Check (< 768px)
+        // 2. Mobile Device Check
         if (window.innerWidth >= 768) return;
 
-        // 4. Inject Phantom Spacer (The Fix)
+        // 3. CONTEXT AWARENESS (The Popup Fix)
+        // Detect if we are inside an Elementor Popup or FacetWP Mobile Flyout
+        const activePopup = target.closest('.elementor-popup-modal') || 
+                            target.closest('.dialog-widget-content') || 
+                            target.closest('.facetwp-flyout');
+
+        // Determine where to inject the spacer
+        // If in a popup, add space inside the popup so IT scrolls. Otherwise, use Body.
+        let injectionTarget = document.body;
+        if (activePopup) {
+            // Try to find the inner scrollable container of the popup (Elementor specific)
+            injectionTarget = activePopup.querySelector('.dialog-message') || activePopup;
+        }
+
+        // 4. Inject Phantom Spacer
         let spacer = document.getElementById('yardlii-mobile-spacer');
         if (!spacer) {
             spacer = document.createElement('div');
             spacer.id = 'yardlii-mobile-spacer';
-            // Add 50vh buffer to bottom of page
             spacer.style.height = '50vh';
             spacer.style.width = '100%';
+            spacer.style.minHeight = '300px'; // Force height for popups
             spacer.style.pointerEvents = 'none';
-            spacer.style.backgroundColor = 'transparent'; // Invisible
-            document.body.appendChild(spacer);
+            spacer.style.backgroundColor = 'transparent';
+            
+            // Append to the correct container (Body vs Popup)
+            injectionTarget.appendChild(spacer);
         }
 
-        // 5. Scroll to Top (Delayed for keyboard animation)
+        // 5. Scroll to Top
         setTimeout(() => {
             target.scrollIntoView({
                 behavior: "smooth", 
@@ -225,9 +240,8 @@ if (locateIcon && typeof google !== 'undefined' && google.maps) {
         }, 300);
     });
 
-    // 6. Cleanup on Blur (Global)
+    // 6. Cleanup on Blur
     document.addEventListener('focusout', function(e) {
-        // Delay to allow click events on dropdown items to register
         setTimeout(() => {
             const spacer = document.getElementById('yardlii-mobile-spacer');
             if (spacer) {
