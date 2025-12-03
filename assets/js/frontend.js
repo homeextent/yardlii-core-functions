@@ -177,4 +177,62 @@ if (locateIcon && typeof google !== 'undefined' && google.maps) {
   }
 })(jQuery);
 
+/**
+ * YARDLII: Global Mobile Viewport Fix (Universal Location Engine)
+ * Context: Fixes Google Autocomplete hiding behind mobile keyboards.
+ * Applies to: Homepage Search, FacetWP, WPUF, Elementor.
+ */
+(function() {
+    // We use 'focusin' because it bubbles up from any input on the page
+    document.addEventListener('focusin', function(e) {
+        
+        // 1. Identify Target
+        const target = e.target;
+        
+        // 2. Check if this is a Location Input (Global Selector List)
+        const isLocationInput = (
+            target.matches('.yardlii-city-autocomplete input') || // WPUF / Elementor
+            target.matches('.yardlii-location-input') ||          // Homepage Search
+            target.matches('.facetwp-location') ||                // FacetWP Standard
+            target.matches('.fwp-location-search') ||             // FacetWP Custom
+            target.id === 'fwp-location-search'                   // Fallback ID
+        );
 
+        if (!isLocationInput) return;
+
+        // 3. Mobile Device Check (< 768px)
+        if (window.innerWidth >= 768) return;
+
+        // 4. Inject Phantom Spacer (The Fix)
+        let spacer = document.getElementById('yardlii-mobile-spacer');
+        if (!spacer) {
+            spacer = document.createElement('div');
+            spacer.id = 'yardlii-mobile-spacer';
+            // Add 50vh buffer to bottom of page
+            spacer.style.height = '50vh';
+            spacer.style.width = '100%';
+            spacer.style.pointerEvents = 'none';
+            spacer.style.backgroundColor = 'transparent'; // Invisible
+            document.body.appendChild(spacer);
+        }
+
+        // 5. Scroll to Top (Delayed for keyboard animation)
+        setTimeout(() => {
+            target.scrollIntoView({
+                behavior: "smooth", 
+                block: "start" 
+            });
+        }, 300);
+    });
+
+    // 6. Cleanup on Blur (Global)
+    document.addEventListener('focusout', function(e) {
+        // Delay to allow click events on dropdown items to register
+        setTimeout(() => {
+            const spacer = document.getElementById('yardlii-mobile-spacer');
+            if (spacer) {
+                spacer.remove();
+            }
+        }, 200);
+    });
+})();
