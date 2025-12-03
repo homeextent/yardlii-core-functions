@@ -45,4 +45,20 @@
             init();
         }
     });
+
+	// --- NEW CODE START ---
+// Fix: On mobile, scroll input to top so keyboard doesn't hide the dropdown
+input.addEventListener('focus', function() {
+    // 1. Mobile Check (matches standard tablet/mobile break)
+    if (window.innerWidth < 768) {
+        // 2. Delay 300ms to allow the virtual keyboard to slide up fully
+        setTimeout(() => {
+            // 3. Smooth scroll the element to the top of the viewport
+            this.scrollIntoView({
+                behavior: "smooth", 
+                block: "start" 
+            });
+        }, 300);
+    }
+});
 })();
