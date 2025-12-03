@@ -1,10 +1,11 @@
 /**
  * YARDLII: WPUF City Autocomplete (Compatibility Mode)
  * Handles both Event-Driven (Async) and Immediate (Sync) loading.
+ * Updated: v3.25.3 - Mobile Keyboard Spacer Fix
  */
 (function() {
     const init = function() {
-        console.log('[YARDLII] WPUF Autocomplete: Initializing...');
+        // console.log('[YARDLII] WPUF Autocomplete: Initializing...');
         
         const attachAutocomplete = (input) => {
             if (input.dataset.yardliiCityInit) return;
@@ -28,6 +29,46 @@
             autocomplete.addListener('place_changed', function() {
                 input.dispatchEvent(new Event('change', { bubbles: true }));
             });
+
+            // --- MOBILE KEYBOARD FIX START ---
+            input.addEventListener('focus', function() {
+                // 1. Mobile Check (< 768px matches your CSS breakpoints)
+                if (window.innerWidth < 768) {
+                    
+                    // 2. Inject "Phantom Spacer" to force page length
+                    // This allows the browser to scroll down far enough to put the input at the top
+                    let spacer = document.getElementById('yardlii-mobile-spacer');
+                    if (!spacer) {
+                        spacer = document.createElement('div');
+                        spacer.id = 'yardlii-mobile-spacer';
+                        spacer.style.height = '50vh'; // Adds 50% viewport height buffer
+                        spacer.style.width = '100%';
+                        spacer.style.pointerEvents = 'none';
+                        spacer.style.backgroundColor = 'transparent';
+                        document.body.appendChild(spacer);
+                    }
+
+                    // 3. Delay slightly for keyboard animation, then snap to top
+                    setTimeout(() => {
+                        this.scrollIntoView({
+                            behavior: "smooth", 
+                            block: "start" 
+                        });
+                    }, 300);
+                }
+            });
+
+            // 4. Cleanup on Blur (User clicks away or closes keyboard)
+            input.addEventListener('blur', function() {
+                // Small delay to ensure click events on the dropdown register first
+                setTimeout(() => {
+                    const spacer = document.getElementById('yardlii-mobile-spacer');
+                    if (spacer) {
+                        spacer.remove();
+                    }
+                }, 200);
+            });
+            // --- MOBILE KEYBOARD FIX END ---
         };
 
         const selector = '.yardlii-city-autocomplete input[type="text"], input.yardlii-filter-location';
@@ -39,26 +80,9 @@
     document.addEventListener('yardliiGoogleMapsLoaded', init);
 
     // 2. Check Immediate Availability (Sync/Header loading)
-    // This catches the case where Google loaded before this script ran.
     document.addEventListener('DOMContentLoaded', function() {
         if (typeof google !== 'undefined' && google.maps && google.maps.places) {
             init();
         }
     });
-
-	// --- NEW CODE START ---
-// Fix: On mobile, scroll input to top so keyboard doesn't hide the dropdown
-input.addEventListener('focus', function() {
-    // 1. Mobile Check (matches standard tablet/mobile break)
-    if (window.innerWidth < 768) {
-        // 2. Delay 300ms to allow the virtual keyboard to slide up fully
-        setTimeout(() => {
-            // 3. Smooth scroll the element to the top of the viewport
-            this.scrollIntoView({
-                behavior: "smooth", 
-                block: "start" 
-            });
-        }, 300);
-    }
-});
 })();
