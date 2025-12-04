@@ -5,12 +5,16 @@ includes:
 parameters:
     level: 6
     paths:
-        - includes
-        - tests/unit
-    excludePaths:
-        - vendor/*
-        - assets/*
-        - tests/integration  # <--- Changed from tests/integration/* to just tests/integration to be safer
+        - includes/
+        - yardlii-core-functions.php
+        - tests/
+    
+    # POINT TO THE ROOT FILE (Where we added the mocks)
     bootstrapFiles:
-        - tests/phpstan-bootstrap.php
-    reportUnmatchedIgnoredErrors: false
+        - phpstan-bootstrap.php
+    
+    excludePaths:
+        - tests/*
+        - vendor/*
+    scanDirectories:
+        - includes
