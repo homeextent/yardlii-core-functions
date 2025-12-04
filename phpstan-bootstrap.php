@@ -1,10 +1,10 @@
 <?php
 
 /* =====================================================
- * GLOBAL BOOTSTRAP (Constants & Autoloaders)
+ * GLOBAL BOOTSTRAP (Constants, Autoloaders, Mocks)
  * ===================================================== */
 namespace {
-    // Define test constants if not already defined
+    // 1. Constants
     if (!defined('YARDLII_CORE_PATH')) {
         define('YARDLII_CORE_PATH', __DIR__ . '/');
     }
@@ -15,13 +15,13 @@ namespace {
         define('YARDLII_CORE_VERSION', '0.0.0');
     }
 
-    // Load Composer autoloader
+    // 2. Composer Autoloader
     $autoloader = __DIR__ . '/vendor/autoload.php';
     if (file_exists($autoloader)) {
         require_once $autoloader;
     }
 
-    // Mock Action Scheduler if missing
+    // 3. Action Scheduler Mocks
     if (!class_exists('ActionScheduler_Store')) {
         class ActionScheduler_Store {
             public function save_action($action) {}
@@ -29,19 +29,17 @@ namespace {
         function as_get_scheduled_actions($args = [], $return_format = '') { return []; }
         function as_schedule_single_action($timestamp, $hook, $args = [], $group = '') {}
     }
-}
 
-/* =====================================================
- * MOCKS for ACF (Advanced Custom Fields)
- * ===================================================== */
-if (!function_exists('get_field')) {
-    function get_field($selector, $post_id = false, $format_value = true) { return null; }
-}
-if (!function_exists('update_field')) {
-    function update_field($selector, $value, $post_id = false) { return true; }
-}
-if (!function_exists('acf_get_fields')) {
-    function acf_get_fields($field_group_id) { return []; }
+    // 4. ACF Mocks (Moved INSIDE the global namespace to fix Fatal Error)
+    if (!function_exists('get_field')) {
+        function get_field($selector, $post_id = false, $format_value = true) { return null; }
+    }
+    if (!function_exists('update_field')) {
+        function update_field($selector, $value, $post_id = false) { return true; }
+    }
+    if (!function_exists('acf_get_fields')) {
+        function acf_get_fields($field_group_id) { return []; }
+    }
 }
 
 /* =====================================================
@@ -51,7 +49,6 @@ namespace Elementor {
     // 1. Mock Widget_Base
     if (!class_exists('Elementor\Widget_Base')) {
         abstract class Widget_Base {
-            // Core identification methods
             public function get_name() {}
             public function get_title() {}
             public function get_icon() {}
