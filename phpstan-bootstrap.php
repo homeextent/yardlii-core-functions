@@ -1,29 +1,34 @@
 <?php
 
-// Define test constants if not already defined
-if (!defined('YARDLII_CORE_PATH')) {
-    define('YARDLII_CORE_PATH', __DIR__ . '/');
-}
-if (!defined('YARDLII_CORE_URL')) {
-    define('YARDLII_CORE_URL', 'http://example.org/wp-content/plugins/yardlii-core/');
-}
-if (!defined('YARDLII_CORE_VERSION')) {
-    define('YARDLII_CORE_VERSION', '0.0.0');
-}
-
-// Load Composer autoloader
-$autoloader = __DIR__ . '/vendor/autoload.php';
-if (file_exists($autoloader)) {
-    require_once $autoloader;
-}
-
-// Mock Action Scheduler if missing
-if (!class_exists('ActionScheduler_Store')) {
-    class ActionScheduler_Store {
-        public function save_action($action) {}
+/* =====================================================
+ * GLOBAL BOOTSTRAP (Constants & Autoloaders)
+ * ===================================================== */
+namespace {
+    // Define test constants if not already defined
+    if (!defined('YARDLII_CORE_PATH')) {
+        define('YARDLII_CORE_PATH', __DIR__ . '/');
     }
-    function as_get_scheduled_actions($args = [], $return_format = '') { return []; }
-    function as_schedule_single_action($timestamp, $hook, $args = [], $group = '') {}
+    if (!defined('YARDLII_CORE_URL')) {
+        define('YARDLII_CORE_URL', 'http://example.org/wp-content/plugins/yardlii-core/');
+    }
+    if (!defined('YARDLII_CORE_VERSION')) {
+        define('YARDLII_CORE_VERSION', '0.0.0');
+    }
+
+    // Load Composer autoloader
+    $autoloader = __DIR__ . '/vendor/autoload.php';
+    if (file_exists($autoloader)) {
+        require_once $autoloader;
+    }
+
+    // Mock Action Scheduler if missing
+    if (!class_exists('ActionScheduler_Store')) {
+        class ActionScheduler_Store {
+            public function save_action($action) {}
+        }
+        function as_get_scheduled_actions($args = [], $return_format = '') { return []; }
+        function as_schedule_single_action($timestamp, $hook, $args = [], $group = '') {}
+    }
 }
 
 /* =====================================================
@@ -64,8 +69,4 @@ namespace Elementor {
             const COLOR = 'color';
         }
     }
-}
-
-namespace {
-    // Global mocks if needed
 }
