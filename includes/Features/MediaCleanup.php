@@ -55,6 +55,11 @@ class MediaCleanup {
 
     /**
      * TIER 2: Smart Edit (Gallery Cleanup)
+     *
+     * @param int $post_id
+     * @param int $form_id
+     * @param array<mixed> $form_settings
+     * @param array<mixed> $form_vars
      */
     public function handle_wpuf_update(int $post_id, int $form_id, array $form_settings, array $form_vars): void {
         if (get_post_type($post_id) !== self::TARGET_CPTS[0]) return;
