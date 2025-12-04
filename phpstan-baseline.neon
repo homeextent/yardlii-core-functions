@@ -1,0 +1,34 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Function acf_get_fields not found\\.$#"
+			count: 1
+			path: includes/Admin/SettingsPageTabs.php
+		-
+			message: "#^Function get_field not found\\.$#"
+			count: 2
+			path: includes/Features/FeaturedImage.php
+		-
+			message: "#^Method .* has no return type specified\\.$#"
+			count: 50
+			path: includes/
+		-
+			message: "#^Method .* has parameter .* with no type specified\\.$#"
+			count: 50
+			path: includes/
+		-
+			message: "#^Method .* return type has no value type specified in iterable type array\\.$#"
+			count: 30
+			path: includes/
+		-
+			message: "#^Property .* is not nullable\\.$#"
+			count: 10
+			path: includes/
+		-
+			message: "#^Right side of && is always false\\.$#"
+			count: 15
+			path: includes/
+		-
+			message: "#^Call to function is_array\\(\\) with WP_User will always evaluate to false\\.$#"
+			count: 1
+			path: includes/Features/TrustVerification/Support/UserDataGuards.php

@@ -32,6 +32,19 @@ namespace {
 }
 
 /* =====================================================
+ * MOCKS for ACF (Advanced Custom Fields)
+ * ===================================================== */
+if (!function_exists('get_field')) {
+    function get_field($selector, $post_id = false, $format_value = true) { return null; }
+}
+if (!function_exists('update_field')) {
+    function update_field($selector, $value, $post_id = false) { return true; }
+}
+if (!function_exists('acf_get_fields')) {
+    function acf_get_fields($field_group_id) { return []; }
+}
+
+/* =====================================================
  * MOCKS for Elementor (Fixes "Unknown Class" Errors)
  * ===================================================== */
 namespace Elementor {

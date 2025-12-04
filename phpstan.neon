@@ -1,6 +1,9 @@
 # phpstan.neon
 
 
+includes:
+    - phpstan-baseline.neon
+
 parameters:
     level: 6
     paths:
@@ -8,7 +11,6 @@ parameters:
         - yardlii-core-functions.php
         - tests/
     
-    # POINT TO THE ROOT FILE (Where we added the mocks)
     bootstrapFiles:
         - phpstan-bootstrap.php
     
