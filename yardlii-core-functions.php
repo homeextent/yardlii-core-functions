@@ -104,6 +104,36 @@ if (!function_exists('yardlii_log')) {
 }
 
 /* =====================================================
+ * Universal Location Engine & Global Assets
+ * Added per v3.25.3 Spec
+ * ===================================================== */
+add_action('wp_enqueue_scripts', static function (): void {
+    // 1. Enqueue the Global Controller (Mobile Fix)
+    // Dependencies: jQuery is required for the scroll logic.
+    wp_enqueue_script(
+        'yardlii-frontend-js',
+        YARDLII_CORE_URL . 'assets/js/frontend.js',
+        ['jquery'], 
+        YARDLII_CORE_VERSION,
+        true // Load in footer
+    );
+
+    // 2. Enqueue the Visibility Layer (Z-Index fixes)
+    wp_enqueue_style(
+        'yardlii-frontend-css',
+        YARDLII_CORE_URL . 'assets/css/frontend.css',
+        [],
+        YARDLII_CORE_VERSION
+    );
+
+    // 3. CONFLICT RESOLUTION: Dequeue the "Old" CSS from the other plugin
+    // This prevents double-loading and version conflicts.
+    wp_dequeue_style('yardlii-core-frontend-css');
+    wp_deregister_style('yardlii-core-frontend-css');
+
+}, 20); // Priority 20 ensures this runs AFTER the other plugin has loaded
+
+/* =====================================================
  * Optional feature flags (code-locked defaults)
  * Define in wp-config.php or here BEFORE init if desired.
  * ===================================================== */
