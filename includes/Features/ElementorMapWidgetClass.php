@@ -30,10 +30,18 @@ class ElementorMapWidgetClass extends Widget_Base {
         return 'eicon-google-maps';
     }
 
+    /**
+     * Get widget categories.
+     * @return array<string>
+     */
     public function get_categories(): array {
         return [ 'general' ];
     }
 
+    /**
+     * Get widget scripts.
+     * @return array<string>
+     */
     public function get_script_depends(): array {
         return [ 'yardlii-core-frontend' ];
     }
