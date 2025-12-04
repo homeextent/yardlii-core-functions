@@ -1,6 +1,5 @@
 # phpstan.neon
-includes:
-    - phpstan-baseline.neon
+
 
 parameters:
     level: 6

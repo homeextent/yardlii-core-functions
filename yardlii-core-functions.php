@@ -95,9 +95,12 @@ if (!defined('YARDLII_DEBUG')) define('YARDLII_DEBUG', false);
 
 // Convenience logger
 if (!function_exists('yardlii_log')) {
+    /**
+     * @param mixed $msg
+     */
     function yardlii_log($msg): void {
         if (defined('YARDLII_DEBUG') && YARDLII_DEBUG) {
-            if (!is_string($msg)) { $msg = wp_json_encode($msg); }
+            if (!is_string($msg)) { $msg = (string) wp_json_encode($msg); }
             error_log('[YARDLII] ' . $msg);
         }
     }
