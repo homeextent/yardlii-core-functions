@@ -130,6 +130,11 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.25.4 - 2025-12-04
+* **Fix:** Enforced global loading of the Universal Location Engine (JS/CSS) on all post types, archives, and Elementor templates.
+* **Fix:** Resolved critical CSS conflict ("Dual Plugin State") by deregistering the legacy map styles (`yardlii-core-frontend`) to prevent duplicate downloads.
+* **Fix:** Removed redundant `WpufCityAutocomplete` registration in the Loader class.
+
 ## 3.25.3 - 2025-12-03 
 * Fix: Solved Android/Mobile keyboard overlap issue on Google Autocomplete.
 * Update: Implemented "Phantom Spacer" pattern in Universal Location Engine.
