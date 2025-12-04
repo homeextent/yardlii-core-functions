@@ -241,28 +241,21 @@
 
 /* --- YARDLII: Google Maps Autocomplete Mobile Fix --- */
 @media (max-width: 768px) {
-    /* * Target the Google Container (.pac-container)
-     * We use !important here because Google injects inline styles 
-     * that we must override to ensure visibility over keyboards.
-     */
     .pac-container {
-        /* Ensure it sits above Elementor Popups (usually z-index 9999) */
-        z-index: 100005 !important; 
+        /* Update Z-Index to 999999. 
+           FacetWP Flyout usually sits at 9999 or 10000.
+           This guarantees the dropdown floats ON TOP of the flyout.
+        */
+        z-index: 999999 !important; 
         
-        /* Increase readability on small screens */
         font-size: 16px !important; 
-        
-        /* Add slight shadow for separation from keyboard */
         box-shadow: 0 -2px 10px rgba(0,0,0,0.2) !important;
     }
 
-    /* Increase touch target size for usability */
     .pac-item {
         padding: 12px 10px !important; 
         line-height: 1.5 !important;
     }
-
-    /* Align icons vertically */
     .pac-icon {
         margin-top: 2px !important;
     }
