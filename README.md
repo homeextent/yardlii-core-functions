@@ -130,6 +130,11 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+##  3.25.5 - 2025-12-04
+* Fix: Media Cleanup "Janitor" now automatically detects and protects Profile Photos and Business Logos from deletion.
+* Refactor: Removed obsolete "Protected Form IDs" setting in favor of direct database verification.
+* Dev: Updated MediaCleanup class with strict PHPStan typing.
+
 ## 3.25.4 - 2025-12-04
 * **Fix:** Enforced global loading of the Universal Location Engine (JS/CSS) on all post types, archives, and Elementor templates.
 * **Fix:** Resolved critical CSS conflict ("Dual Plugin State") by deregistering the legacy map styles (`yardlii-core-frontend`) to prevent duplicate downloads.
