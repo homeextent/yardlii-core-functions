@@ -260,3 +260,8 @@
         margin-top: 2px !important;
     }
 }
+.cegm-map-container { 
+    width: 100%; 
+    position: relative; 
+    overflow: hidden; /* --- NEW: This makes the border-radius work --- */
+}

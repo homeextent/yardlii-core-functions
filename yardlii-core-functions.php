@@ -127,3 +127,30 @@ add_action('plugins_loaded', static function () {
         error_log('[YARDLII] Core class not found — check autoloader.');
     }
 });
+
+/**
+ * YARDLII: Enqueue Universal Frontend Assets
+ * Forces the Mobile Viewport Fix and Location Engine to load on ALL pages.
+ * Added: v3.26.3
+ */
+add_action('wp_enqueue_scripts', function() {
+    // 1. Register the script first
+    wp_register_script(
+        'yardlii-core-frontend',
+        plugin_dir_url(__FILE__) . 'assets/js/frontend.js',
+        ['jquery'], // Dependencies
+        YARDLII_CORE_VERSION,
+        true // Load in Footer
+    );
+
+    // 2. Enqueue it globally
+    wp_enqueue_script('yardlii-core-frontend');
+
+    // 3. Enqueue the CSS globally too (for the z-index fix)
+    wp_enqueue_style(
+        'yardlii-core-frontend',
+        plugin_dir_url(__FILE__) . 'assets/css/frontend.css',
+        [],
+        YARDLII_CORE_VERSION
+    );
+});

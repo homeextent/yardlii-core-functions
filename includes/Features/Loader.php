@@ -238,6 +238,17 @@ final class Loader
             (new WpufCityAutocomplete($coreUrl, $coreVer))->register();
         }
 
+	// Elementor Pro Query Modifications
+        if ( did_action( 'elementor/loaded' ) && class_exists( __NAMESPACE__ . '\\ElementorQueryMods' ) ) {
+            ( new ElementorQueryMods() )->register();
+        }
+
+        // --- NEW: Custom Map Widget (Migrated) ---
+        // Loads the custom map widget into Elementor
+        if ( did_action( 'elementor/loaded' ) && class_exists( __NAMESPACE__ . '\\ElementorMapWidget' ) ) {
+            ( new ElementorMapWidget() )->register();
+        }
+
         // === Elementor Query Mods ===
         $el_enabled = (bool) get_option('yardlii_enable_elementor_query_mods', false);
         if (defined('YARDLII_ENABLE_ELEMENTOR_QUERY_MODS')) {
