@@ -132,7 +132,7 @@ add_action('wp_enqueue_scripts', static function (): void {
 
 }, 20); // Priority 20 ensures this runs AFTER the other plugin has loaded/* 
 
-=====================================================
+/* =====================================================
  * Optional feature flags (code-locked defaults)
  * Define in wp-config.php or here BEFORE init if desired.
  * ===================================================== */
