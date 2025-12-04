@@ -10,41 +10,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Migrated Elementor Map Widget
- * * Original Source: yardlii-custom-elementor-google-map/widget-google-map.php
+ * Original Source: yardlii-custom-elementor-google-map/widget-google-map.php
  * Migrated to Core: v3.26.3
  */
 class ElementorMapWidgetClass extends Widget_Base {
 
     /**
      * Get widget name.
-     * We keep the ID 'yardlii_google_map' identical to the old plugin
-     * so existing widgets on the site continue to work without data loss.
      */
-    public function get_name() {
+    public function get_name(): string {
         return 'yardlii_google_map';
     }
 
-    public function get_title() {
+    public function get_title(): string {
         return esc_html__( 'Yardlii Google Map', 'yardlii-core' );
     }
 
-    public function get_icon() {
+    public function get_icon(): string {
         return 'eicon-google-maps';
     }
 
-    public function get_categories() {
+    public function get_categories(): array {
         return [ 'general' ];
     }
 
-    /**
-     * Get widget scripts.
-     * CRITICAL: Points to the new Universal Location Engine in Core.
-     */
-    public function get_script_depends() {
+    public function get_script_depends(): array {
         return [ 'yardlii-core-frontend' ];
     }
 
-    protected function register_controls() {
+    protected function register_controls(): void {
         $this->start_controls_section(
             'section_map',
             [
@@ -128,7 +122,7 @@ class ElementorMapWidgetClass extends Widget_Base {
     /**
      * Render widget output on the frontend.
      */
-    protected function render() {
+    protected function render(): void {
         $settings = $this->get_settings_for_display();
         
         // Extract settings

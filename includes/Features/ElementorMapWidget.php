@@ -13,9 +13,10 @@ class ElementorMapWidget {
         add_action('elementor/widgets/register', [$this, 'register_widget']);
     }
 
-    public function register_widget($widgets_manager) {
-        // We define the class anonymously or require a separate file for the Widget Class itself.
-        // For simplicity, we assume the Widget Class logic follows standard Elementor patterns.
+    /**
+     * @param mixed $widgets_manager Elementor widgets manager instance
+     */
+    public function register_widget( mixed $widgets_manager ): void {
         require_once __DIR__ . '/ElementorMapWidgetClass.php';
         $widgets_manager->register(new \Yardlii\Core\Features\ElementorMapWidgetClass());
     }
