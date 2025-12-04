@@ -180,21 +180,21 @@ if (locateIcon && typeof google !== 'undefined' && google.maps) {
 /**
  * YARDLII: Global Mobile Viewport Fix (Universal Location Engine)
  * Context: Fixes Google Autocomplete hiding behind mobile keyboards.
- * Upgraded: v3.26.1 - Popup Awareness & Robust Selectors
+ * Upgraded: v3.26.2 - FacetWP Flyout & Directory Support
  */
 (function() {
     document.addEventListener('focusin', function(e) {
         const target = e.target;
 
         // 1. ROBUST IDENTIFICATION
-        // Use 'closest' to catch inputs inside wrappers (WPUF) 
-        // Use 'classList' for direct matches (FacetWP/Homepage)
+        // cathes: WPUF, FacetWP, Homepage, and Directory ID explicitly
         const isLocationInput = (
-            target.closest('.yardlii-city-autocomplete') ||       // WPUF / User Dashboard
-            target.classList.contains('yardlii-location-input') || // Homepage Search
+            target.closest('.yardlii-city-autocomplete') ||        // WPUF / Dashboard
+            target.classList.contains('yardlii-location-input') || // Homepage Class
+            target.id === 'yardlii_location_input' ||              // Directory / Homepage ID
             target.classList.contains('facetwp-location') ||       // FacetWP Standard
-            target.closest('.fwp-location-search') ||              // FacetWP Custom Wrapper
-            target.id === 'fwp-location-search'                    // Fallback ID
+            target.closest('.fwp-location-search') ||              // FacetWP Wrapper
+            target.id === 'fwp-location-search'                    // Fallback
         );
 
         if (!isLocationInput) return;
@@ -202,18 +202,18 @@ if (locateIcon && typeof google !== 'undefined' && google.maps) {
         // 2. Mobile Device Check
         if (window.innerWidth >= 768) return;
 
-        // 3. CONTEXT AWARENESS (The Popup Fix)
-        // Detect if we are inside an Elementor Popup or FacetWP Mobile Flyout
-        const activePopup = target.closest('.elementor-popup-modal') || 
-                            target.closest('.dialog-widget-content') || 
-                            target.closest('.facetwp-flyout');
-
-        // Determine where to inject the spacer
-        // If in a popup, add space inside the popup so IT scrolls. Otherwise, use Body.
+        // 3. CONTEXT DETECTION (The Flyout Fix)
+        // Check if we are inside the FacetWP Mobile Flyout
+        const flyout = target.closest('.facetwp-flyout');
+        
+        // Define where to put the spacer
         let injectionTarget = document.body;
-        if (activePopup) {
-            // Try to find the inner scrollable container of the popup (Elementor specific)
-            injectionTarget = activePopup.querySelector('.dialog-message') || activePopup;
+        
+        if (flyout) {
+            // If in Flyout, try to find the specific scrollable content area
+            // FacetWP usually uses .facetwp-flyout-content
+            const flyoutContent = flyout.querySelector('.facetwp-flyout-content');
+            injectionTarget = flyoutContent || flyout;
         }
 
         // 4. Inject Phantom Spacer
@@ -221,13 +221,13 @@ if (locateIcon && typeof google !== 'undefined' && google.maps) {
         if (!spacer) {
             spacer = document.createElement('div');
             spacer.id = 'yardlii-mobile-spacer';
-            spacer.style.height = '50vh';
+            spacer.style.height = '45vh'; // 45% of viewport height
             spacer.style.width = '100%';
-            spacer.style.minHeight = '300px'; // Force height for popups
+            spacer.style.minHeight = '300px'; 
             spacer.style.pointerEvents = 'none';
             spacer.style.backgroundColor = 'transparent';
             
-            // Append to the correct container (Body vs Popup)
+            // Append to either Body OR the Flyout
             injectionTarget.appendChild(spacer);
         }
 
