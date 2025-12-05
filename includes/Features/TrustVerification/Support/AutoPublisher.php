@@ -3,7 +3,7 @@
 namespace Yardlii\Core\Features\TrustVerification\Support;
 
 use WP_Query;
-use Yardlii\Core\Services\Logger; // Added Import
+use Yardlii\Core\Services\Logger;
 
 /**
  * Class AutoPublisher
@@ -16,15 +16,22 @@ class AutoPublisher {
         add_action('set_user_role', [$this, 'handleRoleChange'], 10, 3);
     }
 
+    /**
+     * @return array<int>
+     */
     private function get_allowed_form_ids(): array {
         $ids = [];
         $basic_id = (int) get_option('yardlii_posting_logic_basic_form', 0);
         if ($basic_id > 0) {
             $ids[] = $basic_id;
         }
+        /** @var array<int> */
         return apply_filters('yardlii_tv_auto_publish_forms', array_filter($ids));
     }
 
+    /**
+     * @param array<string> $old_roles
+     */
     public function handleRoleChange(int $user_id, string $new_role, array $old_roles): void {
         if ($new_role !== 'pending_verification') {
             return;

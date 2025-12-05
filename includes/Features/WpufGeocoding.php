@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Yardlii\Core\Features;
 
-use Yardlii\Core\Services\Logger; // Added Import
+use Yardlii\Core\Services\Logger;
 
 /**
  * Feature: WPUF Geocoding (Privacy Focused)
@@ -19,6 +19,10 @@ class WpufGeocoding {
         add_filter('facetwp_proximity_store_keys', [$this, 'map_facetwp_keys']);
     }
 
+    /**
+     * @param array<mixed> $keys
+     * @return array<string, string>
+     */
     public function map_facetwp_keys(array $keys): array {
         return [
             'latitude'  => 'yardlii_listing_latitude',
@@ -58,6 +62,12 @@ class WpufGeocoding {
         }
     }
 
+    /**
+     * @param int $post_id
+     * @param int $form_id
+     * @param array<string, mixed> $form_settings
+     * @param array<string, mixed> $form_vars
+     */
     public function handle_submission(int $post_id, int $form_id, array $form_settings, array $form_vars): void {
         Logger::log("Processing submission for Post ID: $post_id, Form ID: $form_id", 'GEO');
 
@@ -101,6 +111,9 @@ class WpufGeocoding {
         }
     }
 
+    /**
+     * @return array<string, string>
+     */
     private function parse_mapping_config(string $input): array {
         $lines = explode("\n", $input);
         $map = [];
@@ -117,6 +130,9 @@ class WpufGeocoding {
         return $map;
     }
 
+    /**
+     * @return array{lat: float, lng: float, address: string}|null
+     */
     private function fetch_coordinates(string $postal_code, string $key): ?array {
         $url = "https://maps.googleapis.com/maps/api/geocode/json?address=" . urlencode($postal_code) . "&key=" . $key;
         $response = wp_remote_get($url);
@@ -158,6 +174,9 @@ class WpufGeocoding {
         return null;
     }
     
+    /**
+     * @param array<mixed> $components
+     */
     private function format_privacy_address(array $components): string {
         $city = '';
         $province = '';
