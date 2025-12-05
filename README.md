@@ -130,6 +130,12 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.26.0 - 2025-12-04
+### Architecture
+- **Centralized Logger:** Implemented `Yardlii\Core\Services\Logger`. All debugging output is now strictly gated by the "Enable Debug Mode" toggle in settings.
+- **Log Hygiene:** Fixed "Log Leakage" issues where `Core::init` and `Loader` events were printing to `debug.log` even when debugging was disabled.
+- **Strict Typing:** Refactored `MediaCleanup`, `AutoPublisher`, and `WpufGeocoding` to enforce strict PHPStan Level 6 type safety (e.g., `array<string, mixed>`).
+
 ##  3.25.5 - 2025-12-04
 * Fix: Media Cleanup "Janitor" now automatically detects and protects Profile Photos and Business Logos from deletion.
 * Refactor: Removed obsolete "Protected Form IDs" setting in favor of direct database verification.
