@@ -260,3 +260,52 @@
         margin-top: 2px !important;
     }
 }
+
+/* =========================================================
+   Google Social Login (WPUF)
+   Overrides standard plugin styles to match Yardlii Brand
+   ========================================================= */
+a.wpuf-social-signin-btn.google {
+    /* Brand Colors */
+    background-color: #0A2240 !important; /* Trust Blue */
+    background: #0A2240 !important;       /* Override plugin gradients */
+    color: #FFFFFF !important;            /* White Text */
+    border: 1px solid #0A2240 !important;
+    
+    /* Typography */
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    text-decoration: none !important;
+    
+    /* Layout & Shape */
+    border-radius: 5px !important;
+    padding: 12px 24px !important;
+    height: auto !important;
+    width: 100% !important;
+    max-width: 350px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    transition: all 0.3s ease !important;
+    margin: 10px 0 !important;
+}
+
+/* Hover State */
+a.wpuf-social-signin-btn.google:hover {
+    background-color: #0F325E !important;
+    background: #0F325E !important;
+    color: #FFFFFF !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+}
+
+/* Icon Styling (Invert to White) */
+a.wpuf-social-signin-btn.google img {
+    filter: brightness(0) invert(1) !important;
+    height: 20px !important;
+    width: 20px !important;
+    margin: 0 !important;
+}
