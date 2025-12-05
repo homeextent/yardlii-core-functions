@@ -130,6 +130,10 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.26.2 - 2025-12-05
+### Styling
+- **Social Login:** Integrated custom CSS for WPUF Google Social Login buttons directly into the plugin assets. This overrides default plugin styles to match the Yardlii Brand Identity (Trust Blue) and removes reliance on Customizer CSS.
+
 ## 3.26.1 - 2025-12-04
 ### Fixed
 - **Stability:** Hardened `FeaturedListings::add_sticky_state` to gracefully handle cases where WordPress passes a Post ID (integer) instead of a Post Object, resolving PHP warnings in the debug log.
