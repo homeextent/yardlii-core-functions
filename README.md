@@ -130,6 +130,10 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.26.1 - 2025-12-04
+### Fixed
+- **Stability:** Hardened `FeaturedListings::add_sticky_state` to gracefully handle cases where WordPress passes a Post ID (integer) instead of a Post Object, resolving PHP warnings in the debug log.
+
 ## 3.26.0 - 2025-12-04
 ### Architecture
 - **Centralized Logger:** Implemented `Yardlii\Core\Services\Logger`. All debugging output is now strictly gated by the "Enable Debug Mode" toggle in settings.
