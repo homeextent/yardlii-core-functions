@@ -3,15 +3,16 @@ declare(strict_types=1);
 
 namespace Yardlii\Core\Features\TrustVerification\Providers;
 
+use Yardlii\Core\Services\Logger; // Added Import
+
 final class ElementorPro implements ProviderInterface
 {
     public function getName(): string { return 'elementor-pro'; }
 
     public function registerHooks(): void
     {
-        if (defined('YARDLII_DEBUG') && YARDLII_DEBUG) {
-            error_log('Elementor provider hooks registered');
-        }
+        Logger::log('Elementor provider hooks registered', 'TV');
+        
         // Fire on both events (EP fires new_record before actions, after_send after actions)
         add_action('elementor_pro/forms/new_record', [$this, 'onSubmit'], 10, 2);
         add_action('elementor_pro/forms/after_send', [$this, 'onAfterSend'], 10, 2);
@@ -19,17 +20,13 @@ final class ElementorPro implements ProviderInterface
 
     public function onSubmit($record, $handler): void
     {
-        if (defined('YARDLII_DEBUG') && YARDLII_DEBUG) {
-            error_log('Elementor onSubmit fired');
-        }
+        Logger::log('Elementor onSubmit fired', 'TV');
         $this->forward($record, 'new_record');
     }
 
     public function onAfterSend($record, $handler): void
     {
-        if (defined('YARDLII_DEBUG') && YARDLII_DEBUG) {
-            error_log('Elementor onAfterSend fired');
-        }
+        Logger::log('Elementor onAfterSend fired', 'TV');
         $this->forward($record, 'after_send');
     }
 
@@ -49,7 +46,7 @@ final class ElementorPro implements ProviderInterface
         if ($form_id === '') {
             // Try $record->get('form_name') first (works on many versions)
             $name = (string) ($record->get('form_name') ?? "");
-            // If still empty, safely query settings by key (your EP needs exactly 1 arg)
+            
             if ($name === "" && method_exists($record, 'get_form_settings')) {
                 try {
                     $name = (string) ($record->get_form_settings('form_name') ?? "");
@@ -58,7 +55,6 @@ final class ElementorPro implements ProviderInterface
                 }
             }
 
-            // Also try the widget's internal id
             $wid = "";
             if (method_exists($record, 'get_form_settings')) {
                 try {
@@ -71,7 +67,6 @@ final class ElementorPro implements ProviderInterface
                 $wid = (string) ($record->get('id') ?? "");
             }
 
-            // Build the TV form_id
             if ($name !== "") {
                 $form_id = 'elementor:' . sanitize_title($name);
             } elseif ($wid !== "") {
@@ -79,12 +74,10 @@ final class ElementorPro implements ProviderInterface
             }
         }
         
-        if (defined('YARDLII_DEBUG') && YARDLII_DEBUG) {
-            error_log(sprintf('[TV] Elementor submit event=%s user=%d form_id=%s', $event, $user_id, $form_id));
-        }
+        Logger::log(sprintf('Elementor submit event=%s user=%d form_id=%s', $event, $user_id, $form_id), 'TV');
 
         if ($form_id === "") return;
-        // Create/reuse the TV request
+        
         \Yardlii\Core\Features\TrustVerification\Requests\Guards::maybeCreateRequest($user_id, $form_id, [
             'provider' => 'elementor',
             'event' => $event,
