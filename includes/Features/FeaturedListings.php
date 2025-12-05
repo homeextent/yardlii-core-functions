@@ -117,8 +117,18 @@ class FeaturedListings {
      * @param array<string, string> $states
      * @return array<string, string>
      */
-    public function add_sticky_state(array $states, WP_Post $post): array {
-        if ($post->post_type !== 'listings') {
+    /**
+     * Visual Fix: Add "Sticky" label if Sticky OR Meta is true.
+     *
+     * @param array<string, string> $states
+     * @param mixed $post_obj  WP_Post object or ID.
+     * @return array<string, string>
+     */
+    public function add_sticky_state(array $states, $post_obj): array {
+        // Safety: Ensure we have a valid WP_Post object
+        $post = get_post($post_obj);
+        
+        if (!$post || $post->post_type !== 'listings') {
             return $states;
         }
 
@@ -130,6 +140,8 @@ class FeaturedListings {
 
         return $states;
     }
+
+       
 
     public function add_admin_filter(string $post_type): void {
         if ($post_type !== 'listings') {
