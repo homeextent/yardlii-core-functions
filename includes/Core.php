@@ -4,49 +4,38 @@ namespace Yardlii\Core;
 use Yardlii\Core\Admin\SettingsPageTabs;
 use Yardlii\Core\Admin\Assets;
 use Yardlii\Core\Features\Loader;
+use Yardlii\Core\Services\Logger;
 
 class Core
 {
-    /**
-     * Safe logging helper (only logs if WP_DEBUG = true)
-     */
-    private function log_init($message): void
-{
-    $debug_enabled = (bool) get_option('yardlii_debug_mode', false);
-
-    if ((defined('WP_DEBUG') && WP_DEBUG === true) || $debug_enabled) {
-        error_log('[YARDLII INIT] ' . $message);
-    }
-}
-
-
     /**
      * Main initialization method
      */
     public function init(): void
     {
         $this->load_textdomain();
-        $this->log_init('Core::init() starting...');
+        
+        Logger::log('Core::init() starting...', 'INIT');
 
         try {
             (new Assets())->register();
-            $this->log_init('Admin assets registered successfully.');
+            Logger::log('Admin assets registered successfully.', 'INIT');
         } catch (\Throwable $e) {
-            $this->log_init('Error registering assets: ' . $e->getMessage());
+            Logger::log('Error registering assets: ' . $e->getMessage(), 'INIT');
         }
 
         try {
             (new SettingsPageTabs())->register();
-            $this->log_init('SettingsPageTabs registered successfully.');
+            Logger::log('SettingsPageTabs registered successfully.', 'INIT');
         } catch (\Throwable $e) {
-            $this->log_init('Error initializing SettingsPageTabs: ' . $e->getMessage());
+            Logger::log('Error initializing SettingsPageTabs: ' . $e->getMessage(), 'INIT');
         }
 
         try {
             (new Loader())->register();
-            $this->log_init('Feature loader registered successfully.');
+            Logger::log('Feature loader registered successfully.', 'INIT');
         } catch (\Throwable $e) {
-            $this->log_init('Error initializing Loader: ' . $e->getMessage());
+            Logger::log('Error initializing Loader: ' . $e->getMessage(), 'INIT');
         }
 
         // [FIX] Force Google Maps to 'weekly' channel to fix <gmp-pin> error
@@ -55,9 +44,7 @@ class Core
             return $params;
         });
 
-        
-
-        $this->log_init('Core::init() completed.');
+        Logger::log('Core::init() completed.', 'INIT');
     }
 
     /**

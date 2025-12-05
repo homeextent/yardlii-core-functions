@@ -150,12 +150,7 @@ final class Loader
 
         
 
-        // [DEBUG] Force log to verify loader
-        if ($geo_enabled) {
-             error_log('[YARDLII] Loader: Geocoding is ENABLED. Loading class...');
-        } else {
-             error_log('[YARDLII] Loader: Geocoding is DISABLED.');
-        }
+      
 
         if ($geo_enabled && class_exists(__NAMESPACE__ . '\\WpufGeocoding')) {
             (new WpufGeocoding())->register();
