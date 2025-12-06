@@ -341,7 +341,7 @@
 
     _getRowPreviewPayload($row) {
       const formId = ($row.find('input[name$="[form_id]"]').val() || '').trim();
-      const type = ($row.find('select[name$="[preview_type]"]').val() || '').trim();
+      const type = ($row.find('input[name$="[preview_type]"]:checked').val() || '').trim();
       const userId = ($row.find('input[name$="[preview_user]"]').val() || '0').trim();
 
       const subjField = (type === 'approve') ? 'approve_subject' : 'reject_subject';
