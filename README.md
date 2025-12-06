@@ -130,6 +130,10 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.26.3 - 2025-12-05
+### Fixed
+- **Trust & Verification:** Resolved a JavaScript bug in the admin panel where the "Preview Test Email" button failed to detect the selected email type (Approve/Reject) because it was looking for a dropdown instead of radio buttons.
+
 ## 3.26.2 - 2025-12-05
 ### Styling
 - **Social Login:** Integrated custom CSS for WPUF Google Social Login buttons directly into the plugin assets. This overrides default plugin styles to match the Yardlii Brand Identity (Trust Blue) and removes reliance on Customizer CSS.
