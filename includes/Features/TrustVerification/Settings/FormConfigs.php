@@ -27,6 +27,22 @@ final class FormConfigs
         ]);
     }
 
+/**
+     * Helper: efficient lookup for a specific form configuration.
+     * @param string $form_id
+     * @return array<string, mixed>|null
+     */
+    public static function get_config(string $form_id): ?array
+    {
+        $configs = (array) get_option(self::OPT_KEY, []);
+        foreach ($configs as $row) {
+            if (isset($row['form_id']) && (string) $row['form_id'] === $form_id) {
+                return (array) $row;
+            }
+        }
+        return null;
+    }
+
     /**
      * Validate each per-form config row and emit inline, group-scoped notices.
      * - Skips rows with empty form_id

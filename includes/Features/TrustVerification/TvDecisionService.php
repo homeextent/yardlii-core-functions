@@ -51,7 +51,7 @@ final class TvDecisionService
         $by = isset($opts['actor_id']) ? (int) $opts['actor_id'] : get_current_user_id();
 
         // Load config
-        $cfg = $this->loadConfigForForm($form_id);
+        $cfg = TVFormConfigs::get_config($form_id);
         if (!$cfg && $action !== 'reopen') {
             return false;
         }
@@ -275,14 +275,5 @@ final class TvDecisionService
      * Find per-form config row for a given form_id.
      * @return array<string, mixed>|null
      */
-    private function loadConfigForForm(string $form_id): ?array
-    {
-        $configs = (array) get_option(TVFormConfigs::OPT_KEY, []);
-        foreach ($configs as $row) {
-            if ((string) ($row['form_id'] ?? '') === $form_id) {
-                return (array) $row;
-            }
-        }
-        return null;
-    }
+  
 }

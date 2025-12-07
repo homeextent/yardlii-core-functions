@@ -29,7 +29,7 @@ final class PreviewAjax
             wp_send_json_error(['message' => 'Missing or invalid parameters.']);
         }
 
-        $config = Templates::findConfigByFormId($form_id);
+        $config = \Yardlii\Core\Features\TrustVerification\Settings\FormConfigs::get_config($form_id);
         if (!$config) {
             wp_send_json_error(['message' => 'Form configuration not found.']);
         }

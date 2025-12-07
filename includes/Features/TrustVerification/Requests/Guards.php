@@ -40,7 +40,7 @@ final class Guards
         }
 
         // 1) per-form config must exist
-        $cfg = self::loadConfigForForm($form_id);
+        $cfg = TVFormConfigs::get_config($form_id);
         if (!$cfg) {
             return 0;
         }
@@ -260,16 +260,7 @@ final class Guards
         return !empty($posts) ? (int) $posts[0] : 0;
     }
 
-    private static function loadConfigForForm(string $form_id): ?array
-    {
-        $configs = (array) get_option(TVFormConfigs::OPT_KEY, []);
-        foreach ($configs as $row) {
-            if ((string) ($row['form_id'] ?? '') === $form_id) {
-                return (array) $row;
-            }
-        }
-        return null;
-    }
+   
 
     private static function notifyAdmins(int $request_id, int $user_id, string $form_id): void
     {

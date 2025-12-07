@@ -37,11 +37,7 @@ final class SendTestAjax
         // Find this form’s config row
         $config  = null;
         $configs = (array) get_option(TVFormConfigs::OPT_KEY, []);
-        foreach ($configs as $row) {
-            if ((string) ($row['form_id'] ?? '') === $form_id) {
-                $config = (array) $row;
-                break;
-            }
+        $config = TVFormConfigs::get_config($form_id);
         }
         if (! $config) {
             wp_send_json_error(['message' => __('Form configuration not found.', 'yardlii-core')]);
