@@ -130,6 +130,11 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.27.2 - 2025-12-07
+### Performance & Stability (Phase 1 Complete)
+- **Admin Optimization:** Fixed "N+1" database query issue in the Verification Requests list table. Implemented a cache warmer that pre-fetches user data in a single query, making the admin panel significantly faster.
+- **Server Safety:** Capped the "Auto-Publisher" logic to process a maximum of 50 listings per run. This prevents memory exhaustion crashes if a verified user has hundreds of draft listings.
+
 ## 3.27.1 - 2025-12-07
 ### Performance
 - **Role Optimization:** Removed the expensive `sync_roles` check from the global `init` hook. User capabilities are now only recalculated when saving settings, significantly reducing database queries on every page load.
