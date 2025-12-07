@@ -224,13 +224,11 @@ class HomepageSearch
 
     /**
      * Flush cached terms on taxonomy edits
-     * * @param int $term_id
+     *
+     * @param int $term_id
      */
-    public function flush_term_cache($term_id): void
+    public function flush_term_cache(int $term_id): void
     {
-        // Explicitly cast to int to satisfy strict typing if passed as string/hook args
-        $term_id = (int)$term_id;
-        
         $term = get_term($term_id);
         if ($term && !is_wp_error($term)) {
             delete_transient('yardlii_terms_' . sanitize_key($term->taxonomy) . '_parents');
