@@ -34,8 +34,7 @@ class GoogleMapKey {
             return;
         }
 
-        // --- 1. NEW: Conditional Check ---
-        // If we shouldn't load, exit early.
+        // 1. Conditional Check (Perf)
         if (!$this->should_load_scripts()) {
             return;
         }
@@ -77,10 +76,9 @@ class GoogleMapKey {
 
     /**
      * Determines if the scripts should load on the current page.
-     * @return bool
      */
     private function should_load_scripts(): bool {
-        // A. Always load in Admin (for WPUF/ACF/Map previews)
+        // A. Always load in Admin
         if (is_admin()) {
             return true;
         }
@@ -89,34 +87,31 @@ class GoogleMapKey {
         $raw_targets = (string) get_option('yardlii_gmap_target_pages', '');
         $targets = array_filter(array_map('trim', explode(',', $raw_targets)));
 
-        // If setting is empty, default to GLOBAL loading (Backward Compatibility)
+        // If setting is empty, default to GLOBAL loading
         if (empty($targets)) {
             return true;
         }
 
-        // C. Check Current Page against User List (ID or Slug)
+        // C. Check Current Page ID/Slug
         if (is_page($targets) || is_single($targets)) {
             return true;
         }
 
-        // D. Auto-Detect Critical Shortcodes (Safety Net)
+        // D. Auto-Detect Critical Shortcodes
         global $post;
         if ($post instanceof \WP_Post) {
             $content = $post->post_content;
             
-            // Yardlii Shortcodes
             if (has_shortcode($content, 'yardlii_directory') || 
                 has_shortcode($content, 'yardlii_directory_search') ||
                 has_shortcode($content, 'yardlii_search_form')) {
                 return true;
             }
             
-            // FacetWP Shortcode (Basic Detection)
             if (has_shortcode($content, 'facetwp')) {
                 return true;
             }
             
-            // String checks for WPUF or raw HTML classes
             if (strpos($content, '[wpuf_form') !== false || 
                 strpos($content, 'yardlii-city-autocomplete') !== false) {
                 return true;
@@ -126,7 +121,6 @@ class GoogleMapKey {
         return false;
     }
 
-    // ... (rest of the class methods: apply_api_key, ajax_test..., register_settings, etc. remain unchanged) ...
     public function apply_api_key(): void {
         $key = get_option(self::OPTION_KEY, '');
         if ($key && function_exists('acf_update_setting')) {
@@ -149,15 +143,27 @@ class GoogleMapKey {
         // Placeholder
     }
 
+    /**
+     * Sanitize map controls input
+     * @param mixed $input
+     * @return array<string, string>
+     */
     public function sanitize_map_controls($input): array {
         if (!is_array($input)) return [];
         /** @var array<string, string> */
         return array_map('sanitize_text_field', $input);
     }
 
+    /**
+     * Apply map controls to FacetWP
+     * @param array<string, mixed> $args
+     * @return array<string, mixed>
+     */
     public function apply_map_controls(array $args): array {
         $controls = get_option('yardlii_map_controls', []);
         if (is_array($controls) && !empty($controls)) {
+            // PHPStan doesn't know $controls structure, so we merge carefully
+            /** @var array<string, mixed> $controls */
             $args = array_merge($args, $controls);
         }
         return $args;
