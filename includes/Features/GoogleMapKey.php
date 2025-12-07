@@ -34,7 +34,13 @@ class GoogleMapKey {
             return;
         }
 
-        // 1. Register Router (HEADER - Priority)
+        // --- 1. NEW: Conditional Check ---
+        // If we shouldn't load, exit early.
+        if (!$this->should_load_scripts()) {
+            return;
+        }
+
+        // 2. Register Router (HEADER - Priority)
         if (!wp_script_is('yardlii-maps-router', 'registered')) {
             wp_register_script(
                 'yardlii-maps-router',
@@ -46,12 +52,12 @@ class GoogleMapKey {
             wp_enqueue_script('yardlii-maps-router');
         }
 
-        // 2. Deregister conflicts
+        // 3. Deregister conflicts
         if (wp_script_is('google-maps-places', 'enqueued')) {
             wp_dequeue_script('google-maps-places');
         }
         
-        // 3. Register API with Callback
+        // 4. Register API with Callback
         if (!wp_script_is(self::API_HANDLE, 'registered')) {
             $url = 'https://maps.googleapis.com/maps/api/js';
             $args = [
@@ -69,6 +75,58 @@ class GoogleMapKey {
         }
     }
 
+    /**
+     * Determines if the scripts should load on the current page.
+     * @return bool
+     */
+    private function should_load_scripts(): bool {
+        // A. Always load in Admin (for WPUF/ACF/Map previews)
+        if (is_admin()) {
+            return true;
+        }
+
+        // B. Check User Settings
+        $raw_targets = (string) get_option('yardlii_gmap_target_pages', '');
+        $targets = array_filter(array_map('trim', explode(',', $raw_targets)));
+
+        // If setting is empty, default to GLOBAL loading (Backward Compatibility)
+        if (empty($targets)) {
+            return true;
+        }
+
+        // C. Check Current Page against User List (ID or Slug)
+        if (is_page($targets) || is_single($targets)) {
+            return true;
+        }
+
+        // D. Auto-Detect Critical Shortcodes (Safety Net)
+        global $post;
+        if ($post instanceof \WP_Post) {
+            $content = $post->post_content;
+            
+            // Yardlii Shortcodes
+            if (has_shortcode($content, 'yardlii_directory') || 
+                has_shortcode($content, 'yardlii_directory_search') ||
+                has_shortcode($content, 'yardlii_search_form')) {
+                return true;
+            }
+            
+            // FacetWP Shortcode (Basic Detection)
+            if (has_shortcode($content, 'facetwp')) {
+                return true;
+            }
+            
+            // String checks for WPUF or raw HTML classes
+            if (strpos($content, '[wpuf_form') !== false || 
+                strpos($content, 'yardlii-city-autocomplete') !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // ... (rest of the class methods: apply_api_key, ajax_test..., register_settings, etc. remain unchanged) ...
     public function apply_api_key(): void {
         $key = get_option(self::OPTION_KEY, '');
         if ($key && function_exists('acf_update_setting')) {
@@ -76,20 +134,14 @@ class GoogleMapKey {
         }
     }
 
-    /**
-     * AJAX: Test the API Key validity
-     */
     public function ajax_test_google_map_key(): void {
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
-
         $key = get_option(self::OPTION_KEY, '');
-        
         if (empty($key)) {
             wp_send_json_error(['message' => 'No API key saved.']);
         }
-
         wp_send_json_success(['message' => 'API Key is saved.']);
     }
 
@@ -97,25 +149,12 @@ class GoogleMapKey {
         // Placeholder
     }
 
-    /**
-     * Sanitize map controls input
-     * @param mixed $input
-     * @return array<string, string>
-     */
     public function sanitize_map_controls($input): array {
-        if (!is_array($input)) {
-            return [];
-        }
-        // array_map returns array, we cast to ensure PHPStan knows it's string[]
+        if (!is_array($input)) return [];
         /** @var array<string, string> */
         return array_map('sanitize_text_field', $input);
     }
 
-    /**
-     * Apply map controls to FacetWP
-     * @param array<string, mixed> $args
-     * @return array<string, mixed>
-     */
     public function apply_map_controls(array $args): array {
         $controls = get_option('yardlii_map_controls', []);
         if (is_array($controls) && !empty($controls)) {

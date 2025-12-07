@@ -309,6 +309,11 @@ final class SettingsPageTabs
         register_setting(self::GROUP_GOOGLE_MAP, 'yardlii_google_map_key', ['sanitize_callback' => $N]);
         register_setting(self::GROUP_GOOGLE_MAP, 'yardlii_google_server_key', ['sanitize_callback' => $N]); 
         register_setting(self::GROUP_GOOGLE_MAP, 'yardlii_map_controls',   ['sanitize_callback' => $N]);
+
+        // === NEW: Loading Group (Isolated) ===
+        register_setting('yardlii_google_map_loading_group', 'yardlii_gmap_target_pages', [
+            'sanitize_callback' => 'sanitize_text_field'
+        ]);
     }
 
     private function register_featured_image_settings(): void
@@ -482,12 +487,17 @@ final class SettingsPageTabs
                         <nav class="yardlii-inner-tablist" role="tablist" aria-label="Google Map Settings">
                             <button type="button" class="yardlii-inner-tab active" data-tab="map-api" aria-selected="true">🔑 Google Maps API</button>
                             <button type="button" class="yardlii-inner-tab"        data-tab="map-options" aria-selected="false">⚙️ Map Display Options</button>
+                            <button type="button" class="yardlii-inner-tab"        data-tab="map-loading" aria-selected="false">🚀 Loading Strategy</button>
                         </nav>
+                        
                         <div class="yardlii-inner-tabcontent" data-panel="map-api" role="tabpanel">
                             <?php include __DIR__ . '/views/partials/google-map-key.php'; ?>
                         </div>
                         <div class="yardlii-inner-tabcontent hidden" data-panel="map-options" role="tabpanel">
                             <?php include __DIR__ . '/views/partials/google-map-controls.php'; ?>
+                        </div>
+                        <div class="yardlii-inner-tabcontent hidden" data-panel="map-loading" role="tabpanel">
+                            <?php include __DIR__ . '/views/partials/google-map-loading.php'; ?>
                         </div>
                     </div>
                 </div>
