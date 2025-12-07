@@ -1,7 +1,6 @@
 <?php
 
-namespace Yardlii\Core\Features;
-
+namespace Yardlii\Core\Features\WPUF;
 /**
  * Class PostingLogic
  * Handles dynamic form switching by intercepting low-level metadata calls.

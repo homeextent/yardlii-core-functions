@@ -17,8 +17,7 @@
  * @package Yardlii\Core\Features
  */
 
-namespace Yardlii\Core\Features;
-
+namespace Yardlii\Core\Features\WPUF;
 class WPUFFrontendEnhancements {
 
     /**

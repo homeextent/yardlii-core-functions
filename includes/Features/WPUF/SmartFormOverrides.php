@@ -1,7 +1,6 @@
 <?php
 
-namespace Yardlii\Core\Features;
-
+namespace Yardlii\Core\Features\WPUF;
 /**
  * Class SmartFormOverrides
  * Applies "Smart Logic" to the Basic Form for Pending Verification users.

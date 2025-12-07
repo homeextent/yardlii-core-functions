@@ -130,30 +130,24 @@ final class Loader
             (new ACFUserSync())->register();
         }
 
-        // === WPUF Frontend Enhancements (Dropdown, Cards, etc.) ===
-        // We load the class unconditionally if it exists; the class itself checks flags.
-        if (class_exists(__NAMESPACE__ . '\\WPUFFrontendEnhancements')) {
-            (new WPUFFrontendEnhancements())->register();
+        // === WPUF Frontend Enhancements ===
+        if (class_exists(__NAMESPACE__ . '\\WPUF\\WPUFFrontendEnhancements')) {
+            (new WPUF\WPUFFrontendEnhancements())->register();
         }
-        // WPUF Geocoding (Privacy Focused)
+
+        // === WPUF Geocoding (Privacy Focused) ===
         $geo_enabled = (bool) get_option('yardlii_enable_wpuf_geocoding', false);
         if (defined('YARDLII_ENABLE_WPUF_GEOCODING')) {
             $geo_enabled = (bool) constant('YARDLII_ENABLE_WPUF_GEOCODING');
         }
 
-	// === Profile Form Switcher ===
-        if (class_exists(__NAMESPACE__ . '\\ProfileFormSwitcher')) {
-            (new ProfileFormSwitcher())->register();
+        if ($geo_enabled && class_exists(__NAMESPACE__ . '\\WPUF\\WpufGeocoding')) {
+            (new WPUF\WpufGeocoding())->register();
         }
 
-	
-
-        
-
-      
-
-        if ($geo_enabled && class_exists(__NAMESPACE__ . '\\WpufGeocoding')) {
-            (new WpufGeocoding())->register();
+        // === Profile Form Switcher ===
+        if (class_exists(__NAMESPACE__ . '\\WPUF\\ProfileFormSwitcher')) {
+            (new WPUF\ProfileFormSwitcher())->register();
         }
 
         // === Featured Listings Logic (New) ===
@@ -164,19 +158,18 @@ final class Loader
         }
 
         // === Dynamic Posting Logic ===
-        if (class_exists(__NAMESPACE__ . '\\PostingLogic')) {
-            (new PostingLogic())->register();
+        if (class_exists(__NAMESPACE__ . '\\WPUF\\PostingLogic')) {
+            (new WPUF\PostingLogic())->register();
         }
 
-        // === Smart Form Overrides (New) ===
-        // Handles "Pending" user behavior on the Basic Form
-        if (class_exists(__NAMESPACE__ . '\\SmartFormOverrides')) {
-            (new SmartFormOverrides())->register();
+        // === Smart Form Overrides ===
+        if (class_exists(__NAMESPACE__ . '\\WPUF\\SmartFormOverrides')) {
+            (new WPUF\SmartFormOverrides())->register();
         }
 
-	// === Submit Form Switcher (Dashboard) ===
-        if (class_exists(__NAMESPACE__ . '\\SubmitFormSwitcher')) {
-            (new SubmitFormSwitcher())->register();
+        // === Submit Form Switcher ===
+        if (class_exists(__NAMESPACE__ . '\\WPUF\\SubmitFormSwitcher')) {
+            (new WPUF\SubmitFormSwitcher())->register();
         }
 
         // === Role Control (master + subfeatures) ===
@@ -212,18 +205,17 @@ final class Loader
             (new RoleControlBadgeAssignment())->register();
         }
 
-	// === WPUF City Autocomplete (Universal Location) ===
+	// === WPUF City Autocomplete ===
         $loc_enabled = (bool) get_option('yardlii_enable_wpuf_city_autocomplete', false);
         if (defined('YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE')) {
             $loc_enabled = (bool) YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE;
         }
 
-        if ($loc_enabled && class_exists(__NAMESPACE__ . '\\WpufCityAutocomplete')) {
-            // PHPStan Safe Definitions
+        if ($loc_enabled && class_exists(__NAMESPACE__ . '\\WPUF\\WpufCityAutocomplete')) {
             $coreUrl = defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL : plugin_dir_url(__DIR__ . '/../');
             $coreVer = defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0.0';
 
-            (new WpufCityAutocomplete($coreUrl, $coreVer))->register();
+            (new WPUF\WpufCityAutocomplete($coreUrl, $coreVer))->register();
         }
 
         // === Elementor Query Mods ===
