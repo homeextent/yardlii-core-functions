@@ -97,12 +97,12 @@ final class Loader
             $directory_enabled = (bool) YARDLII_ENABLE_BUSINESS_DIRECTORY;
         }
 
-        if ($directory_enabled && class_exists(__NAMESPACE__ . '\\BusinessDirectory')) {
+        if ($directory_enabled && class_exists(__NAMESPACE__ . '\\Directory\\Renderer')) {
             // Inject constants safely to satisfy PHPStan
             $coreUrl = defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL : plugin_dir_url(__DIR__ . '/../');
             $coreVer = defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0.0';
             
-            (new BusinessDirectory($coreUrl, $coreVer))->register();
+            (new Directory\Renderer($coreUrl, $coreVer))->register();
         }
 
         // Feature: Automated Media Cleanup
