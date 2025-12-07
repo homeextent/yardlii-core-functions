@@ -1,5 +1,8 @@
 <?php
-namespace Yardlii\Core\Features;
+namespace Yardlii\Core\Features\Integrations;
+
+use WP_Term;
+use WP_Error;
 
 /**
  * HomepageSearch
@@ -18,7 +21,7 @@ class HomepageSearch
     private const OPT_SECONDARY_LABEL    = 'yardlii_secondary_label';
     private const OPT_SECONDARY_FACET    = 'yardlii_secondary_facet';
     private const OPT_LOCATION_LABEL     = 'yardlii_location_label';
-    private const OPT_ENABLE_LOCATION    = 'yardlii_enable_location_search'; // NEW
+    private const OPT_ENABLE_LOCATION    = 'yardlii_enable_location_search';
 
     public function register(): void
     {
@@ -62,17 +65,14 @@ class HomepageSearch
         <form role="search" method="get" class="yardlii-search-form" action="<?php echo $action_url; ?>">
             <div class="search-row" style="display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;">
                 
-                <!-- 🔍 Keyword -->
                 <div class="search-field">
                     <input type="search" name="_keyword" placeholder="<?php echo esc_attr__('What are you looking for?', 'yardlii-core'); ?>" />
                 </div>
 
-                <!-- 🧩 Dropdown fields -->
                 <div class="search-dropdowns" style="display:flex;gap:10px;flex-wrap:wrap;">
                     <?php echo $this->render_dropdowns(); ?>
                 </div>
 
-                <!-- 🔘 Submit -->
                 <div class="search-button">
                     <button type="submit"><?php echo esc_html__('Search', 'yardlii-core'); ?></button>
                 </div>
@@ -95,21 +95,21 @@ class HomepageSearch
         $secondary_label = get_option(self::OPT_SECONDARY_LABEL, 'Select Option');
         $secondary_facet = get_option(self::OPT_SECONDARY_FACET, '');
         $location_label  = get_option(self::OPT_LOCATION_LABEL, 'Enter a location');
-        $enable_location = (bool) get_option(self::OPT_ENABLE_LOCATION, false); // NEW toggle check
+        $enable_location = (bool) get_option(self::OPT_ENABLE_LOCATION, false);
 
         $out = '';
 
         // 🏗️ Primary taxonomy dropdown
         if (!empty($primary_tax)) {
             $out .= '<div class="yardlii-search-dropdown primary" data-facet="' . esc_attr($primary_facet) . '">';
-            $out .= $this->taxonomy_dropdown_html($primary_tax, $primary_label, $primary_facet);
+            $out .= $this->taxonomy_dropdown_html((string)$primary_tax, (string)$primary_label, (string)$primary_facet);
             $out .= '</div>';
         }
 
         // 🧱 Secondary taxonomy dropdown
         if (!empty($secondary_tax)) {
             $out .= '<div class="yardlii-search-dropdown secondary" data-facet="' . esc_attr($secondary_facet) . '">';
-            $out .= $this->taxonomy_dropdown_html($secondary_tax, $secondary_label, $secondary_facet);
+            $out .= $this->taxonomy_dropdown_html((string)$secondary_tax, (string)$secondary_label, (string)$secondary_facet);
             $out .= '</div>';
         }
 
@@ -117,14 +117,14 @@ class HomepageSearch
         if ($enable_location) {
             $out .= '<div class="yardlii-search-dropdown location">';
             $out .= '<label for="yardlii_location_input" class="screen-reader-text">'
-                  . esc_html($location_label) . '</label>';
+                  . esc_html((string)$location_label) . '</label>';
 
             // Location field + compass icon
             $out .= '<div class="yardlii-location-wrapper">';
             $out .= '<input type="text" id="yardlii_location_input"
                            name="_location_text"
                            class="yardlii-location-input"
-                           placeholder="' . esc_attr($location_label) . '" />';
+                           placeholder="' . esc_attr((string)$location_label) . '" />';
             $out .= '<span id="yardlii_locate_me" class="yardlii-locate-icon" title="Use my current location" aria-label="Use my current location">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                              stroke-linecap="round" stroke-linejoin="round">
@@ -158,6 +158,7 @@ class HomepageSearch
     private function taxonomy_dropdown_html(string $taxonomy, string $label, string $facetName = ''): string
     {
         $terms = $this->get_cached_terms($taxonomy);
+        
         if (is_wp_error($terms) || empty($terms)) {
             return '';
         }
@@ -166,8 +167,11 @@ class HomepageSearch
 
         $html  = '<select name="' . esc_attr($nameAttr) . '" class="yardlii-search-select">';
         $html .= '<option value="">' . esc_html($label) . '</option>';
+        
         foreach ($terms as $term) {
-            $html .= '<option value="' . esc_attr($term->slug) . '">' . esc_html($term->name) . '</option>';
+            if ($term instanceof WP_Term) {
+                $html .= '<option value="' . esc_attr($term->slug) . '">' . esc_html($term->name) . '</option>';
+            }
         }
         $html .= '</select>';
 
@@ -176,6 +180,9 @@ class HomepageSearch
 
     /**
      * Get cached taxonomy terms (parent-only for hierarchical taxonomies)
+     *
+     * @param string $taxonomy
+     * @return array<int, WP_Term>|WP_Error
      */
     private function get_cached_terms(string $taxonomy)
     {
@@ -200,10 +207,16 @@ class HomepageSearch
             $terms = get_terms($query_args);
 
             if (!is_wp_error($terms) && $is_hierarchical) {
-                $terms = array_values(array_filter($terms, static fn($t) => (int) $t->parent === 0));
+                // Ensure array contains WP_Term objects
+                /** @var array<int, WP_Term> $terms */
+                $terms = array_values(array_filter($terms, static fn($t) => $t instanceof WP_Term && (int) $t->parent === 0));
             }
 
             set_transient($cache_key, $terms, DAY_IN_SECONDS);
+        }
+
+        if (!is_array($terms) && !is_wp_error($terms)) {
+            return [];
         }
 
         return $terms;
@@ -211,8 +224,10 @@ class HomepageSearch
 
     /**
      * Flush cached terms on taxonomy edits
+     *
+     * @param int $term_id
      */
-    public function flush_term_cache($term_id): void
+    public function flush_term_cache(int $term_id): void
     {
         $term = get_term($term_id);
         if ($term && !is_wp_error($term)) {
@@ -220,10 +235,9 @@ class HomepageSearch
             delete_transient('yardlii_terms_' . sanitize_key($term->taxonomy) . '_all');
         }
     }
+
     /**
      * AJAX handler for the "Clear Homepage Term Cache" button in Diagnostics.
-     * Deletes the transients for the configured taxonomies.
-     * @since 3.11.0
      */
     public function ajax_clear_search_cache(): void
     {
@@ -239,8 +253,8 @@ class HomepageSearch
 
         $deleted_count = 0;
 
-        // 3. Delete transients for both (hierarchical and non-hierarchical versions)
-        foreach ([$primary_tax, $secondary_tax] as $tax) {
+        // 3. Delete transients for both
+        foreach ([(string)$primary_tax, (string)$secondary_tax] as $tax) {
             if (!empty($tax)) {
                 $key_all = 'yardlii_terms_' . sanitize_key($tax) . '_all';
                 $key_parents = 'yardlii_terms_' . sanitize_key($tax) . '_parents';
@@ -262,4 +276,3 @@ class HomepageSearch
         ]);
     }
 }
-

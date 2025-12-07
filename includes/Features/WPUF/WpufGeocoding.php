@@ -42,7 +42,7 @@ class WpufGeocoding {
         }
 
         $server_key = get_option('yardlii_google_server_key');
-        $map_key    = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
+        $map_key    = get_option(\Yardlii\Core\Features\Integrations\GoogleMapKey::OPTION_KEY);
         $api_key = !empty($server_key) ? (string)$server_key : (string)$map_key;
 
         if (empty($api_key)) {
@@ -88,7 +88,7 @@ class WpufGeocoding {
         }
 
         $server_key = get_option('yardlii_google_server_key');
-        $map_key    = get_option(\Yardlii\Core\Features\GoogleMapKey::OPTION_KEY);
+        $map_key    = get_option(\Yardlii\Core\Features\Integrations\GoogleMapKey::OPTION_KEY);
         $api_key = !empty($server_key) ? (string)$server_key : (string)$map_key;
 
         if (empty($api_key)) {
