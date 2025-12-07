@@ -130,6 +130,10 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.27.1 - 2025-12-07
+### Performance
+- **Role Optimization:** Removed the expensive `sync_roles` check from the global `init` hook. User capabilities are now only recalculated when saving settings, significantly reducing database queries on every page load.
+
 ## 3.27.0 - 2025-12-07
 ### Performance
 - **Google Maps Optimization:** Implemented conditional loading for the Google Maps API. It no longer loads globally on every page.
