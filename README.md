@@ -130,6 +130,11 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.27.3 - 2025-12-07
+### Architecture (Phase 2 Complete)
+- **Code Cleanup:** Refactored the internal file structure into logical namespaces (`WPUF`, `Directory`, `Integrations`). This improves maintainability and reduces clutter in the `Features` directory.
+- **Strict Typing:** Enhanced type safety across all integration modules to meet PHPStan Level 6 standards.
+
 ## 3.27.2 - 2025-12-07
 ### Performance & Stability (Phase 1 Complete)
 - **Admin Optimization:** Fixed "N+1" database query issue in the Verification Requests list table. Implemented a cache warmer that pre-fetches user data in a single query, making the admin panel significantly faster.
