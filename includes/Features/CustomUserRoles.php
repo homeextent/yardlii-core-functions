@@ -11,8 +11,13 @@ class CustomUserRoles
 {
     public function register(): void
     {
-        add_action('init', [$this, 'sync_roles'], 20);
-        // [NEW] Ensure our system role exists
+        // PERFORMANCE FIX: 
+        // We removed the 'sync_roles' hook on 'init'. 
+        // Roles are persistent in the DB and only need updating when settings are saved.
+        // The sanitize_settings() callback handles the updates on save.
+
+        // Keep this: ensures the critical 'pending_verification' system role always exists.
+        // This check is lightweight (memory lookup) and safe to run on init.
         add_action('init', [$this, 'ensure_system_roles'], 20); 
     }
 
