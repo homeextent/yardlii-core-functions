@@ -180,7 +180,9 @@ class HomepageSearch
 
     /**
      * Get cached taxonomy terms (parent-only for hierarchical taxonomies)
-     * * @return array<int, WP_Term>|WP_Error|array<empty>
+     *
+     * @param string $taxonomy
+     * @return array<int, WP_Term>|WP_Error
      */
     private function get_cached_terms(string $taxonomy)
     {
@@ -226,7 +228,10 @@ class HomepageSearch
      */
     public function flush_term_cache($term_id): void
     {
-        $term = get_term((int)$term_id);
+        // Explicitly cast to int to satisfy strict typing if passed as string/hook args
+        $term_id = (int)$term_id;
+        
+        $term = get_term($term_id);
         if ($term && !is_wp_error($term)) {
             delete_transient('yardlii_terms_' . sanitize_key($term->taxonomy) . '_parents');
             delete_transient('yardlii_terms_' . sanitize_key($term->taxonomy) . '_all');
