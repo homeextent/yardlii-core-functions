@@ -77,18 +77,13 @@ final class Loader
     public function register_features(): void
     {
         // === Google Maps ===
-        if (class_exists(__NAMESPACE__ . '\\GoogleMapKey')) {
-            (new GoogleMapKey())->register();
+        if (class_exists(__NAMESPACE__ . '\\Integrations\\GoogleMapKey')) {
+            (new Integrations\GoogleMapKey())->register();
         }
 
         // === Featured Image Automation ===
         if (class_exists(__NAMESPACE__ . '\\FeaturedImage')) {
             (new FeaturedImage())->register();
-        }
-
-	// === Elementor Query Mods (Author Archives, etc.) ===
-        if (class_exists(__NAMESPACE__ . '\\ElementorQueryMods')) {
-            (new ElementorQueryMods())->register();
         }
 
         // === Feature: Business Directory ===
@@ -116,11 +111,10 @@ final class Loader
         }
 
         // === Homepage Search ===
-        if (class_exists(__NAMESPACE__ . '\\HomepageSearch')) {
-            (new HomepageSearch())->register();
+        if (class_exists(__NAMESPACE__ . '\\Integrations\\HomepageSearch')) {
+            (new Integrations\HomepageSearch())->register();
         }
 
-       
         // === ACF User Sync ===
         $acf_sync_enabled = (bool) get_option('yardlii_enable_acf_user_sync', false);
         if (defined('YARDLII_ENABLE_ACF_USER_SYNC')) {
@@ -178,7 +172,7 @@ final class Loader
             $rc_master = (bool) YARDLII_ENABLE_ROLE_CONTROL;
         }
 
-	// === User Dashboard (My Listings) ===
+	    // === User Dashboard (My Listings) ===
         if (class_exists(__NAMESPACE__ . '\\UserDashboard')) {
             // Inject constants for assets
             $coreUrl = defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL : plugin_dir_url(__DIR__ . '/../');
@@ -205,7 +199,7 @@ final class Loader
             (new RoleControlBadgeAssignment())->register();
         }
 
-	// === WPUF City Autocomplete ===
+	    // === WPUF City Autocomplete ===
         $loc_enabled = (bool) get_option('yardlii_enable_wpuf_city_autocomplete', false);
         if (defined('YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE')) {
             $loc_enabled = (bool) YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE;
@@ -224,8 +218,8 @@ final class Loader
             $el_enabled = (bool) YARDLII_ENABLE_ELEMENTOR_QUERY_MODS;
         }
 
-        if ($el_enabled && class_exists(__NAMESPACE__ . '\\ElementorQueryMods')) {
-            (new ElementorQueryMods())->register();
+        if ($el_enabled && class_exists(__NAMESPACE__ . '\\Integrations\\ElementorQueryMods')) {
+            (new Integrations\ElementorQueryMods())->register();
         }
     }
 

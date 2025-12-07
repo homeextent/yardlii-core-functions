@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Yardlii\Core\Features;
-
+namespace Yardlii\Core\Features\Integrations;
 /**
  * Feature: Google Map API Key Management
  * Centralizes the API key registration and prevents conflicts.

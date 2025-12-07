@@ -1,6 +1,5 @@
 <?php
-namespace Yardlii\Core\Features;
-
+namespace Yardlii\Core\Features\Integrations;
 /**
  * HomepageSearch
  *

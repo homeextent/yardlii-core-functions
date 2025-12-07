@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Yardlii\Core\Features;
-
+namespace Yardlii\Core\Features\Integrations;
 use WP_User;
 use WP_Query;
 
