@@ -32,6 +32,9 @@ final class NativeAdminColumns
         // 4. Logic (Search & Filter)
         add_action('pre_get_posts', [$this, 'modifyMainQuery']);
         
+        // [NEW] Cache Warmer (Fix N+1)
+        add_filter('the_posts', [$this, 'primeUserCache'], 10, 2);
+        
         // 5. Notifications
         add_action('admin_notices', [$this, 'displayAdminNotices']);
     }
@@ -371,8 +374,57 @@ final class NativeAdminColumns
         }
     }
 
+/**
+     * 6 .Cache Warmer: Pre-fetch all related users in ONE query to prevent N+1 issues.
+     * Fires on 'the_posts' filter.
+     *
+     * @param array<WP_Post> $posts
+     * @param WP_Query $query
+     * @return array<WP_Post>
+     */
+    public function primeUserCache(array $posts, WP_Query $query): array
+    {
+        // 1. Safety Checks
+        if (
+            !is_admin() || 
+            !$query->is_main_query() || 
+            $query->get('post_type') !== CPT::POST_TYPE ||
+            empty($posts)
+        ) {
+            return $posts;
+        }
+
+        $user_ids = [];
+
+        // 2. Scan posts for IDs (Applicant + Processor)
+        // Note: WP automatically caches post meta in the main query, so these get_post_meta calls are fast/cached.
+        foreach ($posts as $post) {
+            $applicant_id = (int) get_post_meta($post->ID, '_vp_user_id', true);
+            if ($applicant_id > 0) {
+                $user_ids[] = $applicant_id;
+            }
+
+            $processor_id = (int) get_post_meta($post->ID, '_vp_processed_by', true);
+            if ($processor_id > 0) {
+                $user_ids[] = $processor_id;
+            }
+        }
+
+        // 3. Fetch all Users in ONE query
+        // get_users() automatically primes the WP object cache.
+        if (!empty($user_ids)) {
+            get_users([
+                'include' => array_unique($user_ids),
+                'fields'  => 'all_with_meta', // Prime everything
+            ]);
+        }
+
+        return $posts;
+    }
+
+
     /**
-     * 6. Register Status Views (Top Filters)
+     * 7. Register Status Views (Top Filters)
      * @param array<string, string> $views
      * @return array<string, string>
      */
@@ -432,7 +484,7 @@ final class NativeAdminColumns
     }
 
     /**
-     * 7. Register Bulk Actions
+     * 8. Register Bulk Actions
      * @param array<string, string> $actions
      * @return array<string, string>
      */
