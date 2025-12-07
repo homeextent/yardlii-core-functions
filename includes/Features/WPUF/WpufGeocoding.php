@@ -1,8 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Yardlii\Core\Features;
-
+namespace Yardlii\Core\Features\WPUF;
 use Yardlii\Core\Services\Logger;
 
 /**

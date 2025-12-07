@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Yardlii\Core\Features;
-
+namespace Yardlii\Core\Features\WPUF;
 /**
  * Feature: Dynamic Submit Form Switcher
  * Renders the correct "Submit Listing" form based on user role.

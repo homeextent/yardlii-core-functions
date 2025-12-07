@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Yardlii\Core\Features;
-
+namespace Yardlii\Core\Features\WPUF;
 /**
  * Feature: Dynamic Profile Form Switcher (v3.26.1)
  * - Intercepts settings (God Mode)
