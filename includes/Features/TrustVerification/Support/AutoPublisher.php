@@ -46,7 +46,7 @@ class AutoPublisher {
         $this->runPublishing($user_id, $actor_id, 'tv_decision', $request_id);
     }
 
-    private function runPublishing(int $user_id, int $actor_id, string $context, int $request_id = 0): void {
+   private function runPublishing(int $user_id, int $actor_id, string $context, int $request_id = 0): void {
         if ($user_id < 1) return;
 
         Logger::log(sprintf('AutoPublisher: Triggered for User %d (Context: %s)', $user_id, $context), 'TV');
@@ -60,11 +60,15 @@ class AutoPublisher {
         $defaults = ['post', 'listing', 'listings', 'job_listing', 'product'];
         $post_types = apply_filters('yardlii_tv_auto_publish_post_types', $defaults);
 
+        // SAFETY LIMIT: Process max 50 posts to prevent memory exhaustion/timeouts.
+        // If a user has >50 drafts, they can manually publish the rest or re-trigger.
+        $limit = apply_filters('yardlii_tv_auto_publish_limit', 50);
+
         $args = [
             'post_type'      => $post_types,
             'post_status'    => 'pending',
             'author'         => $user_id,
-            'posts_per_page' => -1,
+            'posts_per_page' => $limit, 
             'fields'         => 'ids',
             'meta_query'     => [
                 [
@@ -77,7 +81,12 @@ class AutoPublisher {
 
         $query = new WP_Query($args);
 
-        Logger::log(sprintf('AutoPublisher: Found %d pending posts to publish.', count($query->posts)), 'TV');
+        // Log if we hit the limit
+        if ($query->found_posts > $limit) {
+            Logger::log(sprintf('AutoPublisher: Warning - User has %d pending posts. Capping processing at %d.', $query->found_posts, $limit), 'TV');
+        } else {
+            Logger::log(sprintf('AutoPublisher: Found %d pending posts to publish.', count($query->posts)), 'TV');
+        }
 
         if (empty($query->posts)) return;
 
@@ -96,7 +105,8 @@ class AutoPublisher {
         if ($request_id > 0 && $published_count > 0 && class_exists(Meta::class)) {
             Meta::appendLog($request_id, 'auto_publish', $actor_id, [
                 'count' => $published_count,
-                'ids'   => implode(',', array_map('strval', $posts))
+                'ids'   => implode(',', array_map('strval', $posts)),
+                'capped'=> ($query->found_posts > $limit) 
             ]);
         }
     }
