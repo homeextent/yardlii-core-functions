@@ -130,6 +130,12 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.27.0 - 2025-12-07
+### Performance
+- **Google Maps Optimization:** Implemented conditional loading for the Google Maps API. It no longer loads globally on every page.
+- **Loading Strategy UI:** Added a new settings tab under "Google Map Settings" to define specific Target Pages (slugs/IDs) for API loading.
+- **Auto-Detection:** The system now automatically detects and loads the API for pages containing Yardlii directory/search shortcodes, WPUF forms, or FacetWP maps.
+
 ## 3.26.3 - 2025-12-05
 ### Fixed
 - **Trust & Verification:** Resolved a JavaScript bug in the admin panel where the "Preview Test Email" button failed to detect the selected email type (Approve/Reject) because it was looking for a dropdown instead of radio buttons.
