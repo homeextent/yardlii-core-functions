@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Yardlii\Core\Features;
+namespace Yardlii\Core\Features\Directory;
 
 use WP_User;
 use WP_User_Query;
@@ -11,7 +11,7 @@ use WP_User_Query;
  * Feature: Dynamic User Directory (v3.24)
  * Usage: [yardlii_directory role="verified_business" trigger="button"]
  */
-class BusinessDirectory {
+class Renderer {
 
     private string $coreUrl;
     private string $coreVersion;
