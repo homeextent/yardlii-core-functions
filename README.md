@@ -130,6 +130,11 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.29.1 - 2025-12-09
+### Fixed
+- **JS Scoping:** Resolved a regression introduced in v3.29.0 that caused a fatal `ReferenceError` on the Dashboard and Find-a-Pro pages by restoring the missing `attachAutocomplete` function definition in `wpuf-city-autocomplete.js`.
+- **Hygiene:** Removed unnecessary console warnings from `frontend.js` where the Homepage Search input was intentionally missing.
+
 ## 3.29.0 - 2025-12-08
 ### Optimization & Stability
 - **Geolocation Stability:** Implemented a defensive MutationObserver in `wpuf-city-autocomplete.js` to eliminate race conditions on dynamically loaded WPUF forms (Dashboard/Profile Edit). This ensures Autocomplete attaches correctly even if inputs are injected asynchronously after page load.
