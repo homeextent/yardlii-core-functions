@@ -130,6 +130,10 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.28.0 - 2025-12-07
+### Polish (Phase 4 Complete)
+- **UX Shortcut:** Added a direct "Settings" link to the plugin row on the WordPress Plugins screen for easier administration.
+
 ## 3.27.4 - 2025-12-07
 ### Optimization (Phase 3 Complete)
 - **Extensibility:** Added `yardlii_map_shortcode_triggers` and `yardlii_map_content_triggers` filters. Developers can now programmatically whitelist custom shortcodes or CSS classes to trigger Google Maps loading without editing core files.
