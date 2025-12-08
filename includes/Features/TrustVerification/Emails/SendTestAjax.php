@@ -34,20 +34,14 @@ final class SendTestAjax
             wp_send_json_error(['message' => __('Please provide a valid recipient address.', 'yardlii-core')]);
         }
 
-        // Find this form’s config row
-        $config  = null;
-        $configs = (array) get_option(TVFormConfigs::OPT_KEY, []);
-        foreach ($configs as $row) {
-            if ((string) ($row['form_id'] ?? '') === $form_id) {
-                $config = (array) $row;
-                break;
-            }
-        }
+        // Find this form’s config using the centralized helper
+        $config = TVFormConfigs::get_config($form_id);
+        
         if (! $config) {
             wp_send_json_error(['message' => __('Form configuration not found.', 'yardlii-core')]);
         }
 
-        // Stored subject/body or sensible defaults (use modern {{…}} tokens; legacy tokens still ok)
+        // Stored subject/body or sensible defaults
         $subject = ($type === 'approve')
             ? (string) ($config['approve_subject'] ?? sprintf(__('You’re verified at %s', 'yardlii-core'), '{{site.name}}'))
             : (string) ($config['reject_subject']  ?? sprintf(__('Your verification status at %s', 'yardlii-core'), '{{site.name}}'));
@@ -56,7 +50,7 @@ final class SendTestAjax
             ? (string) ($config['approve_body'] ?? '<p>' . sprintf(__('Hi %s, your verification at %s was approved.', 'yardlii-core'), '{{user.display_name}}', '{{site.name}}') . '</p>')
             : (string) ($config['reject_body']   ?? '<p>' . sprintf(__('Hi %s, we could not approve your verification at %s.', 'yardlii-core'), '{{user.display_name}}', '{{site.name}}') . '</p>');
 
-        // Allow unsaved overrides from the UI (what you typed in the row before Save)
+        // Allow unsaved overrides from the UI
         $subject_ov = isset($_POST['subject']) ? sanitize_text_field(wp_unslash((string) $_POST['subject'])) : '';
         $body_ov    = isset($_POST['body'])    ? wp_kses_post(wp_unslash((string) $_POST['body']))           : '';
         if ($subject_ov !== '') { $subject = $subject_ov; }
@@ -70,19 +64,16 @@ final class SendTestAjax
         $member = $user_id ? get_userdata($user_id) : null;
         $me     = wp_get_current_user();
         $ctx = [
-            // If a member is provided, tokens resolve to that user; else to current admin
             'user'     => ($member ?: $me),
             'form_id'  => $form_id,
-            // For a test, make replies go back to the person running the test (reliable)
             'reply_to' => ($me && is_email($me->user_email)) ? $me->user_email : get_bloginfo('admin_email'),
             'cc_self'  => false,
         ];
 
-        // Send via central Mailer (which also does {{token}} rendering and From/Reply-To)
+        // Send via central Mailer
         $ok = (new Mailer())->send($to, $subject, $body, $ctx);
 
         if (! $ok) {
-            // Surface PHPMailer error if available
             $err = '';
             if (isset($GLOBALS['phpmailer']) && $GLOBALS['phpmailer'] instanceof \PHPMailer\PHPMailer\PHPMailer) {
                 $err = $GLOBALS['phpmailer']->ErrorInfo ?: '';

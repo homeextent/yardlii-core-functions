@@ -27,9 +27,6 @@ final class Loader
         }
         self::$tvSettingsRegistered = true;
 
-        // These classes must define:
-        //  - yardlii_tv_global_group
-        //  - yardlii_tv_form_configs_group
         if (class_exists(\Yardlii\Core\Features\TrustVerification\Settings\GlobalSettings::class)) {
             (new \Yardlii\Core\Features\TrustVerification\Settings\GlobalSettings())->registerSettings();
         }
@@ -76,43 +73,88 @@ final class Loader
      */
     public function register_features(): void
     {
-        // === Google Maps ===
+        // === Integrations (Maps, Elementor, Search) ===
         if (class_exists(__NAMESPACE__ . '\\Integrations\\GoogleMapKey')) {
             (new Integrations\GoogleMapKey())->register();
         }
 
-        // === Featured Image Automation ===
-        if (class_exists(__NAMESPACE__ . '\\FeaturedImage')) {
-            (new FeaturedImage())->register();
+        $el_enabled = (bool) get_option('yardlii_enable_elementor_query_mods', false);
+        if (defined('YARDLII_ENABLE_ELEMENTOR_QUERY_MODS')) {
+            $el_enabled = (bool) YARDLII_ENABLE_ELEMENTOR_QUERY_MODS;
+        }
+        if ($el_enabled && class_exists(__NAMESPACE__ . '\\Integrations\\ElementorQueryMods')) {
+            (new Integrations\ElementorQueryMods())->register();
         }
 
-        // === Feature: Business Directory ===
+        if (class_exists(__NAMESPACE__ . '\\Integrations\\HomepageSearch')) {
+            (new Integrations\HomepageSearch())->register();
+        }
+
+        // === WPUF Logic ===
+        if (class_exists(__NAMESPACE__ . '\\WPUF\\WPUFFrontendEnhancements')) {
+            (new WPUF\WPUFFrontendEnhancements())->register();
+        }
+
+        $geo_enabled = (bool) get_option('yardlii_enable_wpuf_geocoding', false);
+        if (defined('YARDLII_ENABLE_WPUF_GEOCODING')) {
+            $geo_enabled = (bool) constant('YARDLII_ENABLE_WPUF_GEOCODING');
+        }
+        if ($geo_enabled && class_exists(__NAMESPACE__ . '\\WPUF\\WpufGeocoding')) {
+            (new WPUF\WpufGeocoding())->register();
+        }
+
+        $loc_enabled = (bool) get_option('yardlii_enable_wpuf_city_autocomplete', false);
+        if (defined('YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE')) {
+            $loc_enabled = (bool) YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE;
+        }
+        if ($loc_enabled && class_exists(__NAMESPACE__ . '\\WPUF\\WpufCityAutocomplete')) {
+            $coreUrl = defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL : plugin_dir_url(__DIR__ . '/../');
+            $coreVer = defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0.0';
+            (new WPUF\WpufCityAutocomplete($coreUrl, $coreVer))->register();
+        }
+
+        if (class_exists(__NAMESPACE__ . '\\WPUF\\ProfileFormSwitcher')) {
+            (new WPUF\ProfileFormSwitcher())->register();
+        }
+        if (class_exists(__NAMESPACE__ . '\\WPUF\\PostingLogic')) {
+            (new WPUF\PostingLogic())->register();
+        }
+        if (class_exists(__NAMESPACE__ . '\\WPUF\\SmartFormOverrides')) {
+            (new WPUF\SmartFormOverrides())->register();
+        }
+        if (class_exists(__NAMESPACE__ . '\\WPUF\\SubmitFormSwitcher')) {
+            (new WPUF\SubmitFormSwitcher())->register();
+        }
+
+        // === User Directory ===
         $directory_enabled = (bool) get_option('yardlii_enable_business_directory', false);
         if (defined('YARDLII_ENABLE_BUSINESS_DIRECTORY')) {
             $directory_enabled = (bool) YARDLII_ENABLE_BUSINESS_DIRECTORY;
         }
-
         if ($directory_enabled && class_exists(__NAMESPACE__ . '\\Directory\\Renderer')) {
-            // Inject constants safely to satisfy PHPStan
             $coreUrl = defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL : plugin_dir_url(__DIR__ . '/../');
             $coreVer = defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0.0';
-            
             (new Directory\Renderer($coreUrl, $coreVer))->register();
         }
 
-        // Feature: Automated Media Cleanup
+        // === General Features ===
+        if (class_exists(__NAMESPACE__ . '\\FeaturedImage')) {
+            (new FeaturedImage())->register();
+        }
+
+        if (get_option('yardlii_enable_featured_listings', false)) {
+            if (class_exists(__NAMESPACE__ . '\\FeaturedListings')) {
+                (new FeaturedListings())->register();
+            }
+        }
+
+        // === Media Cleanup ===
         $media_cleanup_enabled = (bool) get_option('yardlii_enable_media_cleanup', false);
         if (defined('YARDLII_ENABLE_MEDIA_CLEANUP')) {
             $media_cleanup_enabled = (bool) YARDLII_ENABLE_MEDIA_CLEANUP;
         }
-
         if ($media_cleanup_enabled && class_exists(__NAMESPACE__ . '\\MediaCleanup')) {
             (new MediaCleanup())->register();
-        }
-
-        // === Homepage Search ===
-        if (class_exists(__NAMESPACE__ . '\\Integrations\\HomepageSearch')) {
-            (new Integrations\HomepageSearch())->register();
         }
 
         // === ACF User Sync ===
@@ -124,108 +166,36 @@ final class Loader
             (new ACFUserSync())->register();
         }
 
-        // === WPUF Frontend Enhancements ===
-        if (class_exists(__NAMESPACE__ . '\\WPUF\\WPUFFrontendEnhancements')) {
-            (new WPUF\WPUFFrontendEnhancements())->register();
-        }
-
-        // === WPUF Geocoding (Privacy Focused) ===
-        $geo_enabled = (bool) get_option('yardlii_enable_wpuf_geocoding', false);
-        if (defined('YARDLII_ENABLE_WPUF_GEOCODING')) {
-            $geo_enabled = (bool) constant('YARDLII_ENABLE_WPUF_GEOCODING');
-        }
-
-        if ($geo_enabled && class_exists(__NAMESPACE__ . '\\WPUF\\WpufGeocoding')) {
-            (new WPUF\WpufGeocoding())->register();
-        }
-
-        // === Profile Form Switcher ===
-        if (class_exists(__NAMESPACE__ . '\\WPUF\\ProfileFormSwitcher')) {
-            (new WPUF\ProfileFormSwitcher())->register();
-        }
-
-        // === Featured Listings Logic (New) ===
-        if (get_option('yardlii_enable_featured_listings', false)) {
-            if (class_exists(__NAMESPACE__ . '\\FeaturedListings')) {
-                (new FeaturedListings())->register();
-            }
-        }
-
-        // === Dynamic Posting Logic ===
-        if (class_exists(__NAMESPACE__ . '\\WPUF\\PostingLogic')) {
-            (new WPUF\PostingLogic())->register();
-        }
-
-        // === Smart Form Overrides ===
-        if (class_exists(__NAMESPACE__ . '\\WPUF\\SmartFormOverrides')) {
-            (new WPUF\SmartFormOverrides())->register();
-        }
-
-        // === Submit Form Switcher ===
-        if (class_exists(__NAMESPACE__ . '\\WPUF\\SubmitFormSwitcher')) {
-            (new WPUF\SubmitFormSwitcher())->register();
-        }
-
-        // === Role Control (master + subfeatures) ===
+        // === Role Control & Dashboard ===
         $rc_master = (bool) get_option('yardlii_enable_role_control', false);
         if (defined('YARDLII_ENABLE_ROLE_CONTROL')) {
             $rc_master = (bool) YARDLII_ENABLE_ROLE_CONTROL;
         }
 
-	    // === User Dashboard (My Listings) ===
         if (class_exists(__NAMESPACE__ . '\\UserDashboard')) {
-            // Inject constants for assets
             $coreUrl = defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL : plugin_dir_url(__DIR__ . '/../');
             $coreVer = defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0.0';
-            
             (new UserDashboard($coreUrl, $coreVer))->register();
         }
 
-        // Submit Access
         $rc_submit_enabled = $rc_master && (bool) get_option('yardlii_enable_role_control_submit', false);
         if ($rc_submit_enabled && class_exists(__NAMESPACE__ . '\\RoleControlSubmitAccess')) {
             (new RoleControlSubmitAccess())->register();
         }
 
-        // Custom User Roles
         $cur_enabled = $rc_master && (bool) get_option('yardlii_enable_custom_roles', true);
         if ($cur_enabled && class_exists(__NAMESPACE__ . '\\CustomUserRoles')) {
             (new CustomUserRoles())->register();
         }
 
-        // Badge Assignment
         $badge_enabled = $rc_master && (bool) get_option('yardlii_enable_badge_assignment', true);
         if ($badge_enabled && class_exists(__NAMESPACE__ . '\\RoleControlBadgeAssignment')) {
             (new RoleControlBadgeAssignment())->register();
-        }
-
-	    // === WPUF City Autocomplete ===
-        $loc_enabled = (bool) get_option('yardlii_enable_wpuf_city_autocomplete', false);
-        if (defined('YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE')) {
-            $loc_enabled = (bool) YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE;
-        }
-
-        if ($loc_enabled && class_exists(__NAMESPACE__ . '\\WPUF\\WpufCityAutocomplete')) {
-            $coreUrl = defined('YARDLII_CORE_URL') ? YARDLII_CORE_URL : plugin_dir_url(__DIR__ . '/../');
-            $coreVer = defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : '1.0.0';
-
-            (new WPUF\WpufCityAutocomplete($coreUrl, $coreVer))->register();
-        }
-
-        // === Elementor Query Mods ===
-        $el_enabled = (bool) get_option('yardlii_enable_elementor_query_mods', false);
-        if (defined('YARDLII_ENABLE_ELEMENTOR_QUERY_MODS')) {
-            $el_enabled = (bool) YARDLII_ENABLE_ELEMENTOR_QUERY_MODS;
-        }
-
-        if ($el_enabled && class_exists(__NAMESPACE__ . '\\Integrations\\ElementorQueryMods')) {
-            (new Integrations\ElementorQueryMods())->register();
         }
     }
 
     /**
      * Optional convenience boot if Loader needs to self-wire.
-     * Not required if Core::init() calls (new Loader())->register().
      */
     public static function boot(): void
     {

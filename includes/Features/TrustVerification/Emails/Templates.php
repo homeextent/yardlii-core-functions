@@ -11,17 +11,7 @@ final class Templates
     /**
      * @return array<string,mixed>|null
      */
-    public static function findConfigByFormId(string $form_id): ?array
-    {
-        /** @var array<int,array<string,mixed>> $configs */
-        $configs = (array) \get_option(FormConfigs::OPT_KEY, []);
-        foreach ($configs as $row) {
-            if ((string) ($row['form_id'] ?? '') === $form_id) {
-                return $row;
-            }
-        }
-        return null;
-    }
+   
 
     /**
      * Build a legacy placeholder context (keys like "{site_title}").
