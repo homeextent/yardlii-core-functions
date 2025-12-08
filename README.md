@@ -130,6 +130,11 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.28.1 - 2025-12-07
+### Bug Fix & Known Issues
+- **Dashboard Links:** Applied fix to prevent aggressive URL parameter deletion in `admin.js`.
+- **Known Issue:** A persistent, intermittent client-side redirection bug remains. Links pointing to nested tabs (e.g., `&tvsection=requests`) may still be momentarily overwritten by the default tab of that parent section (`&tvsection=configuration`), preventing deep linking from external sources like the dashboard. This requires further investigation into JS timing/priority.
+
 ## 3.28.0 - 2025-12-07
 ### Polish (Phase 4 Complete)
 - **UX Shortcut:** Added a direct "Settings" link to the plugin row on the WordPress Plugins screen for easier administration.
