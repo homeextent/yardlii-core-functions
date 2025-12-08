@@ -5,6 +5,7 @@ namespace Yardlii\Core\Features\TrustVerification;
 
 use Yardlii\Core\Features\TrustVerification\Providers\ProviderInterface;
 use Throwable;
+use Yardlii\Core\Services\Logger;
 
 /**
  * Manages the registration and booting of Trust & Verification form providers
@@ -54,9 +55,7 @@ final class TvProviderRegistry
             // Ensure it implements the interface
             $implements = class_implements($fqcn);
             if (!$implements || !isset($implements[ProviderInterface::class])) {
-                if (defined('YARDLII_DEBUG') && YARDLII_DEBUG) {
-                    error_log("[YARDLII] Provider {$fqcn} does not implement TvProviderInterface.");
-                }
+                Logger::log("Provider {$fqcn} does not implement TvProviderInterface.", 'TV');
                 continue;
             }
 
@@ -82,9 +81,7 @@ final class TvProviderRegistry
                 $instance = new $fqcn();
                 $instance->registerHooks();
             } catch (Throwable $e) {
-                if (defined('YARDLII_DEBUG') && YARDLII_DEBUG) {
-                    error_log("[YARDLII] Failed to boot provider {$fqcn}: " . $e->getMessage());
-                }
+                Logger::log("Failed to boot provider {$fqcn}: " . $e->getMessage(), 'TV');
             }
         };
 

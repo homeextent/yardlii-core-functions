@@ -9,6 +9,7 @@ use Yardlii\Core\Features\TrustVerification\Requests\Decisions;
 // NEW: Import the registry
 use Yardlii\Core\Features\TrustVerification\TvProviderRegistry;
 use Yardlii\Core\Features\TrustVerification\Requests\NativeAdminColumns;
+use Yardlii\Core\Services\Logger;
 
 final class Module
 {
@@ -60,9 +61,7 @@ final class Module
                     $decisionsController->register();
                 }
             } catch (\Throwable $e) {
-                if (defined('YARDLII_DEBUG') && YARDLII_DEBUG) {
-                    error_log('[YARDLII] Failed to register Decisions controller: ' . $e->getMessage());
-                }
+                Logger::log('Failed to register Decisions controller: ' . $e->getMessage(), 'TV');
             }
         }
 
@@ -126,9 +125,7 @@ final class Module
                 $obj->register();
             }
         } catch (\Throwable $e) {
-            if (defined('YARDLII_DEBUG') && YARDLII_DEBUG) {
-                error_log('[YARDLII] safeRegister failed for ' . $fqcn . ': ' . $e->getMessage());
-            }
+            Logger::log('safeRegister failed for ' . $fqcn . ': ' . $e->getMessage(), 'TV');
         }
     }
 }
