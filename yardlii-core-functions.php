@@ -145,6 +145,28 @@ add_action('wp_enqueue_scripts', static function (): void {
  * ===================================================== */
 use Yardlii\Core\Core;
 
+/**
+ * Add a Settings link to the plugin action links on the plugins page.
+ *
+ * @param array<string, string> $links
+ * @return array<string, string>
+ */
+function yardlii_core_settings_link(array $links): array
+{
+    $settings_link = sprintf(
+        '<a href="%s">%s</a>',
+        esc_url(admin_url('admin.php?page=yardlii-core-settings')),
+        esc_html__('Settings', 'yardlii-core')
+    );
+    // Insert the link at the beginning of the array.
+    array_unshift($links, $settings_link);
+    
+    return $links;
+}
+
+// Hook it up (using the base name of the plugin file)
+add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'yardlii_core_settings_link');
+
 add_action('plugins_loaded', static function () {
     static $initialized = false;
     if ($initialized) return;
