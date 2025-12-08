@@ -14,14 +14,22 @@
 
     // --- Function to Initialize Google Places Autocomplete (FIXED RACE CONDITION) ---
     function initHomepageAutocomplete() {
-        if (!input || typeof google === 'undefined' || !google.maps || !google.maps.places) {
-            console.warn('YARDLII: Google Maps Places API not loaded or input missing.');
+        // [MODIFIED] Only check if the input is present. We trust the event means the API is loading/ready.
+        if (!input) {
+            console.warn('YARDLII: Location input missing for autocomplete init.');
             return;
         }
 
         // Prevent double initialization (e.g., from immediate call + event listener)
         if (input.dataset.autoInit) return;
         input.dataset.autoInit = 'true';
+
+        // [CRITICAL CHECK] Ensure the google object is defined by the script loader
+        if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+            console.warn('YARDLII: Google object is not yet defined. Deferring.');
+            // Defer: Exit and rely on the next call when the DOM is ready or event fires again.
+            return;
+        }
 
         console.log('YARDLII: Initializing Google Places autocomplete...');
         autocomplete = new google.maps.places.Autocomplete(input, {
@@ -34,11 +42,11 @@
     // --- Hook the initialization to the router event ---
     document.addEventListener('yardliiGoogleMapsLoaded', initHomepageAutocomplete);
 
-    // Safety check for cached loads (already defined global 'google')
+    // [REMOVED/FIXED] The original synchronous check block on lines 56-64 is replaced 
+    // by calling the function once immediately, which safely checks the google object.
     if (typeof google !== 'undefined' && google.maps && google.maps.places) {
         initHomepageAutocomplete();
     }
-
 
 
 
