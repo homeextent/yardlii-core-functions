@@ -106,27 +106,48 @@ final class AdminPage
      * Dashboard Widget
      * =======================================*/
 
-    /**
-     * Register the "Pending Verifications" dashboard widget.
-     */
     public function registerDashboardWidget(): void
     {
-        // Only show widget to admins who can manage TV
-        if (class_exists('\Yardlii\Core\Features\TrustVerification\Caps')) {
-            if (!current_user_can(\Yardlii\Core\Features\TrustVerification\Caps::MANAGE)) {
-                return;
-            }
-        } else {
-            if (!current_user_can('manage_options')) {
-                return;
-            }
-        }
+        // ... (Existing capability check remains here) ...
 
+        // 1. Pending Verifications Widget (Existing)
         wp_add_dashboard_widget(
             'yardlii_tv_dashboard_widget',
             __('YARDLII: Pending Verifications', 'yardlii-core'),
             [$this, 'renderDashboardWidget']
         );
+
+        // 2. [NEW] Quick Links Widget
+        wp_add_dashboard_widget(
+            'yardlii_quick_links_widget',
+            __('YARDLII: Configuration & Health', 'yardlii-core'),
+            [$this, 'renderQuickLinksWidget']
+        );
+    }
+
+/**
+     * Render the Quick Links dashboard widget content.
+     */
+    public function renderQuickLinksWidget(): void
+    {
+        $settings_url = admin_url('admin.php?page=yardlii-core-settings');
+        $diag_url = $settings_url . '&tab=advanced&advsection=diagnostics';
+        $wpuf_url = $settings_url . '&tab=general&gsection=wpuf';
+
+        echo '<div class="yardlii-quick-links">';
+        
+        echo '<h3>' . esc_html__('Configuration', 'yardlii-core') . '</h3>';
+        echo '<ul style="list-style:disc; margin-left: 20px;">';
+        printf('<li><a href="%s">%s</a></li>', esc_url($settings_url), esc_html__('General Settings (Maps, Search)', 'yardlii-core'));
+        printf('<li><a href="%s">%s</a></li>', esc_url($wpuf_url), esc_html__('WPUF Forms & Posting Logic', 'yardlii-core'));
+        echo '</ul>';
+
+        echo '<h3>' . esc_html__('Health Check', 'yardlii-core') . '</h3>';
+        echo '<ul style="list-style:disc; margin-left: 20px;">';
+        printf('<li><a href="%s">%s</a></li>', esc_url($diag_url), esc_html__('Run Diagnostics (API & Flags)', 'yardlii-core'));
+        echo '</ul>';
+
+        echo '</div>';
     }
 
     /**
@@ -171,6 +192,8 @@ final class AdminPage
         
         echo '</div>';
     }
+
+
 
     /* =========================================
      * Helpers

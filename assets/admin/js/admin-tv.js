@@ -90,9 +90,21 @@
       };
 
       // Initial selection
-      let id = fromUrl().trim();
+      const urlId = fromUrl().trim();
+      let id = urlId;
+      
+      if (urlId) {
+          // FIX: If a URL param exists (i.e., we clicked a link from the dashboard), 
+          // we honor it and remove the conflicting session storage key.
+          sessionStorage.removeItem(KEY_TV); 
+      }
+      
+      // If URL was empty (or just cleared), now try to pull from session
       if (!id) id = (sessionStorage.getItem(KEY_TV) || '').trim();
+      
+      // Final fallback
       if (!id) id = String($tabs.first().data('tvsection') || 'configuration');
+      
       activate(id);
 
       // Mouse
