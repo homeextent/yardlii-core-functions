@@ -3,10 +3,13 @@ declare(strict_types=1);
 
 namespace Yardlii\Core\Features\TrustVerification\UI;
 
+use Yardlii\Core\Features\TrustVerification\Requests\CPT;
+
 /**
  * Trust & Verification — Admin Assets Bootstrap
  * - Enqueues TV CSS/JS only on YARDLII Core Settings screen.
  * - Provides YardliiTV globals (AJAX + REST + nonces).
+ * - Registers the Dashboard Widget.
  */
 final class AdminPage
 {
@@ -24,10 +27,13 @@ final class AdminPage
     {
         // Only handle assets; panel is rendered from SettingsPageTabs
         add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);
+        
+        // [NEW] Dashboard Widget
+        add_action('wp_dashboard_setup', [$this, 'registerDashboardWidget']);
     }
 
     /* =========================================
-     *  Enqueue
+     * Enqueue
      * =======================================*/
     /**
      * @param string $hook Current admin screen hook suffix
@@ -38,16 +44,15 @@ final class AdminPage
             return;
         }
         // inside enqueueAssets(), right after the isOurSettingsPage() check
-if (class_exists('\Yardlii\Core\Features\TrustVerification\Caps')) {
-    if (! current_user_can(\Yardlii\Core\Features\TrustVerification\Caps::MANAGE)) {
-        return; // optionally skip enqueuing for users who can't manage TV
-    }
-} else {
-    if (! current_user_can('manage_options')) {
-        return;
-    }
-}
-
+        if (class_exists('\Yardlii\Core\Features\TrustVerification\Caps')) {
+            if (! current_user_can(\Yardlii\Core\Features\TrustVerification\Caps::MANAGE)) {
+                return; // optionally skip enqueuing for users who can't manage TV
+            }
+        } else {
+            if (! current_user_can('manage_options')) {
+                return;
+            }
+        }
 
         // Editor APIs for wp.editor.initialize() (TinyMCE/Quicktags)
         if (function_exists('wp_enqueue_editor')) {
@@ -87,19 +92,88 @@ if (class_exists('\Yardlii\Core\Features\TrustVerification\Caps')) {
         );
 
         /* --- Data for JS --- */
-wp_localize_script(self::SCRIPT_HANDLE, 'YardliiTV', [
-    'ajax'          => admin_url('admin-ajax.php'),
-    'noncePreview'  => wp_create_nonce('yardlii_tv_preview'),
-    'nonceSend'     => wp_create_nonce('yardlii_tv_send_test'),
-    'nonceHistory'  => wp_create_nonce('yardlii_tv_history'), 
-    'restRoot'      => esc_url_raw(rest_url()),
-    'restNonce'     => wp_create_nonce('wp_rest'),
-]);
-
+        wp_localize_script(self::SCRIPT_HANDLE, 'YardliiTV', [
+            'ajax'          => admin_url('admin-ajax.php'),
+            'noncePreview'  => wp_create_nonce('yardlii_tv_preview'),
+            'nonceSend'     => wp_create_nonce('yardlii_tv_send_test'),
+            'nonceHistory'  => wp_create_nonce('yardlii_tv_history'), 
+            'restRoot'      => esc_url_raw(rest_url()),
+            'restNonce'     => wp_create_nonce('wp_rest'),
+        ]);
     }
 
     /* =========================================
-     *  Helpers
+     * Dashboard Widget
+     * =======================================*/
+
+    /**
+     * Register the "Pending Verifications" dashboard widget.
+     */
+    public function registerDashboardWidget(): void
+    {
+        // Only show widget to admins who can manage TV
+        if (class_exists('\Yardlii\Core\Features\TrustVerification\Caps')) {
+            if (!current_user_can(\Yardlii\Core\Features\TrustVerification\Caps::MANAGE)) {
+                return;
+            }
+        } else {
+            if (!current_user_can('manage_options')) {
+                return;
+            }
+        }
+
+        wp_add_dashboard_widget(
+            'yardlii_tv_dashboard_widget',
+            __('YARDLII: Pending Verifications', 'yardlii-core'),
+            [$this, 'renderDashboardWidget']
+        );
+    }
+
+    /**
+     * Render the dashboard widget content.
+     */
+    public function renderDashboardWidget(): void
+    {
+        // Count pending requests
+        $count = (new \WP_Query([
+            'post_type'      => CPT::POST_TYPE,
+            'post_status'    => 'vp_pending',
+            'posts_per_page' => 1, // Efficiency: we only need the count
+            'fields'         => 'ids',
+        ]))->found_posts;
+
+        // Link to the Requests tab
+        $url = admin_url('admin.php?page=yardlii-core-settings&tab=trust-verification&tvsection=requests');
+
+        echo '<div class="yardlii-dashboard-widget" style="padding:10px 0; text-align:center;">';
+        
+        if ($count > 0) {
+            printf(
+                '<div style="font-size: 36px; font-weight: bold; color: #d63638; line-height: 1;">%d</div>',
+                $count
+            );
+            echo '<p style="margin: 5px 0 15px; color: #666;">' . esc_html__('Pending Requests', 'yardlii-core') . '</p>';
+            
+            printf(
+                '<a href="%s" class="button button-primary">%s</a>',
+                esc_url($url),
+                esc_html__('Review Queue', 'yardlii-core')
+            );
+        } else {
+            echo '<div style="font-size: 36px; line-height: 1;">✅</div>';
+            echo '<p style="margin-top:10px;">' . esc_html__('All caught up! No pending requests.', 'yardlii-core') . '</p>';
+            printf(
+                '<a href="%s" class="button">%s</a>',
+                esc_url($url),
+                esc_html__('View History', 'yardlii-core')
+            );
+        }
+        
+        echo '</div>';
+    }
+
+    /* =========================================
+     * Helpers
      * =======================================*/
     /**
      * True only on the YARDLII Core Settings screen.
