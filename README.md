@@ -130,6 +130,12 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.27.4 - 2025-12-07
+### Optimization (Phase 3 Complete)
+- **Extensibility:** Added `yardlii_map_shortcode_triggers` and `yardlii_map_content_triggers` filters. Developers can now programmatically whitelist custom shortcodes or CSS classes to trigger Google Maps loading without editing core files.
+- **Performance:** Centralized configuration loading for the Trust & Verification module, eliminating redundant database calls across multiple classes.
+- **Logging:** Standardized all system logging to use the `Yardlii\Core\Services\Logger` service, ensuring all debug output strictly respects the global "Debug Mode" toggle.
+
 ## 3.27.3 - 2025-12-07
 ### Architecture (Phase 2 Complete)
 - **Code Cleanup:** Refactored the internal file structure into logical namespaces (`WPUF`, `Directory`, `Integrations`). This improves maintainability and reduces clutter in the `Features` directory.
