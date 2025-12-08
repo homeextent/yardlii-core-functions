@@ -75,6 +75,7 @@ class GoogleMapKey {
 
     /**
      * Determines if the scripts should load on the current page.
+     * Checks Admin, User Settings, and Shortcode Auto-Detection.
      */
     private function should_load_scripts(): bool {
         // A. Always load in Admin
@@ -82,7 +83,7 @@ class GoogleMapKey {
             return true;
         }
 
-        // B. Check User Settings
+        // B. Check User Settings (Manual Overrides)
         $raw_targets = (string) get_option('yardlii_gmap_target_pages', '');
         $targets = array_filter(array_map('trim', explode(',', $raw_targets)));
 
@@ -91,28 +92,40 @@ class GoogleMapKey {
             return true;
         }
 
-        // C. Check Current Page ID/Slug
+        // C. Check Current Page ID/Slug against Manual List
         if (is_page($targets) || is_single($targets)) {
             return true;
         }
 
-        // D. Auto-Detect Critical Shortcodes
+        // D. Auto-Detect via Filterable Triggers
         global $post;
-        if ($post instanceof \WP_Post) {
-            $content = $post->post_content;
-            
-            if (has_shortcode($content, 'yardlii_directory') || 
-                has_shortcode($content, 'yardlii_directory_search') ||
-                has_shortcode($content, 'yardlii_search_form')) {
+        if (!($post instanceof \WP_Post)) {
+            return false;
+        }
+
+        // 1. Shortcodes that trigger the map
+        $shortcodes = apply_filters('yardlii_map_shortcode_triggers', [
+            'yardlii_directory',
+            'yardlii_directory_search',
+            'yardlii_search_form',
+            'facetwp',
+            'wpuf_form' // Covers [wpuf_form id="..."]
+        ]);
+
+        foreach ($shortcodes as $tag) {
+            if (has_shortcode($post->post_content, $tag)) {
                 return true;
             }
-            
-            if (has_shortcode($content, 'facetwp')) {
-                return true;
-            }
-            
-            if (strpos($content, '[wpuf_form') !== false || 
-                strpos($content, 'yardlii-city-autocomplete') !== false) {
+        }
+
+        // 2. CSS Classes or Strings that trigger the map
+        $content_markers = apply_filters('yardlii_map_content_triggers', [
+            'yardlii-city-autocomplete', // Class name in raw HTML
+            'wpuf-form' // Fallback string check if has_shortcode fails
+        ]);
+
+        foreach ($content_markers as $marker) {
+            if (strpos($post->post_content, $marker) !== false) {
                 return true;
             }
         }
