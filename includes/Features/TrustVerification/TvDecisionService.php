@@ -47,10 +47,9 @@ final class TvDecisionService
         $status  = (string) $post->post_status;
         $now     = gmdate('c');
         
-        // Allow overriding 'by' via options, default to current user
         $by = isset($opts['actor_id']) ? (int) $opts['actor_id'] : get_current_user_id();
 
-        // Load config
+        // Load config using centralized helper
         $cfg = TVFormConfigs::get_config($form_id);
         if (!$cfg && $action !== 'reopen') {
             return false;
@@ -75,15 +74,6 @@ final class TvDecisionService
         }
 
         if ($result) {
-            /**
-             * Fires after a verification decision (approve, reject, reopen, resend)
-             * has been successfully applied.
-             *
-             * @param int $request_id The ID of the verification_request post.
-             * @param string $action The action taken ('approve', 'reject', 'reopen', 'resend').
-             * @param int $user_id The affected user's ID.
-             * @param int $admin_id The admin user ID who performed the action.
-             */
             do_action('yardlii_tv_decision_made', $request_id, $action, $user_id, $by);
         }
 
@@ -134,15 +124,9 @@ final class TvDecisionService
     {
         if ($status !== 'vp_pending') return false;
 
-        // [NEW] Reversion Logic
-        // If the user is currently 'pending_verification', we MUST restore their old role.
         if ($user && in_array('pending_verification', (array)$user->roles, true)) {
             $old_roles = (array) get_post_meta($request_id, '_vp_old_roles', true);
-            
-            // Restore:
             Roles::restoreRoles($user->ID, $old_roles);
-            
-            // Log the reversion
             Meta::appendLog($request_id, 'provisional_access_revoked', $by, [
                 'restored_roles' => implode(',', $old_roles)
             ]);
@@ -225,9 +209,7 @@ final class TvDecisionService
      */
     private function sendDecisionEmail(?WP_User $user, string $form_id, string $type, array $cfg, int $request_id = 0, array $opts = []): void
     {
-        if (!$user) {
-            return;
-        }
+        if (!$user) return;
 
         if (empty($user->user_email) || !is_email($user->user_email)) {
             if ($request_id) {
@@ -270,10 +252,4 @@ final class TvDecisionService
             );
         }
     }
-
-    /**
-     * Find per-form config row for a given form_id.
-     * @return array<string, mixed>|null
-     */
-  
 }
