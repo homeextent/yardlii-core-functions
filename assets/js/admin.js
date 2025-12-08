@@ -242,7 +242,7 @@ const initialId =
 
   
 
-  // 1) MAIN TABS (General / User Sync / Advanced)
+ // 1) MAIN TABS (General / User Sync / Advanced)
   const mainNav = document.querySelector('nav.yardlii-tabs[data-scope="main"]');
   if (mainNav) {
     const mainBtns = mainNav.querySelectorAll('.yardlii-tab');
@@ -261,8 +261,9 @@ const initialId =
       try {
         const u = new URL(window.location.href);
         u.searchParams.set('tab', id);
-        // We stop AGGRESSIVE deletion, allowing nested params to persist
-        // when navigating from external source like the Dashboard widget.
+        // FIX: We stop AGGRESSIVE deletion. This allows nested parameters 
+        // (gsection, tvsection, etc.) to persist in the URL when navigating 
+        // from external links (Dashboard).
         updateUrlAndReferrers(u);
       } catch (e) {
         // Fails in test suites or old browsers
@@ -305,6 +306,8 @@ const initialId =
     // clicks
     mainBtns.forEach(b => b.addEventListener('click', () => activateMain(b.dataset.tab)));
   }
+  
+  // ... (Rest of the file follows) ...
 
   // 2) GENERAL SUB-TABS (the four buttons above the <details> panels)
   const genNav = document.querySelector('#yardlii-tab-general .yardlii-general-subtabs');
