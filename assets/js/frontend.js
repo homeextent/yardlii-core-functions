@@ -6,6 +6,7 @@
 (function($) {
   $(document).ready(function() {
     const form = $('.yardlii-search-form');
+    // Note: 'input' is defined here and holds document.getElementById('yardlii_location_input')
     const input = document.getElementById('yardlii_location_input');
     const range = document.getElementById('yardlii_radius_range');
     const tooltip = document.getElementById('yardlii_radius_tooltip');
@@ -14,10 +15,10 @@
 
     // --- Function to Initialize Google Places Autocomplete (FIXED RACE CONDITION) ---
     function initHomepageAutocomplete() {
-        // [MODIFIED] Only check if the input is present. We trust the event means the API is loading/ready.
+        
         if (!input) {
-            console.warn('YARDLII: Location input missing for autocomplete init.');
-            return;
+            // [MODIFIED] Silence this line to prevent console spam on Dashboard/Find-a-Pro.
+            return; 
         }
 
         // Prevent double initialization (e.g., from immediate call + event listener)
@@ -26,8 +27,7 @@
 
         // [CRITICAL CHECK] Ensure the google object is defined by the script loader
         if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
-            console.warn('YARDLII: Google object is not yet defined. Deferring.');
-            // Defer: Exit and rely on the next call when the DOM is ready or event fires again.
+            // We rely on the event listener to call us back when it is defined.
             return;
         }
 
@@ -42,14 +42,16 @@
     // --- Hook the initialization to the router event ---
     document.addEventListener('yardliiGoogleMapsLoaded', initHomepageAutocomplete);
 
-    // [REMOVED/FIXED] The original synchronous check block on lines 56-64 is replaced 
-    // by calling the function once immediately, which safely checks the google object.
+    // [REMOVED/FIXED] This entire synchronous initialization block is now redundant 
+    // (and was causing the console spam). We rely solely on the event listener above.
+    /*
     if (typeof google !== 'undefined' && google.maps && google.maps.places) {
         initHomepageAutocomplete();
     }
+    */
 
-
-
+    // [REMOVED] This entire legacy initialization block is now removed.
+    /*
     // --- Initialize Google Places Autocomplete ---
     if (input && typeof google !== 'undefined' && google.maps && google.maps.places) {
       console.log('YARDLII: Initializing Google Places autocomplete...');
@@ -61,8 +63,9 @@
     } else {
       console.warn('YARDLII: Google Maps Places API not loaded or input missing.');
     }
-
- // === 📍 Compact Compass Locate Feature ===
+    */
+    
+    // === 📍 Compact Compass Locate Feature ===
 const locateIcon = document.getElementById('yardlii_locate_me');
 if (locateIcon && typeof google !== 'undefined' && google.maps) {
   locateIcon.addEventListener('click', function() {

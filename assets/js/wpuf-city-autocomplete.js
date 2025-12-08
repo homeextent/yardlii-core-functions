@@ -31,7 +31,7 @@
 
     const init = function() {
         const inputs = document.querySelectorAll(INPUT_SELECTOR);
-        inputs.forEach(attachAutocomplete);
+        inputs.forEach(attachAutocomplete); // <-- This call is now valid
     };
 
     // [CRITICAL FIX: Move MutationObserver logic inside DOMContentLoaded block]
