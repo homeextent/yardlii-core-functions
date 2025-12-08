@@ -12,37 +12,32 @@
     const locateBtn = document.getElementById('yardlii_locate_me');
     let autocomplete, geocoder;
 
- // --- Live tooltip updater (mobile-safe) ---
-if (range && tooltip) {
-  const min = parseInt(range.min, 10);
-  const max = parseInt(range.max, 10);
-  let hideTimeout;
+    // --- Function to Initialize Google Places Autocomplete (FIXED RACE CONDITION) ---
+    function initHomepageAutocomplete() {
+        if (!input || typeof google === 'undefined' || !google.maps || !google.maps.places) {
+            console.warn('YARDLII: Google Maps Places API not loaded or input missing.');
+            return;
+        }
 
-  const updateTooltip = () => {
-    const val = parseInt(range.value, 10);
-    tooltip.textContent = val + ' km';
-    const percent = ((val - min) / (max - min)) * 100;
-    tooltip.style.left = `calc(${percent}% + (${8 - percent * 0.16}px))`;
+        // Prevent double initialization (e.g., from immediate call + event listener)
+        if (input.dataset.autoInit) return;
+        input.dataset.autoInit = 'true';
 
-    // Show tooltip
-    tooltip.classList.add('active');
-    clearTimeout(hideTimeout);
-    hideTimeout = setTimeout(() => tooltip.classList.remove('active'), 2000);
-  };
+        console.log('YARDLII: Initializing Google Places autocomplete...');
+        autocomplete = new google.maps.places.Autocomplete(input, {
+            types: ['(cities)'],
+            fields: ['formatted_address', 'geometry']
+        });
+        geocoder = new google.maps.Geocoder();
+    }
 
-  // Listen to both mouse + touch + pointer events (for iOS)
-  range.addEventListener('input', updateTooltip);
-  range.addEventListener('pointerdown', () => {
-    tooltip.classList.add('active');
-    clearTimeout(hideTimeout);
-  });
-  range.addEventListener('pointerup', () => {
-    clearTimeout(hideTimeout);
-    hideTimeout = setTimeout(() => tooltip.classList.remove('active'), 2000);
-  });
+    // --- Hook the initialization to the router event ---
+    document.addEventListener('yardliiGoogleMapsLoaded', initHomepageAutocomplete);
 
-  updateTooltip(); // initialize once
-}
+    // Safety check for cached loads (already defined global 'google')
+    if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+        initHomepageAutocomplete();
+    }
 
 
 
