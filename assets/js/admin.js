@@ -1,5 +1,3 @@
-
-
 jQuery(document).ready(function ($) {
 
   /**
@@ -263,11 +261,8 @@ const initialId =
       try {
         const u = new URL(window.location.href);
         u.searchParams.set('tab', id);
-        // Clean up sub-section params from other tabs
-        u.searchParams.delete('gsection');
-        u.searchParams.delete('tvsection');
-        u.searchParams.delete('advsection');
-        u.searchParams.delete('rsection'); // <-- THIS IS THE FIX
+        // We stop AGGRESSIVE deletion, allowing nested params to persist
+        // when navigating from external source like the Dashboard widget.
         updateUrlAndReferrers(u);
       } catch (e) {
         // Fails in test suites or old browsers
