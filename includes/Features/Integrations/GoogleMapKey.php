@@ -87,13 +87,14 @@ class GoogleMapKey {
         $raw_targets = (string) get_option('yardlii_gmap_target_pages', '');
         $targets = array_filter(array_map('trim', explode(',', $raw_targets)));
 
-        // If setting is empty, default to GLOBAL loading
+       // If setting is empty, default to GLOBAL loading
         if (empty($targets)) {
             return true;
         }
 
         // C. Check Current Page ID/Slug against Manual List
-        if (is_page($targets) || is_single($targets)) {
+        // FIX 1: Add is_post_type_archive check for Listings archive page.
+        if (is_post_type_archive('listings') || is_page($targets) || is_single($targets)) {
             return true;
         }
 
