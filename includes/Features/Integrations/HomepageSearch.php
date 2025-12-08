@@ -44,23 +44,21 @@ class HomepageSearch
     public function render_search_form(): string
     {
         if (defined('YARDLII_CORE_FILE') && defined('YARDLII_CORE_VERSION')) {
-            // [MODIFIED] Removed explicit enqueue of frontend.js and frontend.css here.
-            // The loading of these assets is now solely managed by the Conditional 
-            // Loading checks in GoogleMapKey.php for performance optimization.
-            
             wp_enqueue_style(
-                'yardlii-frontend-search-styles', // NEW HANDLE to avoid conflict
+                // Use the frontend styles for the form's visual structure
+                'yardlii-frontend', 
                 plugins_url('/assets/css/frontend.css', YARDLII_CORE_FILE),
                 [],
                 YARDLII_CORE_VERSION
             );
             
+            // [CRITICAL MODIFICATION] Load the dedicated homepage-search script
             wp_enqueue_script(
-                'yardlii-frontend-search-js', // NEW HANDLE
-                plugins_url('/assets/js/frontend.js', YARDLII_CORE_FILE),
-                ['jquery'],
+                'yardlii-homepage-search', // New unique handle
+                plugins_url('/assets/js/homepage-search.js', YARDLII_CORE_FILE),
+                ['jquery'], // Dependency on jQuery
                 YARDLII_CORE_VERSION,
-                true
+                true // Load in footer
             );
         }
 

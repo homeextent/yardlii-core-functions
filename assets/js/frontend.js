@@ -4,20 +4,13 @@
  * Formats FacetWP-compatible value: lat,lng,distance,address
  */
 (function($) {
-  $(document).ready(function() {
-    const form = $('.yardlii-search-form');
-    // Note: 'input' is defined here and holds document.getElementById('yardlii_location_input')
-    const input = document.getElementById('yardlii_location_input');
-    const range = document.getElementById('yardlii_radius_range');
-    const tooltip = document.getElementById('yardlii_radius_tooltip');
-    const locateBtn = document.getElementById('yardlii_locate_me');
-    let autocomplete, geocoder;
+  
 
     // --- Function to Initialize Google Places Autocomplete (FIXED RACE CONDITION) ---
     function initHomepageAutocomplete() {
+        const input = document.getElementById('yardlii_location_input');
         
         if (!input) {
-            // [MODIFIED] Silence this line to prevent console spam on Dashboard/Find-a-Pro.
             return; 
         }
 
@@ -25,11 +18,9 @@
         if (input.dataset.autoInit) return;
         input.dataset.autoInit = 'true';
 
-        // [CRITICAL CHECK] Ensure the google object is defined by the script loader
-        if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
-            // We rely on the event listener to call us back when it is defined.
-            return;
-        }
+        // [CRITICAL FIX: REMOVE REDUNDANT CHECK]
+        // The previous check for 'typeof google === undefined' is removed here.
+        // We trust that calling this function via the router callback means the dependency is met.
 
         console.log('YARDLII: Initializing Google Places autocomplete...');
         autocomplete = new google.maps.places.Autocomplete(input, {
