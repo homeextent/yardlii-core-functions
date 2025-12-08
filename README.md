@@ -130,6 +130,12 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.29.0 - 2025-12-08
+### Optimization & Stability
+- **Geolocation Stability:** Implemented a defensive MutationObserver in `wpuf-city-autocomplete.js` to eliminate race conditions on dynamically loaded WPUF forms (Dashboard/Profile Edit). This ensures Autocomplete attaches correctly even if inputs are injected asynchronously after page load.
+- **Loading Cleanup:** Removed redundant asset enqueuing in `HomepageSearch.php` to strictly enforce the Conditional Google Maps Loading strategy, improving performance and reducing global script conflicts.
+- **System Fix:** Restored the critical `attachAutocomplete` function scope in `wpuf-city-autocomplete.js` to resolve a fatal `ReferenceError` that prevented all WPUF/Directory location functionality.
+
 ## 3.28.1 - 2025-12-07
 ### Bug Fix & Known Issues
 - **Dashboard Links:** Applied fix to prevent aggressive URL parameter deletion in `admin.js`.
