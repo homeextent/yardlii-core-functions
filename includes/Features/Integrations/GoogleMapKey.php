@@ -110,7 +110,10 @@ class GoogleMapKey {
             'yardlii_directory_search',
             'yardlii_search_form',
             'facetwp',
-            'wpuf_form' // Covers [wpuf_form id="..."]
+            'wpuf_form', // Covers [wpuf_form id="..."]
+            // FIX 2: Explicitly include Dashboard shortcodes for detection
+            'yardlii_edit_profile', 
+            'yardlii_submit_listing'
         ]);
 
         foreach ($shortcodes as $tag) {
