@@ -10,12 +10,20 @@ use Yardlii\Core\Services\Logger;
 class WpufGeocoding {
 
     const OPTION_MAPPING = 'yardlii_wpuf_geo_mapping';
+    // 1. Define the Action Scheduler hook
+    const ASYNC_HOOK = 'yardlii_geo_process_post'; //
 
     public function register(): void {
+        // [MODIFICATION] Keep the initial synchronous hooks for post-creation/update to fire the scheduler.
         add_action('wpuf_add_post_after_insert', [$this, 'handle_submission'], 10, 4);
         add_action('wpuf_update_post_after_submit', [$this, 'handle_submission'], 10, 4);
         add_action('wp_ajax_yardlii_test_geocoding', [$this, 'ajax_test_geocoding']);
         add_filter('facetwp_proximity_store_keys', [$this, 'map_facetwp_keys']);
+        
+        // 2. Register the Deferred Handler (Action Scheduler)
+        if (function_exists('as_enqueue_async_action')) {
+            add_action(self::ASYNC_HOOK, [$this, 'deferred_process_post'], 10, 1);
+        }
     }
 
     /**
@@ -61,7 +69,8 @@ class WpufGeocoding {
         }
     }
 
-    /**
+/**
+     * Synchronous handler: Replaced heavy lifting with an asynchronous scheduler call.
      * @param int $post_id
      * @param int $form_id
      * @param array<string, mixed> $form_settings
@@ -79,34 +88,71 @@ class WpufGeocoding {
             return;
         }
 
+        // 3. [MODIFICATION] Replace synchronous I/O with async action
+        if (function_exists('as_enqueue_async_action')) {
+            as_enqueue_async_action(
+                self::ASYNC_HOOK, 
+                [ 'post_id' => $post_id ], 
+                'yardlii-geocoding' // Group to prevent race condition/double-queueing
+            );
+            Logger::log("SUCCESS: Geocoding task deferred to Action Scheduler for Post ID: $post_id", 'GEO');
+        } else {
+            // Fallback (or if AS is missing): log an error and skip the API call.
+            // We do NOT run the synchronous call as it is too risky.
+            Logger::log("ERROR: Action Scheduler not available. Geocoding skipped for Post ID: $post_id", 'GEO');
+        }
+    }
+
+    /**
+     * 4. New Deferred Handler: Runs the actual Geocoding logic in the background.
+     * @param int $post_id
+     */
+    public function deferred_process_post(int $post_id): void {
+        $post = get_post($post_id);
+        if (!$post || $post->post_type !== 'listings') return;
+        
+        Logger::log("Deferred processing started for Post ID: $post_id", 'GEO');
+
+        $raw_mapping = (string) get_option(self::OPTION_MAPPING, '');
+        $map = $this->parse_mapping_config($raw_mapping);
+        $form_id = (int) get_post_meta($post_id, '_wpuf_form_id', true); // Re-fetch form ID
+        $fid_str = (string) $form_id;
+
+        if (!isset($map[$fid_str])) {
+            Logger::log("Deferred Skipped: Form ID $fid_str is NOT in the mapping config.", 'GEO');
+            return;
+        }
+        
         $input_meta_key = $map[$fid_str];
         $postal_code = get_post_meta($post_id, $input_meta_key, true);
 
         if (empty($postal_code) || !is_string($postal_code)) {
-            Logger::log("Failed: Postal code empty or invalid for Post $post_id.", 'GEO');
+            Logger::log("Deferred Failed: Postal code empty or invalid for Post $post_id.", 'GEO');
             return;
         }
 
+        // Re-fetch API Keys inside the deferred process for isolation
         $server_key = get_option('yardlii_google_server_key');
         $map_key    = get_option(\Yardlii\Core\Features\Integrations\GoogleMapKey::OPTION_KEY);
         $api_key = !empty($server_key) ? (string)$server_key : (string)$map_key;
 
         if (empty($api_key)) {
-            Logger::log("Error: Google API Key is missing.", 'GEO');
+            Logger::log("Deferred Error: Google API Key is missing.", 'GEO');
             return;
         }
 
-        Logger::log("Calling Google API for postal code: $postal_code", 'GEO');
-        $data = $this->fetch_coordinates($postal_code, $api_key);
+        Logger::log("Deferred Calling Google API for postal code: $postal_code", 'GEO');
+        $data = $this->fetch_coordinates($postal_code, $api_key); // <-- I/O operation here
 
         if ($data) {
+            // Note: Data is saved to the same meta keys as before.
             update_post_meta($post_id, 'yardlii_listing_latitude', $data['lat']);
             update_post_meta($post_id, 'yardlii_listing_longitude', $data['lng']);
             update_post_meta($post_id, 'yardlii_display_city_province', $data['address']);
             
-            Logger::log("SUCCESS! Saved data for Post $post_id.", 'GEO', $data);
+            Logger::log("Deferred SUCCESS! Saved data for Post $post_id.", 'GEO', $data);
         } else {
-            Logger::log("Failed: Google API returned no valid data.", 'GEO');
+            Logger::log("Deferred Failed: Google API returned no valid data.", 'GEO');
         }
     }
 
