@@ -5,7 +5,6 @@ namespace Yardlii\Core\Features;
 
 use Yardlii\Core\Admin\SettingsPageTabs;
 use Yardlii\Core\Admin\Assets;
-use Yardlii\Core\Features\Loader;
 use Yardlii\Core\Services\Logger;
 use Yardlii\Core\Services\FeatureFlagManager; // Import the new Manager
 
