@@ -1,37 +1,44 @@
 <?php
 namespace Yardlii\Core\Features;
 
+use Yardlii\Core\Services\Logger; // Ensure Logger is imported
+
 class FeaturedImage
 {
+    const ASYNC_HOOK = 'yardlii_set_featured_image'; // Define new async hook
+    
     public function register(): void
     {
-        // Hook into WPUF form submissions
+        // Hook into WPUF form submissions - will now only enqueue the job
         add_action('wpuf_add_post_after_insert', [$this, 'maybe_set_featured_image'], 10, 4);
 
         // Display notices in admin (if enabled)
         add_action('admin_notices', [$this, 'display_admin_notice']);
 
-        // ✅ NEW: AJAX test endpoint
+        // AJAX test and reset endpoints remain synchronous for immediate feedback
         add_action('wp_ajax_yardlii_test_featured_image', [$this, 'ajax_test_featured_image']);
-         
-        // ✅ NEW: AJAX reset endpoint
-    add_action('wp_ajax_yardlii_reset_featured_image', [$this, 'ajax_reset_featured_image']);
+        add_action('wp_ajax_yardlii_reset_featured_image', [$this, 'ajax_reset_featured_image']);
+        
+        // 1. Register the Deferred Handler (Action Scheduler)
+        if (function_exists('as_enqueue_async_action')) {
+            add_action(self::ASYNC_HOOK, [$this, 'deferred_set_featured_image'], 10, 1);
+        }
     }
 
     /**
-     * Automatically set the featured image after a WPUF form submission
+     * Synchronous handler: Now only enqueues the background job.
+     * @param int $post_id
+     * @param int $form_id
+     * @param array<string, mixed> $form_settings
+     * @param array<string, mixed> $form_vars
      */
-    public function maybe_set_featured_image($post_id, $form_id, $form_settings, $form_vars)
+    public function maybe_set_featured_image($post_id, $form_id, $form_settings, $form_vars): void
     {
-        // --- 1. MODIFICATION: Get an array of forms, not a single one ---
+        // --- 1. Filter Check (Same as before) ---
         $target_forms = (array) get_option('yardlii_listing_form_id', []);
-        // --- End Modification ---
-        
         $acf_field   = get_option('yardlii_featured_image_field');
         $debug_mode  = (bool) get_option('yardlii_featured_image_debug', false);
 
-        // --- 2. MODIFICATION: Check if form ID is in the array ---
-        // Only run for the configured form(s)
         if ( empty($target_forms) || ! in_array( (int) $form_id, $target_forms, true ) || empty($acf_field) ) {
             if ($debug_mode) {
                 $this->set_notice('⚠️ Featured image automation skipped — no matching form or gallery field.', 'warning');
@@ -39,10 +46,42 @@ class FeaturedImage
             return;
         }
 
+        // 2. [MODIFICATION] Enqueue the asynchronous job
+        if (function_exists('as_enqueue_async_action')) {
+             as_enqueue_async_action(
+                self::ASYNC_HOOK, 
+                [ 'post_id' => $post_id ], 
+                'yardlii-media' // Group for media operations
+            );
+            Logger::log("SUCCESS: Featured Image task deferred to Action Scheduler for Post ID: $post_id", 'MEDIA');
+        } else {
+            // Fallback: Run synchronously ONLY if AS is missing (Original logic for safety/debugging)
+            Logger::log("WARNING: Action Scheduler not found. Running Featured Image sync task synchronously.", 'MEDIA');
+            $this->deferred_set_featured_image($post_id);
+        }
+    }
+
+    /**
+     * 3. New Deferred Handler: Runs the media operation in the background.
+     * @param int $post_id
+     */
+    public function deferred_set_featured_image(int $post_id): void
+    {
+        $acf_field   = get_option('yardlii_featured_image_field');
+        $debug_mode  = (bool) get_option('yardlii_featured_image_debug', false);
+
+        // Required check: must be done here as post-save hooks don't always contain the field data.
+        if (empty($acf_field) || !function_exists('get_field')) {
+             if ($debug_mode) {
+                $this->set_notice('⚠️ Deferred task skipped: ACF or field not ready.', 'warning');
+            }
+            return;
+        }
+
         $images = get_field($acf_field, $post_id);
         if (empty($images) || !is_array($images)) {
             if ($debug_mode) {
-                $this->set_notice('⚠️ No gallery images found for post ID ' . (int) $post_id . '.', 'warning');
+                $this->set_notice('⚠️ No gallery images found for post ID ' . (int) $post_id . ' in deferred task.', 'warning');
             }
             return;
         }
@@ -51,7 +90,7 @@ class FeaturedImage
         $first_image_id = $images[0]['ID'] ?? $images[0] ?? null;
         if (!$first_image_id) {
             if ($debug_mode) {
-                $this->set_notice('⚠️ Unable to extract image ID from gallery for post ID ' . (int) $post_id . '.', 'warning');
+                $this->set_notice('⚠️ Unable to extract image ID from gallery in deferred task.', 'warning');
             }
             return;
         }
@@ -62,7 +101,7 @@ class FeaturedImage
             $post = get_post($post_id);
             $title = $post ? $post->post_title : 'Untitled';
             $this->set_notice(
-                sprintf('🖼️ Featured image set for post "%s" (ID %d)', esc_html($title), (int) $post_id),
+                sprintf('🖼️ Featured image set via deferred task for post "%s" (ID %d)', esc_html($title), (int) $post_id),
                 'success'
             );
         }
