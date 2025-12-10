@@ -1,6 +1,8 @@
 <?php
-
 namespace Yardlii\Core\Features\WPUF;
+
+use Yardlii\Core\Services\WpufHelper; // Import the new Helper
+
 /**
  * Class PostingLogic
  * Handles dynamic form switching by intercepting low-level metadata calls.
@@ -35,6 +37,11 @@ class PostingLogic {
         // Get Pro Form ID
         $pro_form_id = (int) get_option( 'yardlii_posting_logic_pro_form', 0 );
         if ( empty( $pro_form_id ) ) {
+            // [MODIFICATION] Use WpufHelper::getFormIdForPost for the initial read (though $value is available, this enforces centralization for the *context*)
+            $current_form_id = WpufHelper::getFormIdForPost($object_id);
+            if (empty($current_form_id)) {
+                return $value;
+            }
             return $value;
         }
 
