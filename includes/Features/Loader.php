@@ -104,17 +104,20 @@ final class Loader
             (new WPUF\WpufCityAutocomplete($coreUrl, $coreVer))->register();
         }
 
-        if (class_exists(__NAMESPACE__ . '\\WPUF\\ProfileFormSwitcher')) {
+       if (class_exists(__NAMESPACE__ . '\\WPUF\\ProfileFormSwitcher')) {
             (new WPUF\ProfileFormSwitcher())->register();
         }
+        
+        // FIX: Remove accidental backslashes that were causing unexpected T_NS_SEPARATOR
+        // and syntax errors when combined with the class_exists checks.
         if (class_exists(__NAMESPACE__ . '\\WPUF\\PostingLogic')) {
-            (new WPUF\WPUF\\PostingLogic())->register();
+            (new WPUF\PostingLogic())->register(); 
         }
         if (class_exists(__NAMESPACE__ . '\\WPUF\\SmartFormOverrides')) {
-            (new WPUF\\SmartFormOverrides())->register();
+            (new WPUF\SmartFormOverrides())->register();
         }
         if (class_exists(__NAMESPACE__ . '\\WPUF\\SubmitFormSwitcher')) {
-            (new WPUF\\SubmitFormSwitcher())->register();
+            (new WPUF\SubmitFormSwitcher())->register();
         }
 
         // === User Directory ===
