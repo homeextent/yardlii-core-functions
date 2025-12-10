@@ -130,6 +130,9 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 3.30.0 - 2025 -12-9
+-##Critical Performance Upgrade:## Migrated heavy I/O operations (Geocoding API calls and Featured Image generation) to Action Scheduler for background processing, significantly reducing form submission latency. Core Architecture: Implemented the FeatureFlagManager service to cache feature status, eliminating redundant database option lookups during bootstrap. Data Layer: Centralized WPUF Form ID lookups into the WpufHelper service for improved integrity.
+
 ## 3.29.2 - 2025-12-08
 ### Fixed & Stability
 - **Homepage Geolocation:** Resolved a final initialization error in `frontend.js` by removing a redundant internal safety check, restoring reliable Autocomplete functionality to the Homepage Search bar.
