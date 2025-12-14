@@ -3,7 +3,7 @@ namespace Yardlii\Core\Features;
 
 /**
  * Handles ACF → User field synchronization and fallback resolution.
- * Uses a registry for dynamic "special handling" logic.
+ * Uses a registry for dynamic "special handling" logic
  */
 class ACFUserSync
 {
