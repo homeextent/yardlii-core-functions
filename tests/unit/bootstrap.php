@@ -123,10 +123,7 @@ if (!function_exists('current_user_can')) {
     // NEW: Added ...$args to tolerate bad calls from other files
     function current_user_can(string $capability, mixed ...$args): bool
     {
-        // We only care about the MANAGE cap for these tests
-        if ($capability === \Yardlii\Core\Features\TrustVerification\Caps::MANAGE) {
-            return CapsTest_Mock_Store::$current_user_can;
-        }
+        
         return false;
     }
 }
@@ -146,10 +143,7 @@ if (!function_exists('user_can')) {
     // NEW: Changed $user from 'object' to 'mixed' to tolerate bad calls
     function user_can(mixed $user, string $capability): bool
     {
-        // Check if it's our mock user and the correct capability
-        if (is_object($user) && $user === CapsTest_Mock_Store::$mock_user && $capability === \Yardlii\Core\Features\TrustVerification\Caps::MANAGE) {
-            return CapsTest_Mock_Store::$specific_user_can;
-        }
+       
         // Fail safe for bad calls (like an int)
         return false;
     }
