@@ -1,0 +1,39 @@
+name: Build and Publish Plugin
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+        tools: composer
+
+    - name: Install Production Dependencies
+      run: composer install --no-dev --optimize-autoloader
+
+    - name: Create Zip File
+      run: |
+        # Create a temporary directory for the build
+        mkdir build
+        
+        # Copy everything to the build directory
+        rsync -r --exclude='.git' --exclude='.github' --exclude='build' . build/
+        
+        # Zip the build directory contents
+        cd build
+        zip -r ../yardlii-plugin-production.zip .
+
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v1
+      with:
+        files: yardlii-plugin-production.zip
