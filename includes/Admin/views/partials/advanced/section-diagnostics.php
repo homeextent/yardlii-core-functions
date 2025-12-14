@@ -6,7 +6,7 @@
  * 1. Environment & Dependencies Check
  * 2. Feature Flag Status
  * 3. Role Control & Badges Diagnostics
- * 4. Trust & Verification Diagnostics
+ 
  */
 defined('ABSPATH') || exit;
 
@@ -173,11 +173,7 @@ if (defined('YARDLII_ENABLE_ROLE_CONTROL')) {
     </thead>
     <tbody>
       <?php
-      yardlii_diag_flag_status_row(
-          'Trust & Verification',
-          'yardlii_enable_trust_verification',
-          'YARDLII_ENABLE_TRUST_VERIFICATION'
-      );
+      
       yardlii_diag_flag_status_row(
           'Role Control (Master)',
           'yardlii_enable_role_control',
