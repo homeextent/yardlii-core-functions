@@ -66,22 +66,7 @@ if ($acf_sync_locked) {
     <form method="post" action="options.php">
       <?php settings_fields($group_flags); ?>
 
-      <div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
-        <input type="hidden" name="yardlii_enable_trust_verification" value="0" />
-        <input
-          type="checkbox"
-          id="yardlii_enable_trust_verification"
-          name="yardlii_enable_trust_verification"
-          value="1"
-          <?php checked($tv_flag_value); ?>
-          <?php disabled($tv_flag_locked); ?>
-        />
-        <strong><?php esc_html_e('Trust & Verification', 'yardlii-core'); ?></strong>
-        <?php if ($tv_flag_locked) : ?>
-          <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
-        <?php endif; ?>
-      </div>
-
+      
 	<div class="yardlii-checkbox-row">
     <label for="yardlii_enable_media_cleanup">
         <input name="yardlii_enable_media_cleanup" type="checkbox" id="yardlii_enable_media_cleanup" value="1"

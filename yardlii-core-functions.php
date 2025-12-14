@@ -56,39 +56,7 @@ spl_autoload_register(static function ($class) {
     if (file_exists($file)) require $file;
 });
 
-/* =====================================================
- * Trust & Verification caps: grant on activation,
- * deferred grant if class not loaded yet, and optional revoke.
- * ===================================================== */
-register_activation_hook(YARDLII_CORE_FILE, static function () {
-    if (class_exists('\Yardlii\Core\Features\TrustVerification\Caps')) {
-        \Yardlii\Core\Features\TrustVerification\Caps::grantDefault();
-        update_option('yardlii_tv_cap_seeded', 1, false); // mark as seeded for this site
-        delete_option('yardlii_tv_caps_pending_grant');
-        return;
-    }
-    // Defer once until classes are available
-    update_option('yardlii_tv_caps_pending_grant', 1, false);
-});
 
-add_action('plugins_loaded', static function () {
-    // If activation ran before classes were available, complete the grant here
-    if (get_option('yardlii_tv_caps_pending_grant') && class_exists('\Yardlii\Core\Features\TrustVerification\Caps')) {
-        \Yardlii\Core\Features\TrustVerification\Caps::grantDefault();
-        update_option('yardlii_tv_cap_seeded', 1, false);
-        delete_option('yardlii_tv_caps_pending_grant');
-    }
-});
-
-
-register_deactivation_hook(YARDLII_CORE_FILE, static function () {
-    // Optional: revoke the cap; also clear seed flags
-    if (class_exists('\Yardlii\Core\Features\TrustVerification\Caps')) {
-        \Yardlii\Core\Features\TrustVerification\Caps::revokeDefault();
-    }
-    delete_option('yardlii_tv_cap_seeded');
-    delete_option('yardlii_tv_caps_pending_grant');
-});
 
 // Toggle verbose plugin logs. Set to true in dev, false in prod.
 if (!defined('YARDLII_DEBUG')) define('YARDLII_DEBUG', false);

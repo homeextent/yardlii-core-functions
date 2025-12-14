@@ -23,16 +23,14 @@ final class SettingsPageTabs
     private const GROUP_ROLE_CONTROL   = 'yardlii_role_control_group';
     private const GROUP_ROLE_BADGES    = 'yardlii_role_control_badges_group';
 
-    // TV groups
-    private const GROUP_TV_GLOBAL      = 'yardlii_tv_global_group';
-    private const GROUP_TV_FORM_CFG    = 'yardlii_tv_form_configs_group';
+    
 
     public function register(): void
     {
         add_action('admin_menu',  [$this, 'add_menu']);
         add_action('admin_init',  [$this, 'register_settings']);
         add_action('load-settings_page_yardlii-core-settings', [$this, 'preemptNoticesForPage'], 0);
-        add_filter('get_settings_errors', [$this, 'filterTvGroupsFromGlobal'], 5, 2);
+      
     }
 
     public function suppressGlobalSettingsErrorsOnOurPage(): void
@@ -42,76 +40,22 @@ final class SettingsPageTabs
         remove_action('network_admin_notices', 'settings_errors');
     }
 
-    private function currentUserCanTv(): bool
-    {
-        if (class_exists('\Yardlii\Core\Features\TrustVerification\Caps')) {
-            return current_user_can(\Yardlii\Core\Features\TrustVerification\Caps::MANAGE);
-        }
-        return current_user_can('manage_options');
-    }
+    
 
-    private function isOurSettingsPage(): bool
-    {
-        if (!is_admin()) return false;
-        return (isset($_GET['page']) && $_GET['page'] === 'yardlii-core-settings');
-    }
+    
 
-    private function isTvTab(): bool
-    {
-        if (! $this->isOurSettingsPage()) return false;
-        if (!isset($_GET['tab']) || sanitize_key($_GET['tab']) !== 'trust-verification') return false;
-        return $this->currentUserCanTv();
-    }
-
-    public function earlyHideTvNotices(): void
-    {
-        if (!$this->isTvTab()) return;
-        remove_action('admin_notices', 'settings_errors');
-        remove_action('network_admin_notices', 'settings_errors');
-
-        global $wp_settings_errors;
-        if (is_array($wp_settings_errors)) {
-            $wp_settings_errors = array_values(array_filter(
-                $wp_settings_errors,
-                static function ($e) {
-                    $s = isset($e['setting']) ? (string) $e['setting'] : '';
-                    return $s !== self::GROUP_TV_GLOBAL && $s !== self::GROUP_TV_FORM_CFG;
-                }
-            ));
-        }
-    }
+    
 
     public function preemptNoticesForPage(): void
     {
         if (! $this->isOurSettingsPage()) return;
         remove_action('admin_notices', 'settings_errors');
         remove_action('network_admin_notices', 'settings_errors');
-        add_filter('get_settings_errors', [$this, 'filterTvGroupsFromGlobal'], 0, 2);
     }
 
-    public function preemptTvNotices(): void
-    {
-        if (! $this->isOurSettingsPage()) return;
-        remove_action('admin_notices', 'settings_errors');
-        remove_action('network_admin_notices', 'settings_errors');
-        add_filter('get_settings_errors', [$this, 'filterTvGroupsFromGlobal'], 0, 2);
-    }
+   
 
-    public function filterTvGroupsFromGlobal(array $errors, $setting)
-    {
-        if (! $this->isOurSettingsPage()) return $errors;
-        if (!empty($GLOBALS['yardlii_tv_allow_inline_errors'])) return $errors;
-
-        $blocked = [ self::GROUP_TV_GLOBAL, self::GROUP_TV_FORM_CFG ];
-
-        return array_values(array_filter(
-            $errors,
-            static function ($e) use ($blocked) {
-                $s = isset($e['setting']) ? (string) $e['setting'] : '';
-                return ! in_array($s, $blocked, true);
-            }
-        ));
-    }
+    
 
     private static function success_notifier(string $group, callable $sanitize = null): callable
     {
@@ -264,7 +208,7 @@ final class SettingsPageTabs
 
     private function register_feature_flags_settings(): void
     {
-        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_trust_verification', ['sanitize_callback' => self::success_notifier(self::GROUP_FEATURE_FLAGS, static fn($v)=>(bool)$v)]);
+       
         register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_role_control',       ['sanitize_callback' => self::success_notifier(self::GROUP_FEATURE_FLAGS, static fn($v)=>(bool)$v)]);
         register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_media_cleanup', ['sanitize_callback' => static fn($v) => (bool)$v]);
         register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_business_directory', ['sanitize_callback' => static fn($v) => (bool)$v]);
@@ -283,7 +227,7 @@ final class SettingsPageTabs
         register_setting(self::GROUP_SEARCH, 'yardlii_location_facet',        ['sanitize_callback' => $N]);
         register_setting(self::GROUP_SEARCH, 'yardlii_location_label',        ['sanitize_callback' => $N]);
         register_setting(self::GROUP_SEARCH, 'yardlii_enable_location_search',['sanitize_callback' => self::success_notifier(self::GROUP_SEARCH, static fn($v)=>(bool)$v)]);
-	register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_trust_verification', ['sanitize_callback' => static fn($v)=>(bool)$v]);
+	
         register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_role_control',       ['sanitize_callback' => static fn($v)=>(bool)$v]);
         register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_media_cleanup',      ['sanitize_callback' => static fn($v) => (bool)$v]);
         register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_business_directory', ['sanitize_callback' => static fn($v) => (bool)$v]);
@@ -399,32 +343,7 @@ final class SettingsPageTabs
 
         $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'general';
         
-        if ($active_tab === 'trust-verification' && ! $this->currentUserCanTv()) {
-            echo '<div class="notice notice-error is-dismissible" style="margin:12px 0;"><p>' . esc_html__('You do not have permission to view Trust & Verification.', 'yardlii-core') . '</p></div>';
-            $active_tab = 'general';
-        }
-
-        if ($active_tab === 'trust-verification') {
-            remove_action('admin_notices', 'settings_errors');
-            remove_action('network_admin_notices', 'settings_errors');
-            echo '<style id="yardlii-tv-hide-global-rail">body.settings_page_yardlii-core-settings #wpbody-content > .notice, body.settings_page_yardlii-core-settings .wrap > .notice, body.settings_page_yardlii-core-settings .update-nag { display: none !important; }</style>';
-            echo '<style id="yardlii-hide-core-notices">.wrap > .notice{display:none !important}</style>';
-            if (isset($_GET['settings-updated'])) {
-                echo '<script>(function(){try{var u=new URL(location.href);u.searchParams.delete("settings-updated");history.replaceState({},"",u.toString());}catch(e){}})();</script>';
-            }
-        }
-
-        if (!empty($_GET['settings-updated']) && $active_tab !== 'trust-verification' && $active_tab !== 'advanced') {
-            echo '<div class="notice notice-success is-dismissible"><p><strong>' . esc_html__('Settings saved successfully.', 'yardlii-core') . '</strong></p></div>';
-        }
-
-        if ($active_tab === 'trust-verification' || $active_tab === 'advanced') {
-            echo '<style id="yardlii-hide-core-updated">#setting-error-settings_updated,.wrap>.notice.notice-success{display:none!important}</style>';
-            if (isset($_GET['settings-updated'])) {
-                echo '<script>(function(){try{var u=new URL(location.href);u.searchParams.delete("settings-updated");history.replaceState({},"",u.toString());}catch(e){}})();</script>';
-            }
-        }
-
+        
         $user_sync_enabled = (bool) get_option('yardlii_enable_acf_user_sync', false);
         if (defined('YARDLII_ENABLE_ACF_USER_SYNC')) {
             $user_sync_enabled = (bool) YARDLII_ENABLE_ACF_USER_SYNC;
@@ -435,13 +354,9 @@ final class SettingsPageTabs
             $role_control_master = (bool) YARDLII_ENABLE_ROLE_CONTROL;
         }
 
-        $tv_on = (bool) get_option('yardlii_enable_trust_verification', true);
-        if (defined('YARDLII_ENABLE_TRUST_VERIFICATION')) {
-            $tv_on = (bool) YARDLII_ENABLE_TRUST_VERIFICATION;
-        }
+       
 
-        $tv_cap_ok  = $this->currentUserCanTv();
-        $tv_visible = $tv_on && $tv_cap_ok;
+       
 
         echo '<div class="wrap yardlii-wrap">';
         echo '<div class="yardlii-header">';
@@ -456,9 +371,7 @@ final class SettingsPageTabs
         <nav class="yardlii-tabs" role="tablist" data-scope="main">
             <button type="button" class="yardlii-tab active" data-tab="general" aria-selected="true">🗺️ General</button>
             <button type="button" class="yardlii-tab" data-tab="role-control" aria-selected="false">🛡️ Role Control</button>
-            <?php if ($tv_visible): ?>
-                <button id="yardlii-tab-btn-trust-verification" class="yardlii-tab" data-tab="trust-verification" aria-controls="yardlii-tab-trust-verification" aria-selected="false">🤝 Trust & Verification</button>
-            <?php endif; ?>
+            
             <button type="button" class="yardlii-tab" data-tab="advanced" aria-selected="false">⚙️ Advanced</button>
         </nav>
 
@@ -568,22 +481,7 @@ final class SettingsPageTabs
             <?php endif; ?>
         </section>
 
-        <?php if ($tv_visible): ?>
-        <section id="yardlii-tab-trust-verification" class="yardlii-tabpanel hidden" data-panel="trust-verification" role="tabpanel" aria-labelledby="yardlii-tab-btn-trust-verification">
-            <?php
-            remove_action('admin_notices', 'settings_errors');
-            remove_action('network_admin_notices', 'settings_errors');
-            echo '<style id="yardlii-tv-hide-global-rail">body.settings_page_yardlii-core-settings #wpbody-content > .notice, body.settings_page_yardlii-core-settings .wrap > .notice, body.settings_page_yardlii-core-settings .update-nag { display:none!important; }</style>';
-            if ($tv_on) {
-                $panel = plugin_dir_path(YARDLII_CORE_FILE) . 'includes/Admin/views/partials/trust-verification/panel.php';
-                if (file_exists($panel)) require $panel;
-                else echo '<div class="notice notice-error"><p>' . esc_html__('Trust & Verification panel file not found.', 'yardlii-core') . '</p></div>';
-            } else {
-                echo '<div class="yardlii-banner yardlii-banner--info yardlii-banner--dismiss" style="margin:1rem 0;"><p><strong>' . esc_html__('Trust & Verification is disabled.', 'yardlii-core') . '</strong></p></div>';
-            }
-            ?>
-        </section>
-        <?php endif; ?>
+       
 
         <section id="yardlii-tab-advanced" class="yardlii-tabpanel hidden" data-panel="advanced">
           <?php
@@ -605,8 +503,7 @@ final class SettingsPageTabs
             <summary><?php esc_html_e('Feature Flags & Debug', 'yardlii-core'); ?></summary>
             <div class="yardlii-section-content">
               <?php
-              $tv_flag_value  = $tv_on;
-              $tv_flag_locked = defined('YARDLII_ENABLE_TRUST_VERIFICATION');
+             
               $group_debug    = self::GROUP_DEBUG;
               $group_flags    = self::GROUP_FEATURE_FLAGS;
               include __DIR__ . '/views/partials/advanced/section-flags.php';

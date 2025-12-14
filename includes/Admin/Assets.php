@@ -72,31 +72,5 @@ class Assets
             ]);
         }
 
-        // 6. Trust & Verification Assets (Conditional)
-        if (isset($_GET['tab']) && $_GET['tab'] === 'trust-verification') {
-            wp_enqueue_style(
-                'yardlii-admin-tv',
-                $coreUrl . 'assets/admin/css/trust-verification.css',
-                ['yardlii-admin'],
-                $coreVer
-            );
-
-            wp_enqueue_script(
-                'yardlii-admin-tv-js',
-                $coreUrl . 'assets/admin/js/admin-tv.js',
-                ['jquery', 'yardlii-admin'],
-                $coreVer,
-                true
-            );
-
-            wp_localize_script('yardlii-admin-tv-js', 'yardliiTv', [
-                'ajaxurl'      => admin_url('admin-ajax.php'),
-                'noncePreview' => wp_create_nonce('yardlii_tv_preview_email'),
-                'nonceSend'    => wp_create_nonce('yardlii_tv_send_test_email'),
-                'nonceHistory' => wp_create_nonce('yardlii_tv_history_load'),
-                'restNonce'    => wp_create_nonce('wp_rest'),
-                'restUrl'      => rest_url('yardlii/v1/verification-requests/'),
-            ]);
-        }
-    }
+            }
 }
