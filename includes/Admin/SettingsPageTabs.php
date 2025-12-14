@@ -18,64 +18,18 @@ final class SettingsPageTabs
     private const GROUP_GOOGLE_MAP     = 'yardlii_google_map_group';
     private const GROUP_FEATURED_IMAGE = 'yardlii_featured_image_group';
     private const GROUP_GENERAL        = 'yardlii_general_group';
-    private const GROUP_DIRECTORY      = 'yardlii_directory_group'; // New Group
+    private const GROUP_DIRECTORY      = 'yardlii_directory_group';
 
     private const GROUP_ROLE_CONTROL   = 'yardlii_role_control_group';
     private const GROUP_ROLE_BADGES    = 'yardlii_role_control_badges_group';
-
-    
 
     public function register(): void
     {
         add_action('admin_menu',  [$this, 'add_menu']);
         add_action('admin_init',  [$this, 'register_settings']);
-        add_action('load-settings_page_yardlii-core-settings', [$this, 'preemptNoticesForPage'], 0);
-      
-    }
-
-    private function isOurSettingsPage(): bool
-    {
-        if (!is_admin()) return false;
-        return (isset($_GET['page']) && $_GET['page'] === 'yardlii-core-settings');
-    }
-
-    public function suppressGlobalSettingsErrorsOnOurPage(): void
-    {
-        if (! $this->isOurSettingsPage()) return;
-        remove_action('admin_notices', 'settings_errors');
-        remove_action('network_admin_notices', 'settings_errors');
-    }
-
-    
-
-    
-
-    
-
-    public function preemptNoticesForPage(): void
-    {
-        if (! $this->isOurSettingsPage()) return;
-        remove_action('admin_notices', 'settings_errors');
-        remove_action('network_admin_notices', 'settings_errors');
-    }
-
-   
-
-    
-
-    private static function success_notifier(string $group, callable $sanitize = null): callable
-    {
-        return static function ($v) use ($group, $sanitize) {
-            $val = is_callable($sanitize) ? $sanitize($v) : $v;
-            if (isset($_POST['option_page']) && $_POST['option_page'] === $group) {
-                static $notified = [];
-                if (empty($notified[$group])) {
-                    add_settings_error($group, "{$group}_saved", __('Settings saved.', 'yardlii-core'), 'updated');
-                    $notified[$group] = true;
-                }
-            }
-            return $val;
-        };
+        
+        // REMOVED: pre-emptive notice clearing hooks. 
+        // We want standard WP behavior now.
     }
 
     public function register_settings(): void
@@ -87,8 +41,10 @@ final class SettingsPageTabs
         $this->register_featured_image_settings();
 
         // WPUF General
+        // FIX: Removed 'sanitize_callback' => self::success_notifier(...)
+        // Replaced with standard sanitization or simple type casting.
         register_setting(self::GROUP_GENERAL, 'yardlii_enable_wpuf_dropdown', [
-            'sanitize_callback' => self::success_notifier(self::GROUP_GENERAL, static fn($v)=>(bool) $v),
+            'sanitize_callback' => 'rest_sanitize_boolean',
         ]);
         register_setting(self::GROUP_GENERAL, 'yardlii_wpuf_target_pages', [
             'sanitize_callback' => 'sanitize_text_field',
@@ -114,6 +70,7 @@ final class SettingsPageTabs
             'sanitize_callback' => 'absint',
             'default'           => 0,
         ]);
+        // Deprecated but kept for compatibility
         register_setting(self::GROUP_GENERAL, 'yardlii_posting_logic_provisional_form', [
             'sanitize_callback' => 'absint',
             'default'           => 0,
@@ -126,15 +83,15 @@ final class SettingsPageTabs
         register_setting(
             self::GROUP_GENERAL, 
             'yardlii_enable_wpuf_geocoding',
-            ['sanitize_callback' => static fn($v) => (bool)$v]
+            ['sanitize_callback' => 'rest_sanitize_boolean']
         );
         register_setting(
             self::GROUP_FEATURE_FLAGS, 
             'yardlii_enable_wpuf_geocoding',
-            ['sanitize_callback' => static fn($v) => (bool)$v]
+            ['sanitize_callback' => 'rest_sanitize_boolean']
         );
 
-// === User Directory (Global Config) ===
+        // === User Directory (Global Config) ===
         register_setting(
             self::GROUP_DIRECTORY, 
             'yardlii_dir_default_trigger', 
@@ -146,7 +103,7 @@ final class SettingsPageTabs
             ['sanitize_callback' => 'absint']
         );
 
-	// === Dynamic Profile Form Map (Repeater) ===
+        // === Dynamic Profile Form Map (Repeater) ===
         register_setting(
             self::GROUP_GENERAL, 
             'yardlii_profile_form_map', 
@@ -163,14 +120,13 @@ final class SettingsPageTabs
             ]
         );
 
-        // === User Directory (Global Config) ===
-    register_setting(
-        self::GROUP_DIRECTORY,
-        'yardlii_dir_trade_field', // New Setting
-        ['sanitize_callback' => 'sanitize_text_field']
-    );
+        register_setting(
+            self::GROUP_DIRECTORY,
+            'yardlii_dir_trade_field',
+            ['sanitize_callback' => 'sanitize_text_field']
+        );
 
-    // === User Directory (Role-Based Config) ===
+        // === User Directory (Role-Based Config) ===
         register_setting(
             self::GROUP_DIRECTORY, 
             'yardlii_directory_role_config', 
@@ -184,7 +140,6 @@ final class SettingsPageTabs
                             'title'    => sanitize_text_field($row['title'] ?? ''),
                             'badge'    => sanitize_text_field($row['badge'] ?? ''),
                             'location' => sanitize_text_field($row['location'] ?? ''),
-                            // NEW: Persist UI Preferences
                             'ui_decoupled' => isset($row['ui_decoupled']) ? '1' : '0',
                             'ui_button'    => isset($row['ui_button']) ? '1' : '0',
                             'ui_width'     => sanitize_text_field($row['ui_width'] ?? ''),
@@ -203,64 +158,60 @@ final class SettingsPageTabs
         register_setting(self::GROUP_DEBUG, 'yardlii_debug_mode', [
             'type'              => 'boolean',
             'default'           => false,
-            'sanitize_callback' => self::success_notifier(self::GROUP_DEBUG, static fn($v)=>(bool)$v),
+            'sanitize_callback' => 'rest_sanitize_boolean',
         ]);
         register_setting(self::GROUP_DEBUG, 'yardlii_remove_data_on_delete', [
             'type'              => 'boolean',
             'default'           => false,
-            'sanitize_callback' => self::success_notifier(self::GROUP_DEBUG, static fn($v) => (bool)$v),
+            'sanitize_callback' => 'rest_sanitize_boolean',
         ]);
     }
 
     private function register_feature_flags_settings(): void
     {
-       
-        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_role_control',       ['sanitize_callback' => self::success_notifier(self::GROUP_FEATURE_FLAGS, static fn($v)=>(bool)$v)]);
-        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_media_cleanup', ['sanitize_callback' => static fn($v) => (bool)$v]);
-        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_business_directory', ['sanitize_callback' => static fn($v) => (bool)$v]);
+        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_role_control',       ['sanitize_callback' => 'rest_sanitize_boolean']);
+        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_media_cleanup',      ['sanitize_callback' => 'rest_sanitize_boolean']);
+        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_business_directory', ['sanitize_callback' => 'rest_sanitize_boolean']);
+        
+        // NEW Features
+        register_setting(
+            self::GROUP_FEATURE_FLAGS,
+            'yardlii_enable_wpuf_city_autocomplete',
+            ['sanitize_callback' => 'rest_sanitize_boolean']
+        );
+        register_setting(
+            self::GROUP_FEATURE_FLAGS,
+            'yardlii_enable_elementor_query_mods',
+            ['sanitize_callback' => 'rest_sanitize_boolean']
+        );
     }
 
     private function register_search_settings(): void
     {
-        $N = self::success_notifier(self::GROUP_SEARCH);
-        register_setting(self::GROUP_SEARCH, 'yardlii_primary_taxonomy',      ['sanitize_callback' => $N]);
-        register_setting(self::GROUP_SEARCH, 'yardlii_primary_label',         ['sanitize_callback' => $N]);
-        register_setting(self::GROUP_SEARCH, 'yardlii_primary_facet',         ['sanitize_callback' => $N]);
-        register_setting(self::GROUP_SEARCH, 'yardlii_secondary_taxonomy',    ['sanitize_callback' => $N]);
-        register_setting(self::GROUP_SEARCH, 'yardlii_secondary_label',       ['sanitize_callback' => $N]);
-        register_setting(self::GROUP_SEARCH, 'yardlii_secondary_facet',       ['sanitize_callback' => $N]);
-        register_setting(self::GROUP_SEARCH, 'yardlii_homepage_search_debug', ['sanitize_callback' => $N]);
-        register_setting(self::GROUP_SEARCH, 'yardlii_location_facet',        ['sanitize_callback' => $N]);
-        register_setting(self::GROUP_SEARCH, 'yardlii_location_label',        ['sanitize_callback' => $N]);
-        register_setting(self::GROUP_SEARCH, 'yardlii_enable_location_search',['sanitize_callback' => self::success_notifier(self::GROUP_SEARCH, static fn($v)=>(bool)$v)]);
-	
-        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_role_control',       ['sanitize_callback' => static fn($v)=>(bool)$v]);
-        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_media_cleanup',      ['sanitize_callback' => static fn($v) => (bool)$v]);
-        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_business_directory', ['sanitize_callback' => static fn($v) => (bool)$v]);
-
-        // NEW: Universal Location Engine
-        register_setting(
-            self::GROUP_FEATURE_FLAGS,
-            'yardlii_enable_wpuf_city_autocomplete',
-            ['sanitize_callback' => static fn($v) => (bool)$v]
-        );
-
-        // NEW: Elementor Query Mods
-        register_setting(
-            self::GROUP_FEATURE_FLAGS,
-            'yardlii_enable_elementor_query_mods',
-            ['sanitize_callback' => static fn($v) => (bool)$v]
-        );
+        register_setting(self::GROUP_SEARCH, 'yardlii_primary_taxonomy',      ['sanitize_callback' => 'sanitize_text_field']);
+        register_setting(self::GROUP_SEARCH, 'yardlii_primary_label',         ['sanitize_callback' => 'sanitize_text_field']);
+        register_setting(self::GROUP_SEARCH, 'yardlii_primary_facet',         ['sanitize_callback' => 'sanitize_text_field']);
+        register_setting(self::GROUP_SEARCH, 'yardlii_secondary_taxonomy',    ['sanitize_callback' => 'sanitize_text_field']);
+        register_setting(self::GROUP_SEARCH, 'yardlii_secondary_label',       ['sanitize_callback' => 'sanitize_text_field']);
+        register_setting(self::GROUP_SEARCH, 'yardlii_secondary_facet',       ['sanitize_callback' => 'sanitize_text_field']);
+        register_setting(self::GROUP_SEARCH, 'yardlii_homepage_search_debug', ['sanitize_callback' => 'rest_sanitize_boolean']);
+        register_setting(self::GROUP_SEARCH, 'yardlii_location_facet',        ['sanitize_callback' => 'sanitize_text_field']);
+        register_setting(self::GROUP_SEARCH, 'yardlii_location_label',        ['sanitize_callback' => 'sanitize_text_field']);
+        register_setting(self::GROUP_SEARCH, 'yardlii_enable_location_search',['sanitize_callback' => 'rest_sanitize_boolean']);
     }
 
     private function register_google_map_settings(): void
     {
-        $N = self::success_notifier(self::GROUP_GOOGLE_MAP);
-        register_setting(self::GROUP_GOOGLE_MAP, 'yardlii_google_map_key', ['sanitize_callback' => $N]);
-        register_setting(self::GROUP_GOOGLE_MAP, 'yardlii_google_server_key', ['sanitize_callback' => $N]); 
-        register_setting(self::GROUP_GOOGLE_MAP, 'yardlii_map_controls',   ['sanitize_callback' => $N]);
+        register_setting(self::GROUP_GOOGLE_MAP, 'yardlii_google_map_key', ['sanitize_callback' => 'sanitize_text_field']);
+        register_setting(self::GROUP_GOOGLE_MAP, 'yardlii_google_server_key', ['sanitize_callback' => 'sanitize_text_field']); 
+        
+        // Map controls array sanitizer
+        register_setting(self::GROUP_GOOGLE_MAP, 'yardlii_map_controls',   ['sanitize_callback' => function($input) {
+             if (!is_array($input)) return [];
+             return array_map('sanitize_text_field', $input);
+        }]);
 
-        // === NEW: Loading Group (Isolated) ===
+        // Loading Group
         register_setting('yardlii_google_map_loading_group', 'yardlii_gmap_target_pages', [
             'sanitize_callback' => 'sanitize_text_field'
         ]);
@@ -268,78 +219,74 @@ final class SettingsPageTabs
 
     private function register_featured_image_settings(): void
     {
-        $N = self::success_notifier(self::GROUP_FEATURED_IMAGE);
-        register_setting(self::GROUP_FEATURED_IMAGE, 'yardlii_featured_image_field', ['sanitize_callback' => $N]);
+        register_setting(self::GROUP_FEATURED_IMAGE, 'yardlii_featured_image_field', ['sanitize_callback' => 'sanitize_text_field']);
         
         $sanitize_forms_cb = static function ($input) {
             if (!is_array($input)) $input = [];
             return array_values(array_filter(array_map('absint', $input)));
         };
 
-        register_setting(self::GROUP_FEATURED_IMAGE, 'yardlii_listing_form_id', ['sanitize_callback' => self::success_notifier(self::GROUP_FEATURED_IMAGE, $sanitize_forms_cb)]);
-        register_setting(self::GROUP_FEATURED_IMAGE, 'yardlii_featured_image_debug', ['sanitize_callback' => $N]);
+        register_setting(self::GROUP_FEATURED_IMAGE, 'yardlii_listing_form_id', ['sanitize_callback' => $sanitize_forms_cb]);
+        register_setting(self::GROUP_FEATURED_IMAGE, 'yardlii_featured_image_debug', ['sanitize_callback' => 'rest_sanitize_boolean']);
     }
 
     private function register_role_control_settings(): void
     {
         register_setting(self::GROUP_ROLE_CONTROL, 'yardlii_enable_role_control_submit', [
-            'sanitize_callback' => self::success_notifier(self::GROUP_ROLE_CONTROL, static fn($v)=>(bool)$v),
+            'sanitize_callback' => 'rest_sanitize_boolean',
         ]);
         register_setting(self::GROUP_ROLE_CONTROL, 'yardlii_role_control_allowed_roles', [
-            'sanitize_callback' => self::success_notifier(self::GROUP_ROLE_CONTROL, static function ($v) {
+            'sanitize_callback' => static function ($v) {
                 if (!is_array($v)) $v = [];
                 $v = array_map('sanitize_text_field', $v);
                 $editable = array_keys(get_editable_roles());
                 return array_values(array_intersect($v, $editable));
-            }),
+            },
         ]);
         register_setting(self::GROUP_ROLE_CONTROL, 'yardlii_role_control_denied_action', [
-            'sanitize_callback' => self::success_notifier(self::GROUP_ROLE_CONTROL, static function ($v) {
+            'sanitize_callback' => static function ($v) {
                 $v = sanitize_text_field($v);
                 return in_array($v, ['redirect_login', 'message'], true) ? $v : 'message';
-            }),
+            },
         ]);
         register_setting(self::GROUP_ROLE_CONTROL, 'yardlii_role_control_denied_message', [
-            'sanitize_callback' => self::success_notifier(self::GROUP_ROLE_CONTROL, 'sanitize_textarea_field'),
+            'sanitize_callback' => 'sanitize_textarea_field',
         ]);
         register_setting(self::GROUP_ROLE_CONTROL, 'yardlii_role_control_target_page', [
-            'sanitize_callback' => self::success_notifier(self::GROUP_ROLE_CONTROL, 'sanitize_text_field'),
+            'sanitize_callback' => 'sanitize_text_field',
         ]);
         register_setting(self::GROUP_ROLE_CONTROL, 'yardlii_enable_custom_roles', [
-            'sanitize_callback' => self::success_notifier(self::GROUP_ROLE_CONTROL, static fn($v)=>(bool)$v),
+            'sanitize_callback' => 'rest_sanitize_boolean',
         ]);
         register_setting(self::GROUP_ROLE_CONTROL, 'yardlii_custom_roles', [
-            'sanitize_callback' => self::success_notifier(self::GROUP_ROLE_CONTROL, ['Yardlii\\Core\\Features\\CustomUserRoles', 'sanitize_settings']),
+            'sanitize_callback' => ['Yardlii\\Core\\Features\\CustomUserRoles', 'sanitize_settings'],
         ]);
     }
 
     private function register_role_badge_settings(): void
     {
         register_setting(self::GROUP_ROLE_BADGES, 'yardlii_enable_badge_assignment', [
-            'sanitize_callback' => self::success_notifier(self::GROUP_ROLE_BADGES, static fn($v)=>(bool)$v),
+            'sanitize_callback' => 'rest_sanitize_boolean',
         ]);
         register_setting(self::GROUP_ROLE_BADGES, 'yardlii_rc_badges', [
-            'sanitize_callback' => self::success_notifier(self::GROUP_ROLE_BADGES, ['Yardlii\\Core\\Features\\RoleControlBadgeAssignment', 'sanitize_settings']),
+            'sanitize_callback' => ['Yardlii\\Core\\Features\\RoleControlBadgeAssignment', 'sanitize_settings'],
             'default'           => ['map' => [], 'meta_key' => 'user_badge', 'fallback_field' => ''],
         ]);
     }
 
-   /* =========================================
+    /* =========================================
      * Menu + Page
      * =======================================*/
     public function add_menu(): void
     {
-        // OLD: add_options_page(...) -> Hidden under Settings
-        
-        // NEW: Top Level Menu Item
         add_menu_page(
-            __('YARDLII Core Settings', 'yardlii-core'), // Page Title
-            __('YARDLII', 'yardlii-core'),               // Menu Title (Short)
-            'manage_options',                            // Capability
-            'yardlii-core-settings',                     // Menu Slug
-            [$this, 'render_page'],                      // Callback Function
-            'dashicons-shield',                          // Icon (Shield = Trust/Verification)
-            50                                           // Position (50 = Below Comments/Products)
+            __('YARDLII Core Settings', 'yardlii-core'), 
+            __('YARDLII', 'yardlii-core'),               
+            'manage_options',                            
+            'yardlii-core-settings',                     
+            [$this, 'render_page'],                      
+            'dashicons-shield',                          
+            50                                           
         );
     }
 
@@ -347,22 +294,17 @@ final class SettingsPageTabs
     {
         if (!current_user_can('manage_options')) return;
 
-        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'general';
-        
-        
-        $user_sync_enabled = (bool) get_option('yardlii_enable_acf_user_sync', false);
-        if (defined('YARDLII_ENABLE_ACF_USER_SYNC')) {
-            $user_sync_enabled = (bool) YARDLII_ENABLE_ACF_USER_SYNC;
-        }
+        // --- GLOBAL NOTICES START ---
+        // We only call settings_errors() ONCE here.
+        // This will catch standard WP "Settings Saved" messages AND
+        // any custom errors added by our classes.
+        settings_errors(); 
+        // --- GLOBAL NOTICES END ---
 
         $role_control_master = (bool) get_option('yardlii_enable_role_control', false);
         if (defined('YARDLII_ENABLE_ROLE_CONTROL')) {
             $role_control_master = (bool) YARDLII_ENABLE_ROLE_CONTROL;
         }
-
-       
-
-       
 
         echo '<div class="wrap yardlii-wrap">';
         echo '<div class="yardlii-header">';
@@ -371,25 +313,18 @@ final class SettingsPageTabs
         echo '</div>';
 
         if (class_exists(Notices::class)) {
-            Notices::render();
+            Notices::render(); // Custom Yardlii notices if any
         }
         ?>
         <nav class="yardlii-tabs" role="tablist" data-scope="main">
             <button type="button" class="yardlii-tab active" data-tab="general" aria-selected="true">🗺️ General</button>
             <button type="button" class="yardlii-tab" data-tab="role-control" aria-selected="false">🛡️ Role Control</button>
-            
             <button type="button" class="yardlii-tab" data-tab="advanced" aria-selected="false">⚙️ Advanced</button>
         </nav>
 
         <section id="yardlii-tab-general" class="yardlii-tabpanel" data-panel="general">
             <?php
-            if (function_exists('settings_errors')) {
-                settings_errors(self::GROUP_GOOGLE_MAP);
-                settings_errors(self::GROUP_FEATURED_IMAGE);
-                settings_errors(self::GROUP_SEARCH);
-                settings_errors(self::GROUP_GENERAL);
-                settings_errors(self::GROUP_DIRECTORY); // Render directory errors
-            }
+            // FIX: Removed manual settings_errors() calls here to prevent duplicates
             ?>
             <nav class="yardlii-tabs yardlii-general-subtabs" role="tablist" aria-label="General Sections">
                 <button type="button" class="yardlii-tab active" data-gsection="gmap" aria-selected="true">🗺️ Google Map Settings</button>
@@ -453,10 +388,7 @@ final class SettingsPageTabs
 
         <section id="yardlii-tab-role-control" class="yardlii-tabpanel hidden" data-panel="role-control" aria-disabled="<?php echo $role_control_master ? 'false' : 'true'; ?>">
             <?php
-            if (function_exists('settings_errors')) {
-                settings_errors(self::GROUP_ROLE_CONTROL);
-                settings_errors(self::GROUP_ROLE_BADGES);
-            }
+            // FIX: Removed manual settings_errors() calls here
             ?>
             <?php if (!$role_control_master): ?>
                 <div class="notice notice-warning" style="margin:12px 0;">
@@ -487,14 +419,9 @@ final class SettingsPageTabs
             <?php endif; ?>
         </section>
 
-       
-
         <section id="yardlii-tab-advanced" class="yardlii-tabpanel hidden" data-panel="advanced">
           <?php
-          if (function_exists('settings_errors')) {
-              settings_errors(self::GROUP_DEBUG);
-              settings_errors(self::GROUP_FEATURE_FLAGS);
-          }
+          // FIX: Removed manual settings_errors() calls here
           $adv_section = isset($_GET['advsection']) ? sanitize_key($_GET['advsection']) : 'flags';
           ?>
           <nav class="yardlii-tabs yardlii-advanced-subtabs" role="tablist" aria-label="<?php esc_attr_e('Advanced Sections', 'yardlii-core'); ?>">
@@ -509,7 +436,6 @@ final class SettingsPageTabs
             <summary><?php esc_html_e('Feature Flags & Debug', 'yardlii-core'); ?></summary>
             <div class="yardlii-section-content">
               <?php
-             
               $group_debug    = self::GROUP_DEBUG;
               $group_flags    = self::GROUP_FEATURE_FLAGS;
               include __DIR__ . '/views/partials/advanced/section-flags.php';
