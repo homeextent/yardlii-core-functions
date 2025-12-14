@@ -132,6 +132,11 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+### 3.31.1 - 2025-12-14
+* **Fix:** Resolved excessive "Settings Saved" notification spam by removing the deprecated `success_notifier` callback and reverting to standard WordPress settings handling.
+* **Fix:** Eliminated duplicate "Custom User Roles is disabled" warnings by implementing a robust `get_settings_errors()` check to deduplicate error messages.
+* **CI:** Added automated release workflow. Production-ready zip files are now automatically generated and attached to GitHub Releases.
+
 ## 3.31.0 - 2025-12-13
 ### 💥 BREAKING CHANGE: ARCHITECTURAL SPLIT
 - **Trust & Verification Removal:** The entire Trust & Verification (TV) module has been removed from Core Functions.
