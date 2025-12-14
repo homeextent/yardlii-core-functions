@@ -33,6 +33,12 @@ final class SettingsPageTabs
       
     }
 
+    private function isOurSettingsPage(): bool
+    {
+        if (!is_admin()) return false;
+        return (isset($_GET['page']) && $_GET['page'] === 'yardlii-core-settings');
+    }
+
     public function suppressGlobalSettingsErrorsOnOurPage(): void
     {
         if (! $this->isOurSettingsPage()) return;
