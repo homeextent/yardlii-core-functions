@@ -18,50 +18,16 @@ if (! defined('ABSPATH')) {
  */
 final class Loader
 {
-    /** Guard: ensure we only register TV settings once per request */
-    private static bool $tvSettingsRegistered = false;
-
-    /**
-     * Register Trust & Verification settings EARLY for options.php.
-     * Runs in wp-admin (incl. admin-ajax). Safe to call multiple times.
-     */
-    public static function ensureTvSettingsRegistered(): void
-    {
-        if (self::$tvSettingsRegistered || ! is_admin()) {
-            return;
-        }
-        self::$tvSettingsRegistered = true;
-
-        if (class_exists(\Yardlii\Core\Features\TrustVerification\Settings\GlobalSettings::class)) {
-            (new \Yardlii\Core\Features\TrustVerification\Settings\GlobalSettings())->registerSettings();
-        }
-        if (class_exists(\Yardlii\Core\Features\TrustVerification\Settings\FormConfigs::class)) {
-            (new \Yardlii\Core\Features\TrustVerification\Settings\FormConfigs())->registerSettings();
-        }
-    }
-
+    
     /**
      * Entry point: wire early settings, then register all feature modules.
      */
     public function register(): void
     {
-        // ... (existing ensureTvSettingsRegistered logic) ...
 
-        // Register non-TV features.
         $this->register_features();
 
-        // Trust & Verification module behind feature flag/constant override.
-        $tv_master = FeatureFlagManager::isEnabled('trust_verification'); // [MODIFICATION] Use Manager
-
-        if (
-            $tv_master
-            && class_exists(\Yardlii\Core\Features\TrustVerification\Module::class)
-        ) {
-            (new \Yardlii\Core\Features\TrustVerification\Module(
-                defined('YARDLII_CORE_FILE') ? YARDLII_CORE_FILE : __FILE__,
-                defined('YARDLII_CORE_VERSION') ? YARDLII_CORE_VERSION : null
-            ))->register();
-        }
+        
     }
 
     /**
