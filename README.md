@@ -2,6 +2,8 @@ Markdown
 
 \# 🧩 YARDLII Core Functions
 
+> ⚠️ **ARCHITECTURAL CHANGE (v3.31.0):** The **Trust & Verification** module has been extracted into a standalone plugin: `yardlii-trust-verification`. It is no longer included in this Core package.
+
 \[\!\[WordPress Tested\](https://img.shields.io/badge/tested\_up\_to-6.8-blue.svg)\](https://wordpress.org/plugins/)  
 \[\!\[PHP Version\](https://img.shields.io/badge/php-8.0%2B-blue.svg)\](https://www.php.net/)  
 \[\!\[License\](https://img.shields.io/badge/license-GPLv2%2B-green.svg)\](https://www.gnu.org/licenses/gpl-2.0.html)  
@@ -129,6 +131,18 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 ---
 
 ## 📦 Changelog
+
+## 3.31.0 - 2025-12-13
+### 💥 BREAKING CHANGE: ARCHITECTURAL SPLIT
+- **Trust & Verification Removal:** The entire Trust & Verification (TV) module has been removed from Core Functions.
+    - **Reason:** Decoupled into the standalone `yardlii-trust-verification` plugin for better maintainability and separation of concerns.
+    - **Impact:** The "Trust & Verification" tab, settings, and background logic will no longer appear in this plugin.
+    - **Migration:** You must install and activate the new `yardlii-trust-verification` plugin to retain user verification features. Data is preserved.
+
+### Cleanup
+- **Diagnostics:** Removed TV-specific API tests and flag status rows from the Diagnostics panel.
+- **Uninstaller:** Updated `uninstall.php` to strictly preserve TV data (CPTs, User Meta, Options) so the new plugin can inherit it safely.
+- **Deep Linking:** Fixed a regression in `admin.js` where nested URL parameters (e.g., `&gsection=wpuf`) were being stripped on tab clicks.
 
 ## 3.30.0 - 2025 -12-9
 -##Critical Performance Upgrade:## Migrated heavy I/O operations (Geocoding API calls and Featured Image generation) to Action Scheduler for background processing, significantly reducing form submission latency. Core Architecture: Implemented the FeatureFlagManager service to cache feature status, eliminating redundant database option lookups during bootstrap. Data Layer: Centralized WPUF Form ID lookups into the WpufHelper service for improved integrity.
