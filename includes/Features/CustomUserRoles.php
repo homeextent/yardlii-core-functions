@@ -36,62 +36,51 @@ class CustomUserRoles
         }
     }
 
-
     public static function sanitize_settings($raw)
     {
-        // Master off? Keep previous value, do nothing.
-$master = (bool) get_option('yardlii_enable_role_control', false);
-if (defined('YARDLII_ENABLE_ROLE_CONTROL')) {
-    $master = (bool) YARDLII_ENABLE_ROLE_CONTROL;
-}
-if (!$master) {
-    return get_option('yardlii_custom_roles', []);
-}
+        // Guard: Prevent duplicate notifications in a single request
+        static $feedback_added = false;
 
+        // Master off? Keep previous value, do nothing.
+        $master = (bool) get_option('yardlii_enable_role_control', false);
+        if (defined('YARDLII_ENABLE_ROLE_CONTROL')) {
+            $master = (bool) YARDLII_ENABLE_ROLE_CONTROL;
+        }
+        if (!$master) {
+            if (!$feedback_added) {
+                \add_settings_error(
+                    'yardlii_role_control_group',
+                    'yardlii_master_off',
+                    __('Role Control is disabled. Enable it in Advanced → Feature Flags to manage custom roles.', 'yardlii-core'),
+                    'warning'
+                );
+                $feedback_added = true;
+            }
+            return get_option('yardlii_custom_roles', []);
+        }
 
         // 1) Permission guard
         if (!current_user_can('manage_options')) {
             return get_option('yardlii_custom_roles', []);
         }
 
-        // === PATCH 1: START ===========================================
-    // 1a) MASTER switch guard + UI notice
-    $master = (bool) get_option('yardlii_enable_role_control', false);
-    if (defined('YARDLII_ENABLE_ROLE_CONTROL')) {
-        $master = (bool) YARDLII_ENABLE_ROLE_CONTROL;
-    }
-    if (!$master) {
-        \add_settings_error(
-            'yardlii_role_control_group',
-            'yardlii_master_off',
-            __('Role Control is disabled. Enable it in Advanced → Feature Flags to manage custom roles.', 'yardlii-core'),
-            'warning'
-        );
-        return get_option('yardlii_custom_roles', []);
-    }
-
-    // 1b) Per-feature guard + UI notice (prevents accidental mutations)
-    $enabled_post = isset($_POST['yardlii_enable_custom_roles']) && $_POST['yardlii_enable_custom_roles'];
-    $enabled = $enabled_post ? true : (bool) get_option('yardlii_enable_custom_roles', true);
-    if (!$enabled) {
-        \add_settings_error(
-            'yardlii_role_control_group',
-            'yardlii_cur_off',
-            __('Custom User Roles is disabled. Enable it to create, update, or remove roles.', 'yardlii-core'),
-            'info'
-        );
-        return get_option('yardlii_custom_roles', []);
-    }
-    // === PATCH 1: END =============================================
-
-        // 2) If feature disabled, keep existing (prevents accidental deletions)
+        // 1b) Per-feature guard + UI notice (prevents accidental mutations)
         $enabled_post = isset($_POST['yardlii_enable_custom_roles']) && $_POST['yardlii_enable_custom_roles'];
         $enabled = $enabled_post ? true : (bool) get_option('yardlii_enable_custom_roles', true);
         if (!$enabled) {
+            if (!$feedback_added) {
+                \add_settings_error(
+                    'yardlii_role_control_group',
+                    'yardlii_cur_off',
+                    __('Custom User Roles is disabled. Enable it to create, update, or remove roles.', 'yardlii-core'),
+                    'info'
+                );
+                $feedback_added = true;
+            }
             return get_option('yardlii_custom_roles', []);
         }
 
-        // 3) Main logic (clean, create/update, delete + reassign)
+        // 2) Main logic (clean, create/update, delete + reassign)
         $prev        = get_option('yardlii_custom_roles', []);
         $prev_slugs  = is_array($prev) ? array_keys($prev) : [];
         $reserved    = ['administrator','editor','author','contributor','subscriber'];
@@ -220,7 +209,4 @@ if (!$master) {
             }
         }
     }
-
-
-    
 }
