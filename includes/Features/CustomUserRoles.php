@@ -38,23 +38,22 @@ class CustomUserRoles
 
     public static function sanitize_settings($raw)
     {
-        // Guard: Prevent duplicate notifications in a single request
-        static $feedback_added = false;
-
         // Master off? Keep previous value, do nothing.
         $master = (bool) get_option('yardlii_enable_role_control', false);
         if (defined('YARDLII_ENABLE_ROLE_CONTROL')) {
             $master = (bool) YARDLII_ENABLE_ROLE_CONTROL;
         }
+        
         if (!$master) {
-            if (!$feedback_added) {
+            // Check if error is already queued to prevent duplicates
+            $existing_errors = get_settings_errors('yardlii_master_off');
+            if (empty($existing_errors)) {
                 \add_settings_error(
                     'yardlii_role_control_group',
                     'yardlii_master_off',
                     __('Role Control is disabled. Enable it in Advanced → Feature Flags to manage custom roles.', 'yardlii-core'),
                     'warning'
                 );
-                $feedback_added = true;
             }
             return get_option('yardlii_custom_roles', []);
         }
@@ -67,15 +66,17 @@ class CustomUserRoles
         // 1b) Per-feature guard + UI notice (prevents accidental mutations)
         $enabled_post = isset($_POST['yardlii_enable_custom_roles']) && $_POST['yardlii_enable_custom_roles'];
         $enabled = $enabled_post ? true : (bool) get_option('yardlii_enable_custom_roles', true);
+        
         if (!$enabled) {
-            if (!$feedback_added) {
+            // Check if error is already queued to prevent duplicates
+            $existing_errors = get_settings_errors('yardlii_cur_off');
+            if (empty($existing_errors)) {
                 \add_settings_error(
                     'yardlii_role_control_group',
                     'yardlii_cur_off',
                     __('Custom User Roles is disabled. Enable it to create, update, or remove roles.', 'yardlii-core'),
                     'info'
                 );
-                $feedback_added = true;
             }
             return get_option('yardlii_custom_roles', []);
         }
