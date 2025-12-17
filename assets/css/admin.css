@@ -240,4 +240,17 @@ details.yardlii-subsection[open]{ background:#f9fafb; border-color:#c7c7c7; box-
   .yardlii-inner-tabcontent,
   #yardlii-tab-general details.yardlii-section{ transition: none !important; }
 }
+/* FORCE HIDE for elements with the hidden attribute */
+[hidden] {
+    display: none !important;
+}
+
+/* OPTIONAL: If your tabs use a class based system instead of attributes */
+.group {
+    display: none;
+}
+
+.group.active {
+    display: block;
+}
 
