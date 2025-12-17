@@ -101,6 +101,13 @@ final class Loader
             (new Integrations\CustomMapWidget())->register();
         }
 
+        // === Login Persistence ===
+        // [MODIFICATION] Migrated from Code Snippets
+        $login_persistence_enabled = FeatureFlagManager::isEnabled('login_persistence');
+        if ($login_persistence_enabled && class_exists(__NAMESPACE__ . '\\LoginPersistence')) {
+            (new LoginPersistence())->register();
+        }
+
         // === General Features ===
         if (class_exists(__NAMESPACE__ . '\\FeaturedImage')) {
             (new FeaturedImage())->register();

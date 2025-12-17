@@ -227,6 +227,32 @@ if ($acf_sync_locked) {
     Enables the <code>Custom Google Map</code> widget in Elementor. Requires Google Maps API Key to be configured in General Settings.
 </p>
 
+<div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
+    <?php
+    $lp_val = (bool) get_option('yardlii_enable_login_persistence', false);
+    $lp_locked = defined('YARDLII_ENABLE_LOGIN_PERSISTENCE');
+    if ($lp_locked) {
+        $lp_val = (bool) constant('YARDLII_ENABLE_LOGIN_PERSISTENCE');
+    }
+    ?>
+    <input type="hidden" name="yardlii_enable_login_persistence" value="0" />
+    <input
+        type="checkbox"
+        id="yardlii_enable_login_persistence"
+        name="yardlii_enable_login_persistence"
+        value="1"
+        <?php checked($lp_val); ?>
+        <?php disabled($lp_locked); ?>
+    />
+    <strong><?php esc_html_e('Always-On Login Persistence', 'yardlii-core'); ?></strong>
+    <?php if ($lp_locked) : ?>
+        <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
+    <?php endif; ?>
+</div>
+<p class="description" style="margin-left: 24px; margin-top: 0; color: #666;">
+    Forces user sessions to last 1 year and hides the "Remember Me" checkbox. Replaces external code snippets.
+</p>
+
       
       <p style="margin-top:1rem;">
         <button class="button button-primary" type="submit">

@@ -187,6 +187,12 @@ final class SettingsPageTabs
 
         register_setting(
             self::GROUP_FEATURE_FLAGS,
+            'yardlii_enable_login_persistence',
+            ['sanitize_callback' => 'rest_sanitize_boolean']
+        );
+
+        register_setting(
+            self::GROUP_FEATURE_FLAGS,
             'yardlii_enable_custom_map_widget',
             ['sanitize_callback' => 'rest_sanitize_boolean']
         );
