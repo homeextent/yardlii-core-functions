@@ -55,14 +55,22 @@
 /* Panels */
 .yardlii-tabpanel.hidden{ display:none; }
 
-/* Smoothly collapse hidden GENERAL subtab panels (<details>) */
-#yardlii-tab-general details.yardlii-section{
-  transition:max-height 220ms ease, opacity 180ms ease, border-color 160ms ease;
-  overflow:hidden;
+/* Smoothly collapse hidden subtab panels (<details>) for General AND WPUF */
+#yardlii-tab-general details.yardlii-section,
+#yardlii-tab-wpuf details.yardlii-section {
+  transition: max-height 220ms ease, opacity 180ms ease, border-color 160ms ease;
+  overflow: hidden;
 }
-#yardlii-tab-general details.yardlii-section[hidden]{
-  display:block; max-height:0 !important; opacity:0;
-  padding-top:0; padding-bottom:0; border-width:0;
+
+#yardlii-tab-general details.yardlii-section[hidden],
+#yardlii-tab-wpuf details.yardlii-section[hidden] {
+  display: block;
+  max-height: 0 !important;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+  margin: 0; /* Ensure no margin keeps it visible */
 }
 
 /* Smoothly collapse hidden ADVANCED subtab panels (<details>) */
