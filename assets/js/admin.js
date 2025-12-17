@@ -200,6 +200,57 @@ const panel = document.querySelector('#yardlii-tab-role-control');
   // --- END: NEW CODE ---
 }
 
+/* === YARDLII: WPUF Customisations subtabs === */
+function initWpufSubtabs() {
+  const panel = document.querySelector('#yardlii-tab-wpuf');
+  if (!panel) return;
+
+  const wrap = panel.querySelector('.yardlii-wpuf-subtabs');
+  if (!wrap) return;
+
+  const buttons = wrap.querySelectorAll('.yardlii-tab[data-wsection]');
+  const panels  = panel.querySelectorAll('.yardlii-section[data-wsection]');
+
+  function activate(id) {
+    buttons.forEach(btn => {
+      const on = btn.dataset.wsection === id;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+
+    panels.forEach(p => {
+      const show = p.dataset.wsection === id;
+      if ('open' in p) {
+        p.open = !!show;
+        if (show) { p.removeAttribute('hidden'); } else { p.setAttribute('hidden', 'hidden'); }
+      } else {
+        p.classList.toggle('hidden', !show);
+      }
+    });
+
+    try { localStorage.setItem('yardlii_active_wsection', id); } catch (e) {}
+    
+    // Update URL
+    try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('tab', 'wpuf');
+        u.searchParams.set('wsection', id);
+        // Note: updateUrlAndReferrers is local to the IIFE below, so we rely on this simple set or localStorage.
+    } catch (e) {}
+  }
+
+  // Initial Load Logic
+  const localSection = localStorage.getItem('yardlii_active_wsection');
+  const urlSection   = (new URL(window.location.href)).searchParams.get('wsection');
+  const initialId    = urlSection || localSection || buttons[0]?.dataset.wsection;
+
+  if (initialId) activate(initialId);
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => activate(btn.dataset.wsection));
+  });
+}
+
   // --- START: MODIFIED RESTORE LOGIC ---
 const urlRSection = getUrlParam('rsection');
 const localRSection = localStorage.getItem('yardlii_active_rsection');
@@ -275,6 +326,10 @@ const initialId =
     if (id === 'role-control') {
       initRoleControlSubtabs();
     }
+    // --- ADD THIS NEW CHECK ---
+      if (id === 'wpuf') {
+        initWpufSubtabs();
+      }
     // --- END: ADD THIS ---
   }
 
