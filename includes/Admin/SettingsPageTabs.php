@@ -331,20 +331,17 @@ final class SettingsPageTabs
         <nav class="yardlii-tabs" role="tablist" data-scope="main">
             <button type="button" class="yardlii-tab active" data-tab="general" aria-selected="true">🗺️ General</button>
             <button type="button" class="yardlii-tab" data-tab="role-control" aria-selected="false">🛡️ Role Control</button>
+            <button type="button" class="yardlii-tab" data-tab="wpuf" aria-selected="false">🔧 WPUF Customisations</button>
             <button type="button" class="yardlii-tab" data-tab="advanced" aria-selected="false">⚙️ Advanced</button>
         </nav>
 
         <section id="yardlii-tab-general" class="yardlii-tabpanel" data-panel="general">
-            <?php
-            // FIX: Removed manual settings_errors() calls here to prevent duplicates
-            ?>
             <nav class="yardlii-tabs yardlii-general-subtabs" role="tablist" aria-label="General Sections">
                 <button type="button" class="yardlii-tab active" data-gsection="gmap" aria-selected="true">🗺️ Google Map Settings</button>
                 <button type="button" class="yardlii-tab"        data-gsection="fimg" aria-selected="false">🖼️ Featured Image Automation</button>
                 <button type="button" class="yardlii-tab"        data-gsection="home" aria-selected="false">🔍 Homepage Search</button>
-                <button type="button" class="yardlii-tab"        data-gsection="wpuf" aria-selected="false">🔧 WPUF Customisations</button>
                 <button type="button" class="yardlii-tab"        data-gsection="dir"  aria-selected="false">📂 User Directory</button>
-            </nav>
+                </nav>
 
             <details class="yardlii-section" id="gsec-gmap" data-gsection="gmap" open>
                 <summary>🗺️ Google Map Settings</summary>
@@ -383,18 +380,40 @@ final class SettingsPageTabs
                 </div>
             </details>
 
-            <details class="yardlii-section" id="gsec-wpuf" data-gsection="wpuf">
-                <summary>🔧 WPUF Customisations</summary>
-                <div class="yardlii-section-content">
-                    <?php include __DIR__ . '/views/partials/wpuf-customizations.php'; ?>
-                </div>
-            </details>
-
             <details class="yardlii-section" id="gsec-dir" data-gsection="dir">
                 <summary>📂 User Directory</summary>
                 <div class="yardlii-section-content">
                     <?php include __DIR__ . '/views/partials/user-directory.php'; ?>
                 </div>
+            </details>
+        </section>
+
+        <section id="yardlii-tab-wpuf" class="yardlii-tabpanel hidden" data-panel="wpuf">
+            <nav class="yardlii-tabs yardlii-wpuf-subtabs" role="tablist" aria-label="WPUF Sections">
+                <button type="button" class="yardlii-tab active" data-wsection="styling" aria-selected="true">🎨 Frontend Styling</button>
+                <button type="button" class="yardlii-tab"        data-wsection="logic"   aria-selected="false">🧠 Listing Logic</button>
+                <button type="button" class="yardlii-tab"        data-wsection="geo"     aria-selected="false">📍 Privacy Geocoding</button>
+                <button type="button" class="yardlii-tab"        data-wsection="profile" aria-selected="false">👤 Profile Mapping</button>
+            </nav>
+
+            <details class="yardlii-section" data-wsection="styling" open>
+                <summary>🎨 Frontend Styling</summary>
+                <div class="yardlii-section-content"><?php include __DIR__ . '/views/partials/wpuf/frontend-styling.php'; ?></div>
+            </details>
+
+            <details class="yardlii-section" data-wsection="logic">
+                <summary>🧠 Listing Logic</summary>
+                <div class="yardlii-section-content"><?php include __DIR__ . '/views/partials/wpuf/listing-logic.php'; ?></div>
+            </details>
+
+            <details class="yardlii-section" data-wsection="geo">
+                <summary>📍 Privacy Geocoding</summary>
+                <div class="yardlii-section-content"><?php include __DIR__ . '/views/partials/wpuf/privacy-geocoding.php'; ?></div>
+            </details>
+
+            <details class="yardlii-section" data-wsection="profile">
+                <summary>👤 Profile Mapping</summary>
+                <div class="yardlii-section-content"><?php include __DIR__ . '/views/partials/wpuf/profile-mapping.php'; ?></div>
             </details>
         </section>
 
