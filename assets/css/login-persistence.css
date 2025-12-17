@@ -1,0 +1,16 @@
+/**
+ * YARDLII: Login Persistence UI
+ * Hides the redundant "Remember Me" checkbox since persistence is forced on the backend.
+ */
+
+/* Target WPUF Login Forms */
+#wpuf-rememberme,
+label[for="wpuf-rememberme"],
+.wpuf-login-form label:has(#wpuf-rememberme) {
+    display: none !important;
+}
+
+/* Target Standard WP Login (Optional fallback) */
+.login-remember {
+    display: none !important;
+}
