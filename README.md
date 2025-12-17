@@ -132,6 +132,19 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+## 📦 Changelog
+
+### 3.32.0 - 2025-12-16
+### 🚀 Features
+* **Custom Map Widget:** Fully integrated the **Elementor Custom Google Map** widget into Core.
+    * Migrated from standalone plugin to `Features\Integrations\CustomMapWidget`.
+    * Widget now uses the Core's "Universal Location Engine" to prevent API race conditions.
+    * Added Feature Flag toggle in **Settings → Advanced**.
+
+### 🐛 Fixes
+* **Maps Traffic Controller:** Updated `GoogleMapKey.php` to force API loading on all Single Listings (`is_singular('listings')`). This ensures map widgets inside Elementor Templates render correctly.
+* **Dev:** Added Elementor class stubs to PHPStan configuration for better static analysis.
+
 ### 3.31.1 - 2025-12-14
 * **Fix:** Resolved excessive "Settings Saved" notification spam by removing the deprecated `success_notifier` callback and reverting to standard WordPress settings handling.
 * **Fix:** Eliminated duplicate "Custom User Roles is disabled" warnings by implementing a robust `get_settings_errors()` check to deduplicate error messages.
