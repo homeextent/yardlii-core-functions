@@ -184,6 +184,12 @@ final class SettingsPageTabs
             'yardlii_enable_elementor_query_mods',
             ['sanitize_callback' => 'rest_sanitize_boolean']
         );
+
+        register_setting(
+            self::GROUP_FEATURE_FLAGS,
+            'yardlii_enable_custom_map_widget',
+            ['sanitize_callback' => 'rest_sanitize_boolean']
+        );
     }
 
     private function register_search_settings(): void

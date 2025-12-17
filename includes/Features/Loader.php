@@ -94,6 +94,13 @@ final class Loader
             (new Directory\Renderer($coreUrl, $coreVer))->register();
         }
 
+        // === Custom Map Widget ===
+        // [MODIFICATION] Migrated from standalone plugin
+        $map_widget_enabled = FeatureFlagManager::isEnabled('custom_map_widget');
+        if ($map_widget_enabled && class_exists(__NAMESPACE__ . '\\Integrations\\CustomMapWidget')) {
+            (new Integrations\CustomMapWidget())->register();
+        }
+
         // === General Features ===
         if (class_exists(__NAMESPACE__ . '\\FeaturedImage')) {
             (new FeaturedImage())->register();

@@ -201,6 +201,32 @@ if ($acf_sync_locked) {
 <p class="description" style="margin-left: 24px; margin-top: 0; color: #666;">
     Enables custom query IDs like <code>yardlii_author_listings</code> for Elementor Loop Grids.
 </p>
+<div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
+    <?php
+    $cmw_val = (bool) get_option('yardlii_enable_custom_map_widget', false);
+    $cmw_locked = defined('YARDLII_ENABLE_CUSTOM_MAP_WIDGET');
+    if ($cmw_locked) {
+        $cmw_val = (bool) constant('YARDLII_ENABLE_CUSTOM_MAP_WIDGET');
+    }
+    ?>
+    <input type="hidden" name="yardlii_enable_custom_map_widget" value="0" />
+    <input
+        type="checkbox"
+        id="yardlii_enable_custom_map_widget"
+        name="yardlii_enable_custom_map_widget"
+        value="1"
+        <?php checked($cmw_val); ?>
+        <?php disabled($cmw_locked); ?>
+    />
+    <strong><?php esc_html_e('Elementor Custom Map Widget', 'yardlii-core'); ?></strong>
+    <?php if ($cmw_locked) : ?>
+        <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
+    <?php endif; ?>
+</div>
+<p class="description" style="margin-left: 24px; margin-top: 0; color: #666;">
+    Enables the <code>Custom Google Map</code> widget in Elementor. Requires Google Maps API Key to be configured in General Settings.
+</p>
+
       
       <p style="margin-top:1rem;">
         <button class="button button-primary" type="submit">

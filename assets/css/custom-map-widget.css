@@ -1,0 +1,7 @@
+/* YARDLII: Custom Map Widget Styles */
+.cegm-map-container { 
+    width: 100%; 
+    position: relative; 
+    overflow: hidden; /* Ensures border-radius settings in Elementor apply correctly */
+    background-color: #f0f0f0; /* Loading placeholder color */
+}

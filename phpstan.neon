@@ -13,4 +13,5 @@ parameters:
         - tests/integration  # <--- Changed from tests/integration/* to just tests/integration to be safer
     bootstrapFiles:
         - tests/phpstan-bootstrap.php
+        - tests/elementor-stubs.php
     reportUnmatchedIgnoredErrors: false
