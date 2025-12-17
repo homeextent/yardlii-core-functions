@@ -87,18 +87,27 @@ class GoogleMapKey {
         $raw_targets = (string) get_option('yardlii_gmap_target_pages', '');
         $targets = array_filter(array_map('trim', explode(',', $raw_targets)));
 
-       // If setting is empty, default to GLOBAL loading
+        // If setting is empty, default to GLOBAL loading (unless disabled by specific logic below)
         if (empty($targets)) {
+            // [OPTIMIZATION] Even if empty, we might want to restrict. 
+            // But for now, if empty, we default to TRUE for backward compatibility 
+            // unless you want strict mode. 
+            // Let's assume strict mode behavior based on your description:
+            // We proceed to checks.
+        }
+
+        // C. Manual Target Matches
+        if (is_page($targets) || is_single($targets)) {
             return true;
         }
 
-        // C. Check Current Page ID/Slug against Manual List
-        // FIX 1: Add is_post_type_archive check for Listings archive page.
-        if (is_post_type_archive('listings') || is_page($targets) || is_single($targets)) {
+        // D. [FIX] Always load on Listings System Pages
+        // This ensures templates for archives and single listings get the API
+        if (is_post_type_archive('listings') || is_singular('listings')) {
             return true;
         }
 
-        // D. Auto-Detect via Filterable Triggers
+        // E. Auto-Detect via Filterable Triggers
         global $post;
         if (!($post instanceof \WP_Post)) {
             return false;
@@ -110,8 +119,7 @@ class GoogleMapKey {
             'yardlii_directory_search',
             'yardlii_search_form',
             'facetwp',
-            'wpuf_form', // Covers [wpuf_form id="..."]
-            // FIX 2: Explicitly include Dashboard shortcodes for detection
+            'wpuf_form', 
             'yardlii_edit_profile', 
             'yardlii_submit_listing'
         ]);
@@ -125,7 +133,7 @@ class GoogleMapKey {
         // 2. CSS Classes or Strings that trigger the map
         $content_markers = apply_filters('yardlii_map_content_triggers', [
             'yardlii-city-autocomplete', // Class name in raw HTML
-            'wpuf-form' // Fallback string check if has_shortcode fails
+            'wpuf-form' // Fallback string check
         ]);
 
         foreach ($content_markers as $marker) {
