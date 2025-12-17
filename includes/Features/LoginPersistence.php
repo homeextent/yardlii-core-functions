@@ -26,12 +26,13 @@ class LoginPersistence
 
     /**
      * Set auth cookie expiration to 1 year.
-     * * @param int $seconds
+     *
+     * @param int $seconds
      * @param int $user_id
      * @param bool $remember
      * @return int
      */
-    public function extend_cookie_duration($seconds, $user_id, $remember): int
+    public function extend_cookie_duration(int $seconds, int $user_id, bool $remember): int
     {
         return self::YEAR_IN_SECONDS;
     }
@@ -39,10 +40,11 @@ class LoginPersistence
     /**
      * Force the auth cookie to be set with the "remember" flag true,
      * even if the user didn't check the box.
-     * * @param string $user_login
+     *
+     * @param string $user_login
      * @param \WP_User $user
      */
-    public function force_remember_on_login($user_login, $user): void
+    public function force_remember_on_login(string $user_login, \WP_User $user): void
     {
         // Only force if it wasn't already requested (prevents double-setting)
         if (!isset($_POST['rememberme'])) {
