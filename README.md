@@ -132,6 +132,14 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+### 3.33.1 - 2025-12-17 
+### 🐛 Fixes
+* **Fix:** Resolved JavaScript conflict preventing "General" and "WPUF Customisations" tabs from switching correctly.
+* **Fix:** Addressed visibility issue where nested tab content remained visible on initial page load.
+* **Update:** Reorganized "Feature Flags" (Advanced Tab) into logical categories for better UX.
+* **Update:** Updated dashboard shortcode documentation to reflect current "My Listings" and "Profile" logic.
+* **Style:** Added modern toggle-switch styling to Feature Flags and Debug Mode settings.
+* **Style:** Refactored CSS to move inline styles from PHP files to main admin stylesheet.
 
 
 ### 3.33.0 - 2025-12-17
