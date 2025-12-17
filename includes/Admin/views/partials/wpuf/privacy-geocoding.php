@@ -4,7 +4,7 @@
     <p class="description">Convert Postal Codes to City/Province + Lat/Lng for privacy-safe location search.</p>
 
     <form method="post" action="options.php" class="yardlii-settings-form">
-        <?php settings_fields('yardlii_general_group'); ?>
+        <?php settings_fields('yardlii_wpuf_geo_group'); ?>
         
         <?php 
             $geo_enabled = (bool) get_option('yardlii_enable_wpuf_geocoding', false);

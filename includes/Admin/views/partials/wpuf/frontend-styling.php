@@ -4,7 +4,7 @@
     <p class="description">Controls the visual appearance of WPUF forms on the frontend.</p>
     
     <form method="post" action="options.php" class="yardlii-settings-form">
-        <?php settings_fields('yardlii_general_group'); ?>
+        <?php settings_fields('yardlii_wpuf_styling_group'); ?>
         
         <div style="background: #f9f9f9; border: 1px solid #e5e5e5; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
             <label for="yardlii_wpuf_target_pages" style="display:block; margin-bottom:5px;">
