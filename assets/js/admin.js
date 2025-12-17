@@ -148,401 +148,356 @@ jQuery(document).ready(function ($) {
   });
 
 
-   
+  /* === YARDLII: Role Control subtabs (Submit Access / Custom User Roles) === */
+  function initRoleControlSubtabs() {
+    const panel = document.querySelector('#yardlii-tab-role-control');
+    if (!panel) return;
 
-/* === YARDLII: Role Control subtabs (Submit Access / Custom User Roles) === */
-function initRoleControlSubtabs() {
-const panel = document.querySelector('#yardlii-tab-role-control');
-  if (!panel) return;
-
-  // If the panel is locked (master OFF), do not bind handlers
-  if (panel.getAttribute('aria-disabled') === 'true' || panel.querySelector('.yardlii-locked')) {
-    return;
-  }
-
-  
-  const wrap = document.querySelector('#yardlii-tab-role-control .yardlii-role-subtabs');
-  if (!wrap) return;
-
-  const buttons = wrap.querySelectorAll('.yardlii-tab[data-rsection]');
-  const panels  = document.querySelectorAll('#yardlii-tab-role-control .yardlii-section[data-rsection]');
-
-  function activate(id) {
-  buttons.forEach(btn => {
-    const on = btn.dataset.rsection === id;
-    btn.classList.toggle('active', on);
-    btn.setAttribute('aria-selected', on ? 'true' : 'false');
-    btn.tabIndex = on ? 0 : -1;
-  });
-
-  panels.forEach(p => {
-    const show = p.dataset.rsection === id;
-    if ('open' in p) {
-      p.open = !!show;
-      if (show) { p.removeAttribute('hidden'); } else { p.setAttribute('hidden', 'hidden'); }
-    } else {
-      p.classList.toggle('hidden', !show);
-      p.setAttribute('aria-hidden', show ? 'false' : 'true');
-    }
-  });
-
-  try { localStorage.setItem('yardlii_active_rsection', id); } catch (e) {}
-
-  // --- START: NEW CODE (Keeps URL in sync) ---
-  try {
-    const u = new URL(window.location.href);
-    u.searchParams.set('tab', 'role-control'); // Force parent tab
-    u.searchParams.set('rsection', id);
-    updateUrlAndReferrers(u);
-  } catch (e) {
-    // Fails in test suites or old browsers
-  }
-  // --- END: NEW CODE ---
-}
-
-/* === YARDLII: WPUF Customisations subtabs === */
-function initWpufSubtabs() {
-  const panel = document.querySelector('#yardlii-tab-wpuf');
-  if (!panel) return;
-
-  const wrap = panel.querySelector('.yardlii-wpuf-subtabs');
-  if (!wrap) return;
-
-  const buttons = wrap.querySelectorAll('.yardlii-tab[data-wsection]');
-  const panels  = panel.querySelectorAll('.yardlii-section[data-wsection]');
-
-  function activate(id) {
-    buttons.forEach(btn => {
-      const on = btn.dataset.wsection === id;
-      btn.classList.toggle('active', on);
-      btn.setAttribute('aria-selected', on ? 'true' : 'false');
-    });
-
-    panels.forEach(p => {
-      const show = p.dataset.wsection === id;
-      if ('open' in p) {
-        p.open = !!show;
-        if (show) { p.removeAttribute('hidden'); } else { p.setAttribute('hidden', 'hidden'); }
-      } else {
-        p.classList.toggle('hidden', !show);
-      }
-    });
-
-    try { localStorage.setItem('yardlii_active_wsection', id); } catch (e) {}
-    
-    // Update URL
-    try {
-        const u = new URL(window.location.href);
-        u.searchParams.set('tab', 'wpuf');
-        u.searchParams.set('wsection', id);
-        updateUrlAndReferrers(u);
-    } catch (e) {}
-  }
-
-  // --- START: CORRECTED RESTORE LOGIC ---
-  const urlSection = getUrlParam('wsection');
-  const localSection = localStorage.getItem('yardlii_active_wsection');
-
-  const initialId =
-      (urlSection && [...buttons].some(b => b.dataset.wsection === urlSection))
-      ? urlSection // Priority 1: URL
-      : (localSection && [...buttons].some(b => b.dataset.wsection === localSection))
-        ? localSection // Priority 2: LocalStorage
-        : wrap.querySelector('.yardlii-tab.active')?.dataset.wsection // Priority 3: HTML Default
-        || document.querySelector('#yardlii-tab-wpuf .yardlii-section[open]')?.dataset.wsection
-        || panels[0]?.dataset.wsection;
-  // --- END: CORRECTED RESTORE LOGIC ---
-
-  if (initialId) activate(initialId);
-
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => activate(btn.dataset.wsection));
-  });
-}
-
-  // --- START: MODIFIED RESTORE LOGIC ---
-const urlRSection = getUrlParam('rsection');
-const localRSection = localStorage.getItem('yardlii_active_rsection');
-
-const initialId =
-    (urlRSection && [...buttons].some(b => b.dataset.rsection === urlRSection))
-    ? urlRSection // Priority 1: Use 'rsection' from URL
-    : (localRSection && [...buttons].some(b => b.dataset.rsection === localRSection))
-      ? localRSection // Priority 2: Use 'localStorage'
-      : wrap.querySelector('.yardlii-tab.active')?.dataset.rsection // Priority 3: HTML default
-      || document.querySelector('#yardlii-tab-role-control .yardlii-section[open]')?.dataset.rsection
-      || panels[0]?.dataset.rsection;
-// --- END: MODIFIED RESTORE LOGIC ---
-
-  if (initialId) activate(initialId);
-
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => activate(btn.dataset.rsection));
-    btn.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-        e.preventDefault();
-        const list = [...buttons];
-        const idx  = list.indexOf(btn);
-        const next = e.key === 'ArrowRight'
-          ? list[(idx + 1) % list.length]
-          : list[(idx - 1 + list.length) % list.length];
-        next.focus();
-        activate(next.dataset.rsection);
-      }
-    });
-  });
-}
-
-
-/* === YARDLII: Persist active tabs across reloads === */
-(() => {
-  const KEY_MAIN   = 'yardlii_active_tab';
-  const KEY_GEN    = 'yardlii_active_gsection';
-  const KEY_MAP_IN = 'yardlii_active_map_inner';
-
-  
-
- // 1) MAIN TABS (General / User Sync / Advanced)
-  const mainNav = document.querySelector('nav.yardlii-tabs[data-scope="main"]');
-  if (mainNav) {
-    const mainBtns = mainNav.querySelectorAll('.yardlii-tab');
-    const mainPanels = document.querySelectorAll('.yardlii-tabpanel');
-
-    function activateMain(id) {
-      mainBtns.forEach(b => {
-        const on = b.dataset.tab === id;
-        b.classList.toggle('active', on);
-        b.setAttribute('aria-selected', on ? 'true' : 'false');
-      });
-      mainPanels.forEach(p => p.classList.toggle('hidden', p.dataset.panel !== id));
-      sessionStorage.setItem(KEY_MAIN, id);
-
-      // --- START: NEW CODE (Keeps URL in sync) ---
-      try {
-        const u = new URL(window.location.href);
-        u.searchParams.set('tab', id);
-        // FIX: We stop AGGRESSIVE deletion. This allows nested parameters 
-        // (gsection, tvsection, etc.) to persist in the URL when navigating 
-        // from external links (Dashboard).
-        updateUrlAndReferrers(u);
-      } catch (e) {
-        // Fails in test suites or old browsers
-    }
-    // --- END: NEW CODE ---
-
-    // --- START: ADD THIS ---
-    // After activating the main tab, initialize sub-tabs IF we are on that tab.
-    if (id === 'role-control') {
-      initRoleControlSubtabs();
-    }
-    // --- ADD THIS NEW CHECK ---
-      if (id === 'wpuf') {
-        initWpufSubtabs();
-      }
-    // --- END: ADD THIS ---
-  }
-
-    // --- START: MODIFIED RESTORE LOGIC ---
-    
-    // Check URL first, then session storage, then default
-    const urlTab = getUrlParam('tab');
-    const sessionTab = sessionStorage.getItem(KEY_MAIN);
-    const firstActive = [...mainBtns].find(b => b.classList.contains('active')) || mainBtns[0];
-    let initialTab = 'general'; // Default tab
-
-    if (urlTab && [...mainBtns].some(b => b.dataset.tab === urlTab)) {
-      // Priority 1: Use the 'tab' from the URL
-      initialTab = urlTab;
-    } else if (sessionTab && [...mainBtns].some(b => b.dataset.tab === sessionTab)) {
-      // Priority 2: Use the last-clicked tab from session storage
-      initialTab = sessionTab;
-    } else if (firstActive) {
-      // Priority 3: Use the tab that is already active (from HTML)
-      initialTab = firstActive.dataset.tab;
-    }
-    
-    if (initialTab) {
-      activateMain(initialTab);
-    }
-    
-    // --- END: MODIFIED RESTORE LOGIC ---
-
-    // clicks
-    mainBtns.forEach(b => b.addEventListener('click', () => activateMain(b.dataset.tab)));
-  }
-  
-  // ... (Rest of the file follows) ...
-
-  // 2) GENERAL SUB-TABS (the four buttons above the <details> panels)
-  const genNav = document.querySelector('#yardlii-tab-general .yardlii-general-subtabs');
-  if (genNav) {
-    const genBtns = genNav.querySelectorAll('.yardlii-tab');
-    const genPanels = document.querySelectorAll('#yardlii-tab-general details.yardlii-section');
-
-    function activateGen(id) {
-      genBtns.forEach(b => {
-        const on = b.dataset.gsection === id;
-        b.classList.toggle('active', on);
-        b.setAttribute('aria-selected', on ? 'true' : 'false');
-      });
-      genPanels.forEach(p => {
-        const show = p.dataset.gsection === id;
-        if (show) { p.removeAttribute('hidden'); p.setAttribute('open','open'); }
-        else { p.setAttribute('hidden','hidden'); p.removeAttribute('open'); }
-      });
-      sessionStorage.setItem(KEY_GEN, id);
-
-      // --- START: NEW CODE (Keeps URL in sync) ---
-      try {
-        const u = new URL(window.location.href);
-        u.searchParams.set('tab', 'general'); // Force parent tab
-        u.searchParams.set('gsection', id);
-        updateUrlAndReferrers(u);
-      } catch (e) {
-        // Fails in test suites or old browsers
-      }
-      // --- END: NEW CODE ---
-    }
-    
-    // --- MODIFIED: Use new getUrlParam helper ---
-    const urlGen = getUrlParam('gsection');
-    const savedGen = sessionStorage.getItem(KEY_GEN);
-    let initialGen = '';
-    
-    if (urlGen && [...genBtns].some(b => b.dataset.gsection === urlGen)) {
-      initialGen = urlGen;
-    } else if (savedGen && [...genBtns].some(b => b.dataset.gsection === savedGen)) {
-      initialGen = savedGen;
+    // If the panel is locked (master OFF), do not bind handlers
+    if (panel.getAttribute('aria-disabled') === 'true' || panel.querySelector('.yardlii-locked')) {
+      return;
     }
 
-    if (initialGen) {
-      activateGen(initialGen);
-    }
 
-    genBtns.forEach(b => b.addEventListener('click', () => activateGen(b.dataset.gsection)));
-  }
+    const wrap = document.querySelector('#yardlii-tab-role-control .yardlii-role-subtabs');
+    if (!wrap) return;
 
-  // 3) INNER TABS (inside Google Map Settings)
-  document.querySelectorAll('.yardlii-inner-tabs').forEach((wrap) => {
-    const tabs   = wrap.querySelectorAll('.yardlii-inner-tab');
-    const panels = wrap.querySelectorAll('.yardlii-inner-tabcontent');
-
-    function activateInner(id) {
-      tabs.forEach(btn => {
-        const on = btn.dataset.tab === id;
-        btn.classList.toggle('active', on);
-        btn.setAttribute('aria-selected', on ? 'true' : 'false');
-      });
-      panels.forEach(p => {
-        const show = p.dataset.panel === id;
-        p.classList.toggle('hidden', !show);
-        p.setAttribute('aria-hidden', show ? 'false' : 'true');
-      });
-      sessionStorage.setItem(KEY_MAP_IN, id);
-    }
-
-    // restore
-    const savedInner = sessionStorage.getItem(KEY_MAP_IN);
-    const firstActive = [...tabs].find(b => b.classList.contains('active')) || tabs[0];
-    const initial = (savedInner && [...tabs].some(b => b.dataset.tab === savedInner))
-      ? savedInner
-      : firstActive?.dataset.tab;
-
-    if (initial) activateInner(initial);
-
-    tabs.forEach(btn => btn.addEventListener('click', () => activateInner(btn.dataset.tab)));
-  });
-})();
-
-/**
- * YARDLII: Advanced Subtabs
- * Handles switching sections on the Advanced tab.
- */
-(function ($) {
-  'use strict';
-
-  function initAdvancedSubtabs() {
-    const $panel = $('#yardlii-tab-advanced');
-    if (!$panel.length) return;
-
-    const $tabs = $panel.find('.yardlii-advanced-subtabs .yardlii-tab');
-    const $sections = $panel.find('details.yardlii-section[data-asection]');
-    if (!$tabs.length || !$sections.length) return;
-
-    const KEY_ADV = 'yardlii_active_adv_section';
+    const buttons = wrap.querySelectorAll('.yardlii-tab[data-rsection]');
+    const panels = document.querySelectorAll('#yardlii-tab-role-control .yardlii-section[data-rsection]');
 
     function activate(id) {
-      if (!id) return;
-      
-      // Update tabs
-      $tabs.removeClass('active').attr('aria-selected', 'false');
-      $tabs.filter('[data-asection="' + id + '"]').addClass('active').attr('aria-selected', 'true');
+      buttons.forEach(btn => {
+        const on = btn.dataset.rsection === id;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        btn.tabIndex = on ? 0 : -1;
+      });
 
-      // Update <details> panels
-      $sections.each(function() {
-        const $sec = $(this);
-        if ($sec.data('asection') === id) {
-          $sec.attr('open', true).removeAttr('hidden');
+      panels.forEach(p => {
+        const show = p.dataset.rsection === id;
+        if ('open' in p) {
+          p.open = !!show;
+          if (show) { p.removeAttribute('hidden'); } else { p.setAttribute('hidden', 'hidden'); }
         } else {
-          $sec.removeAttr('open').attr('hidden', true);
+          p.classList.toggle('hidden', !show);
+          p.setAttribute('aria-hidden', show ? 'false' : 'true');
         }
       });
-      
-      sessionStorage.setItem(KEY_ADV, id);
-    }
 
-    // Get active tab from URL or session storage
-    function getActiveId() {
-      try {
-        const urlId = (new URL(window.location.href)).searchParams.get('advsection');
-        if (urlId) return urlId;
-      } catch (e) {}
-      
-      const storageId = sessionStorage.getItem(KEY_ADV);
-      if (storageId) return storageId;
-
-      return $tabs.first().data('asection') || 'flags';
-    }
-
-    // Initial activation
-    activate(getActiveId());
-
-    // Click handler
-    $tabs.on('click', function (e) {
-      e.preventDefault();
-      const id = $(this).data('asection'); // <-- This line is corrected
-      activate(id);
+      try { localStorage.setItem('yardlii_active_rsection', id); } catch (e) { }
 
       // Keep URL in sync
       try {
         const u = new URL(window.location.href);
-        u.searchParams.set('advsection', id);
+        u.searchParams.set('tab', 'role-control'); // Force parent tab
+        u.searchParams.set('rsection', id);
         updateUrlAndReferrers(u);
-      } catch (e) {}
+      } catch (e) { }
+    }
+
+    // Restore State Logic
+    const urlRSection = getUrlParam('rsection');
+    const localRSection = localStorage.getItem('yardlii_active_rsection');
+
+    const initialId =
+      (urlRSection && [...buttons].some(b => b.dataset.rsection === urlRSection))
+        ? urlRSection
+        : (localRSection && [...buttons].some(b => b.dataset.rsection === localRSection))
+          ? localRSection
+          : wrap.querySelector('.yardlii-tab.active')?.dataset.rsection
+          || document.querySelector('#yardlii-tab-role-control .yardlii-section[open]')?.dataset.rsection
+          || panels[0]?.dataset.rsection;
+
+    if (initialId) activate(initialId);
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => activate(btn.dataset.rsection));
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          const list = [...buttons];
+          const idx = list.indexOf(btn);
+          const next = e.key === 'ArrowRight'
+            ? list[(idx + 1) % list.length]
+            : list[(idx - 1 + list.length) % list.length];
+          next.focus();
+          activate(next.dataset.rsection);
+        }
+      });
     });
   }
 
-  $(function () {
-    // We must wait for the main "Advanced" tab to be clicked,
-    // so we re-initialize every time the main tabs are swapped.
-    // This assumes the main tab switcher (not shown here) is already working.
-    $(document).on('click', '.yardlii-tabs[data-scope="main"] .yardlii-tab[data-tab="advanced"]', function() {
-      // Use a small delay to ensure the panel is visible before init
-      setTimeout(initAdvancedSubtabs, 10);
+  /* === YARDLII: WPUF Customisations subtabs (CORRECTED) === */
+  function initWpufSubtabs() {
+    const panel = document.querySelector('#yardlii-tab-wpuf');
+    if (!panel) return;
+
+    const wrap = panel.querySelector('.yardlii-wpuf-subtabs');
+    if (!wrap) return;
+
+    const buttons = wrap.querySelectorAll('.yardlii-tab[data-wsection]');
+    const panels = panel.querySelectorAll('.yardlii-section[data-wsection]');
+
+    function activate(id) {
+      buttons.forEach(btn => {
+        const on = btn.dataset.wsection === id;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+
+      panels.forEach(p => {
+        const show = p.dataset.wsection === id;
+        if ('open' in p) {
+          p.open = !!show;
+          if (show) { p.removeAttribute('hidden'); } else { p.setAttribute('hidden', 'hidden'); }
+        } else {
+          p.classList.toggle('hidden', !show);
+        }
+      });
+
+      try { localStorage.setItem('yardlii_active_wsection', id); } catch (e) { }
+
+      // Update URL
+      try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('tab', 'wpuf');
+        u.searchParams.set('wsection', id);
+        updateUrlAndReferrers(u);
+      } catch (e) { }
+    }
+
+    // --- CORRECTED RESTORE LOGIC (Uses wsection, not rsection) ---
+    const urlSection = getUrlParam('wsection');
+    const localSection = localStorage.getItem('yardlii_active_wsection');
+
+    const initialId =
+      (urlSection && [...buttons].some(b => b.dataset.wsection === urlSection))
+        ? urlSection // Priority 1: URL
+        : (localSection && [...buttons].some(b => b.dataset.wsection === localSection))
+          ? localSection // Priority 2: LocalStorage
+          : wrap.querySelector('.yardlii-tab.active')?.dataset.wsection // Priority 3: HTML Default
+          || document.querySelector('#yardlii-tab-wpuf .yardlii-section[open]')?.dataset.wsection
+          || panels[0]?.dataset.wsection;
+
+    if (initialId) activate(initialId);
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => activate(btn.dataset.wsection));
+    });
+  }
+
+
+  /* === YARDLII: Persist active tabs across reloads === */
+  (() => {
+    const KEY_MAIN = 'yardlii_active_tab';
+    const KEY_GEN = 'yardlii_active_gsection';
+    const KEY_MAP_IN = 'yardlii_active_map_inner';
+
+    // 1) MAIN TABS (General / Role Control / WPUF / Advanced)
+    const mainNav = document.querySelector('nav.yardlii-tabs[data-scope="main"]');
+    if (mainNav) {
+      const mainBtns = mainNav.querySelectorAll('.yardlii-tab');
+      const mainPanels = document.querySelectorAll('.yardlii-tabpanel');
+
+      function activateMain(id) {
+        mainBtns.forEach(b => {
+          const on = b.dataset.tab === id;
+          b.classList.toggle('active', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        mainPanels.forEach(p => p.classList.toggle('hidden', p.dataset.panel !== id));
+        sessionStorage.setItem(KEY_MAIN, id);
+
+        // Keep URL in sync
+        try {
+          const u = new URL(window.location.href);
+          u.searchParams.set('tab', id);
+          updateUrlAndReferrers(u);
+        } catch (e) { }
+
+        // --- SUB-TAB INITIALIZATION HOOKS ---
+        if (id === 'role-control') {
+          initRoleControlSubtabs();
+        }
+        if (id === 'wpuf') {
+          initWpufSubtabs();
+        }
+      }
+
+      // Restore Logic
+      const urlTab = getUrlParam('tab');
+      const sessionTab = sessionStorage.getItem(KEY_MAIN);
+      const firstActive = [...mainBtns].find(b => b.classList.contains('active')) || mainBtns[0];
+      let initialTab = 'general'; // Default
+
+      if (urlTab && [...mainBtns].some(b => b.dataset.tab === urlTab)) {
+        initialTab = urlTab;
+      } else if (sessionTab && [...mainBtns].some(b => b.dataset.tab === sessionTab)) {
+        initialTab = sessionTab;
+      } else if (firstActive) {
+        initialTab = firstActive.dataset.tab;
+      }
+
+      if (initialTab) {
+        activateMain(initialTab);
+      }
+
+      // Clicks
+      mainBtns.forEach(b => b.addEventListener('click', () => activateMain(b.dataset.tab)));
+    }
+
+
+    // 2) GENERAL SUB-TABS (FIXED with Fallback)
+    const genNav = document.querySelector('#yardlii-tab-general .yardlii-general-subtabs');
+    if (genNav) {
+      const genBtns = genNav.querySelectorAll('.yardlii-tab');
+      const genPanels = document.querySelectorAll('#yardlii-tab-general details.yardlii-section');
+
+      function activateGen(id) {
+        genBtns.forEach(b => {
+          const on = b.dataset.gsection === id;
+          b.classList.toggle('active', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        genPanels.forEach(p => {
+          const show = p.dataset.gsection === id;
+          if (show) { p.removeAttribute('hidden'); p.setAttribute('open', 'open'); }
+          else { p.setAttribute('hidden', 'hidden'); p.removeAttribute('open'); }
+        });
+        sessionStorage.setItem(KEY_GEN, id);
+
+        try {
+          const u = new URL(window.location.href);
+          u.searchParams.set('tab', 'general');
+          u.searchParams.set('gsection', id);
+          updateUrlAndReferrers(u);
+        } catch (e) { }
+      }
+
+      const urlGen = getUrlParam('gsection');
+      const savedGen = sessionStorage.getItem(KEY_GEN);
+      let initialGen = '';
+
+      if (urlGen && [...genBtns].some(b => b.dataset.gsection === urlGen)) {
+        initialGen = urlGen;
+      } else if (savedGen && [...genBtns].some(b => b.dataset.gsection === savedGen)) {
+        initialGen = savedGen;
+      }
+
+      // <<< FIXED: FALLBACK LOGIC >>>
+      if (initialGen) {
+        activateGen(initialGen);
+      } else if (genBtns.length > 0) {
+        // If no history exists, FORCE ACTIVATE the first tab
+        // This runs the hide logic for all other tabs immediately on load
+        activateGen(genBtns[0].dataset.gsection);
+      }
+
+      genBtns.forEach(b => b.addEventListener('click', () => activateGen(b.dataset.gsection)));
+    }
+
+    // 3) INNER TABS (Google Map Settings)
+    document.querySelectorAll('.yardlii-inner-tabs').forEach((wrap) => {
+      const tabs = wrap.querySelectorAll('.yardlii-inner-tab');
+      const panels = wrap.querySelectorAll('.yardlii-inner-tabcontent');
+
+      function activateInner(id) {
+        tabs.forEach(btn => {
+          const on = btn.dataset.tab === id;
+          btn.classList.toggle('active', on);
+          btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        panels.forEach(p => {
+          const show = p.dataset.panel === id;
+          p.classList.toggle('hidden', !show);
+          p.setAttribute('aria-hidden', show ? 'false' : 'true');
+        });
+        sessionStorage.setItem(KEY_MAP_IN, id);
+      }
+
+      const savedInner = sessionStorage.getItem(KEY_MAP_IN);
+      const firstActive = [...tabs].find(b => b.classList.contains('active')) || tabs[0];
+      const initial = (savedInner && [...tabs].some(b => b.dataset.tab === savedInner))
+        ? savedInner
+        : firstActive?.dataset.tab;
+
+      if (initial) activateInner(initial);
+
+      tabs.forEach(btn => btn.addEventListener('click', () => activateInner(btn.dataset.tab)));
+    });
+  })();
+
+  /**
+   * YARDLII: Advanced Subtabs
+   */
+  (function ($) {
+    'use strict';
+
+    function initAdvancedSubtabs() {
+      const $panel = $('#yardlii-tab-advanced');
+      if (!$panel.length) return;
+
+      const $tabs = $panel.find('.yardlii-advanced-subtabs .yardlii-tab');
+      const $sections = $panel.find('details.yardlii-section[data-asection]');
+      if (!$tabs.length || !$sections.length) return;
+
+      const KEY_ADV = 'yardlii_active_adv_section';
+
+      function activate(id) {
+        if (!id) return;
+
+        $tabs.removeClass('active').attr('aria-selected', 'false');
+        $tabs.filter('[data-asection="' + id + '"]').addClass('active').attr('aria-selected', 'true');
+
+        $sections.each(function () {
+          const $sec = $(this);
+          if ($sec.data('asection') === id) {
+            $sec.attr('open', true).removeAttr('hidden');
+          } else {
+            $sec.removeAttr('open').attr('hidden', true);
+          }
+        });
+
+        sessionStorage.setItem(KEY_ADV, id);
+      }
+
+      function getActiveId() {
+        try {
+          const urlId = (new URL(window.location.href)).searchParams.get('advsection');
+          if (urlId) return urlId;
+        } catch (e) { }
+
+        const storageId = sessionStorage.getItem(KEY_ADV);
+        if (storageId) return storageId;
+
+        return $tabs.first().data('asection') || 'flags';
+      }
+
+      activate(getActiveId());
+
+      $tabs.on('click', function (e) {
+        e.preventDefault();
+        const id = $(this).data('asection');
+        activate(id);
+
+        try {
+          const u = new URL(window.location.href);
+          u.searchParams.set('advsection', id);
+          updateUrlAndReferrers(u);
+        } catch (e) { }
+      });
+    }
+
+    $(function () {
+      $(document).on('click', '.yardlii-tabs[data-scope="main"] .yardlii-tab[data-tab="advanced"]', function () {
+        setTimeout(initAdvancedSubtabs, 10);
+      });
+
+      if ($('#yardlii-tab-advanced').is(':visible')) {
+        initAdvancedSubtabs();
+      }
     });
 
-    // Also run on page load, in case the "Advanced" tab is already active
-    if ($('#yardlii-tab-advanced').is(':visible')) {
-      initAdvancedSubtabs();
-    }
-  });
-
-})(jQuery);
-
-
-
-
-
-
+  })(jQuery);
 
 });
