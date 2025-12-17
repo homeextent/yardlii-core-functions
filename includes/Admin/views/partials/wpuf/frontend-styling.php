@@ -25,9 +25,9 @@
         </div>
 
         <div class="yardlii-setting-row" style="margin-bottom: 15px;">
-            <label class="yardlii-toggle">
+            <label class="yardlii-switch">
                 <input type="checkbox" name="yardlii_wpuf_card_layout" value="1" <?php checked((bool)get_option('yardlii_wpuf_card_layout', false), true); ?> />
-                <span class="yardlii-toggle-slider"></span>
+                <span class="slider round"></span>
             </label>
             <div style="display:inline-block; vertical-align:top; margin-left: 10px;">
                 <strong>Card-Style Layout</strong>
@@ -38,9 +38,9 @@
         </div>
 
         <div class="yardlii-setting-row" style="margin-bottom: 15px;">
-            <label class="yardlii-toggle">
+            <label class="yardlii-switch">
                 <input type="checkbox" name="yardlii_wpuf_modern_uploader" value="1" <?php checked((bool)get_option('yardlii_wpuf_modern_uploader', false), true); ?> />
-                <span class="yardlii-toggle-slider"></span>
+                <span class="slider round"></span>
             </label>
             <div style="display:inline-block; vertical-align:top; margin-left: 10px;">
                 <strong>Modern Uploader Skin</strong>
