@@ -20,6 +20,7 @@ class WidgetGoogleMap extends Widget_Base {
         return 'eicon-google-maps';
     }
 
+    /** @return string[] */
     public function get_categories(): array {
         return ['general'];
     }
