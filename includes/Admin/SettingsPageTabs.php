@@ -17,7 +17,6 @@ final class SettingsPageTabs
     private const GROUP_SEARCH         = 'yardlii_search_group';
     private const GROUP_GOOGLE_MAP     = 'yardlii_google_map_group';
     private const GROUP_FEATURED_IMAGE = 'yardlii_featured_image_group';
-    private const GROUP_GENERAL        = 'yardlii_general_group';
     private const GROUP_DIRECTORY      = 'yardlii_directory_group';
 
     private const GROUP_ROLE_CONTROL   = 'yardlii_role_control_group';
