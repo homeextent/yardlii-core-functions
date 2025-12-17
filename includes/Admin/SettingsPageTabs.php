@@ -19,6 +19,13 @@ final class SettingsPageTabs
     private const GROUP_FEATURED_IMAGE = 'yardlii_featured_image_group';
     private const GROUP_DIRECTORY      = 'yardlii_directory_group';
 
+    // --- NEW WPUF GROUPS ---
+    private const GROUP_WPUF_STYLING   = 'yardlii_wpuf_styling_group';
+    private const GROUP_WPUF_LOGIC     = 'yardlii_wpuf_logic_group';
+    private const GROUP_WPUF_GEO       = 'yardlii_wpuf_geo_group';
+    private const GROUP_WPUF_PROFILE   = 'yardlii_wpuf_profile_group';
+    // -----------------------
+
     private const GROUP_ROLE_CONTROL   = 'yardlii_role_control_group';
     private const GROUP_ROLE_BADGES    = 'yardlii_role_control_badges_group';
 
@@ -42,123 +49,93 @@ final class SettingsPageTabs
         // --- WPUF CUSTOMISATIONS: SPLIT GROUPS ---
 
         // 1. Frontend Styling Tab
-        // Group: 'yardlii_wpuf_styling_group'
-        register_setting('yardlii_wpuf_styling_group', 'yardlii_enable_wpuf_dropdown', [
+        register_setting(self::GROUP_WPUF_STYLING, 'yardlii_enable_wpuf_dropdown', [
             'sanitize_callback' => 'rest_sanitize_boolean',
         ]);
-        register_setting('yardlii_wpuf_styling_group', 'yardlii_wpuf_target_pages', [
+        register_setting(self::GROUP_WPUF_STYLING, 'yardlii_wpuf_target_pages', [
             'sanitize_callback' => 'sanitize_text_field',
             'default'           => 'submit-a-post',
         ]);
-        register_setting('yardlii_wpuf_styling_group', 'yardlii_wpuf_card_layout', [
+        register_setting(self::GROUP_WPUF_STYLING, 'yardlii_wpuf_card_layout', [
             'sanitize_callback' => 'rest_sanitize_boolean',
             'default'           => false,
         ]);
-        register_setting('yardlii_wpuf_styling_group', 'yardlii_wpuf_modern_uploader', [
+        register_setting(self::GROUP_WPUF_STYLING, 'yardlii_wpuf_modern_uploader', [
             'sanitize_callback' => 'rest_sanitize_boolean',
             'default'           => false,
         ]);
 
         // 2. Listing Logic Tab
-        // Group: 'yardlii_wpuf_logic_group'
-        register_setting('yardlii_wpuf_logic_group', 'yardlii_enable_featured_listings', [
+        register_setting(self::GROUP_WPUF_LOGIC, 'yardlii_enable_featured_listings', [
             'sanitize_callback' => 'rest_sanitize_boolean',
             'default'           => false,
         ]);
-        register_setting('yardlii_wpuf_logic_group', 'yardlii_posting_logic_pro_form', [
+        register_setting(self::GROUP_WPUF_LOGIC, 'yardlii_posting_logic_pro_form', [
             'sanitize_callback' => 'absint',
             'default'           => 0,
         ]);
-        register_setting('yardlii_wpuf_logic_group', 'yardlii_posting_logic_basic_form', [
+        register_setting(self::GROUP_WPUF_LOGIC, 'yardlii_posting_logic_basic_form', [
             'sanitize_callback' => 'absint',
             'default'           => 0,
         ]);
-        // Deprecated but kept for compatibility
-        register_setting('yardlii_wpuf_logic_group', 'yardlii_posting_logic_provisional_form', [
+        register_setting(self::GROUP_WPUF_LOGIC, 'yardlii_posting_logic_provisional_form', [
             'sanitize_callback' => 'absint',
             'default'           => 0,
         ]);
 
         // 3. Privacy Geocoding Tab
-        // Group: 'yardlii_wpuf_geo_group'
-        register_setting(
-            'yardlii_wpuf_geo_group',
-            'yardlii_wpuf_geo_mapping',
-            ['sanitize_callback' => 'sanitize_textarea_field']
-        );
-        register_setting(
-            'yardlii_wpuf_geo_group', 
-            'yardlii_enable_wpuf_geocoding',
-            ['sanitize_callback' => 'rest_sanitize_boolean']
-        );
+        register_setting(self::GROUP_WPUF_GEO, 'yardlii_wpuf_geo_mapping', [
+            'sanitize_callback' => 'sanitize_textarea_field'
+        ]);
+        register_setting(self::GROUP_WPUF_GEO, 'yardlii_enable_wpuf_geocoding', [
+            'sanitize_callback' => 'rest_sanitize_boolean'
+        ]);
         
-        // Note: This option is ALSO registered in the Feature Flags group (Advanced Tab).
-        // We keep this here so the toggle on the Advanced tab still works.
-        register_setting(
-            self::GROUP_FEATURE_FLAGS, 
-            'yardlii_enable_wpuf_geocoding',
-            ['sanitize_callback' => 'rest_sanitize_boolean']
-        );
+        // Keep Advanced Tab Flag Sync
+        register_setting(self::GROUP_FEATURE_FLAGS, 'yardlii_enable_wpuf_geocoding', [
+            'sanitize_callback' => 'rest_sanitize_boolean'
+        ]);
 
         // 4. Profile Mapping Tab
-        // Group: 'yardlii_wpuf_profile_group'
-        register_setting(
-            'yardlii_wpuf_profile_group', 
-            'yardlii_profile_form_map', 
-            [
-                'sanitize_callback' => static function ($input) {
-                    if (!is_array($input)) return [];
-                    return array_map(function($row) {
-                        return [
-                            'role'    => sanitize_text_field($row['role'] ?? ''),
-                            'form_id' => absint($row['form_id'] ?? 0),
-                        ];
-                    }, $input);
-                }
-            ]
-        );
+        register_setting(self::GROUP_WPUF_PROFILE, 'yardlii_profile_form_map', [
+            'sanitize_callback' => static function ($input) {
+                if (!is_array($input)) return [];
+                return array_map(function($row) {
+                    return [
+                        'role'    => sanitize_text_field($row['role'] ?? ''),
+                        'form_id' => absint($row['form_id'] ?? 0),
+                    ];
+                }, $input);
+            }
+        ]);
 
         // === User Directory (Global Config) ===
-        // These remain in the directory group as they are on a different main tab
-        register_setting(
-            self::GROUP_DIRECTORY, 
-            'yardlii_dir_default_trigger', 
-            ['sanitize_callback' => 'sanitize_key']
-        );
-        register_setting(
-            self::GROUP_DIRECTORY, 
-            'yardlii_dir_default_width', 
-            ['sanitize_callback' => 'absint']
-        );
-
-        register_setting(
-            self::GROUP_DIRECTORY,
-            'yardlii_dir_trade_field',
-            ['sanitize_callback' => 'sanitize_text_field']
-        );
-
-        // === User Directory (Role-Based Config) ===
-        register_setting(
-            self::GROUP_DIRECTORY, 
-            'yardlii_directory_role_config', 
-            [
-                'sanitize_callback' => static function ($input) {
-                    if (!is_array($input)) return [];
-                    return array_map(function($row) {
-                        return [
-                            'role'     => sanitize_text_field($row['role'] ?? ''),
-                            'image'    => sanitize_text_field($row['image'] ?? ''),
-                            'title'    => sanitize_text_field($row['title'] ?? ''),
-                            'badge'    => sanitize_text_field($row['badge'] ?? ''),
-                            'location' => sanitize_text_field($row['location'] ?? ''),
-                            'ui_decoupled' => isset($row['ui_decoupled']) ? '1' : '0',
-                            'ui_button'    => isset($row['ui_button']) ? '1' : '0',
-                            'ui_width'     => sanitize_text_field($row['ui_width'] ?? ''),
-                        ];
-                    }, $input);
-                }
-            ]
-        );
+        register_setting(self::GROUP_DIRECTORY, 'yardlii_dir_default_trigger', [
+            'sanitize_callback' => 'sanitize_key'
+        ]);
+        register_setting(self::GROUP_DIRECTORY, 'yardlii_dir_default_width', [
+            'sanitize_callback' => 'absint'
+        ]);
+        register_setting(self::GROUP_DIRECTORY, 'yardlii_dir_trade_field', [
+            'sanitize_callback' => 'sanitize_text_field'
+        ]);
+        register_setting(self::GROUP_DIRECTORY, 'yardlii_directory_role_config', [
+            'sanitize_callback' => static function ($input) {
+                if (!is_array($input)) return [];
+                return array_map(function($row) {
+                    return [
+                        'role'     => sanitize_text_field($row['role'] ?? ''),
+                        'image'    => sanitize_text_field($row['image'] ?? ''),
+                        'title'    => sanitize_text_field($row['title'] ?? ''),
+                        'badge'    => sanitize_text_field($row['badge'] ?? ''),
+                        'location' => sanitize_text_field($row['location'] ?? ''),
+                        'ui_decoupled' => isset($row['ui_decoupled']) ? '1' : '0',
+                        'ui_button'    => isset($row['ui_button']) ? '1' : '0',
+                        'ui_width'     => sanitize_text_field($row['ui_width'] ?? ''),
+                    ];
+                }, $input);
+            }
+        ]);
 
         $this->register_role_control_settings();
         $this->register_role_badge_settings();
