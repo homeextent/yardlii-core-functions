@@ -56,7 +56,7 @@ function yl_role_label($slug, $roles) {
           <label class="yardlii-switch">
             <input type="hidden" name="<?php echo esc_attr(BA::ENABLE_OPTION); ?>" value="0" />
             <input type="checkbox" name="<?php echo esc_attr(BA::ENABLE_OPTION); ?>" value="1" <?php checked($enabled_opt, true); ?> />
-            <span class="slider round">ON</span>
+            <span class="slider round"></span>
           </label>
         </td>
       </tr>
