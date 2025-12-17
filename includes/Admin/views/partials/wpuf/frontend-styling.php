@@ -51,9 +51,9 @@
         </div>
 
         <div class="yardlii-setting-row">
-            <label class="yardlii-toggle">
+            <label class="yardlii-switch">
                 <input type="checkbox" name="yardlii_enable_wpuf_dropdown" value="1" <?php checked((bool)get_option('yardlii_enable_wpuf_dropdown', true), true); ?> />
-                <span class="yardlii-toggle-slider"></span>
+                <span class="slider round"></span>
             </label>
             <div style="display:inline-block; vertical-align:top; margin-left: 10px;">
                 <strong>Enhanced Taxonomy Dropdown</strong>

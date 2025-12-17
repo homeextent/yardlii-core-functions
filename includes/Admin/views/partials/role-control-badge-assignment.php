@@ -53,10 +53,10 @@ function yl_role_label($slug, $roles) {
       <tr>
         <th scope="row">Enable Badge Assignment</th>
         <td>
-          <label class="yardlii-toggle">
+          <label class="yardlii-switch">
             <input type="hidden" name="<?php echo esc_attr(BA::ENABLE_OPTION); ?>" value="0" />
             <input type="checkbox" name="<?php echo esc_attr(BA::ENABLE_OPTION); ?>" value="1" <?php checked($enabled_opt, true); ?> />
-            <span>On</span>
+            <span class="slider round">ON</span>
           </label>
         </td>
       </tr>

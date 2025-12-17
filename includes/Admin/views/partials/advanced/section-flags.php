@@ -12,19 +12,72 @@
  */
 defined('ABSPATH') || exit;
 
+// --- 1. INITIALIZE VARIABLES (Keep existing logic) ---
+
+// Role Control
 $rc_flag_value  = (bool) get_option('yardlii_enable_role_control', false);
 $rc_flag_locked = defined('YARDLII_ENABLE_ROLE_CONTROL');
 if ($rc_flag_locked) {
     $rc_flag_value = (bool) constant('YARDLII_ENABLE_ROLE_CONTROL');
 }
 
+// ACF Sync
 $acf_sync_value  = (bool) get_option('yardlii_enable_acf_user_sync', false);
 $acf_sync_locked = defined('YARDLII_ENABLE_ACF_USER_SYNC');
 if ($acf_sync_locked) {
     $acf_sync_value = (bool) constant('YARDLII_ENABLE_ACF_USER_SYNC');
 }
 
+// Geocoding
+$geo_val = (bool) get_option('yardlii_enable_wpuf_geocoding', false);
+$geo_locked = defined('YARDLII_ENABLE_WPUF_GEOCODING');
+if ($geo_locked) {
+    $geo_val = (bool) constant('YARDLII_ENABLE_WPUF_GEOCODING');
+}
+
+// Business Directory
+$bd_val = (bool) get_option('yardlii_enable_business_directory', false);
+$bd_locked = defined('YARDLII_ENABLE_BUSINESS_DIRECTORY');
+if ($bd_locked) {
+    $bd_val = (bool) constant('YARDLII_ENABLE_BUSINESS_DIRECTORY');
+}
+
+// Location Engine
+$loc_val = (bool) get_option('yardlii_enable_wpuf_city_autocomplete', false);
+$loc_locked = defined('YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE');
+if ($loc_locked) {
+    $loc_val = (bool) constant('YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE');
+}
+
+// Elementor Queries
+$el_val = (bool) get_option('yardlii_enable_elementor_query_mods', false);
+$el_locked = defined('YARDLII_ENABLE_ELEMENTOR_QUERY_MODS');
+if ($el_locked) {
+    $el_val = (bool) constant('YARDLII_ENABLE_ELEMENTOR_QUERY_MODS');
+}
+
+// Custom Map Widget
+$cmw_val = (bool) get_option('yardlii_enable_custom_map_widget', false);
+$cmw_locked = defined('YARDLII_ENABLE_CUSTOM_MAP_WIDGET');
+if ($cmw_locked) {
+    $cmw_val = (bool) constant('YARDLII_ENABLE_CUSTOM_MAP_WIDGET');
+}
+
+// Login Persistence
+$lp_val = (bool) get_option('yardlii_enable_login_persistence', false);
+$lp_locked = defined('YARDLII_ENABLE_LOGIN_PERSISTENCE');
+if ($lp_locked) {
+    $lp_val = (bool) constant('YARDLII_ENABLE_LOGIN_PERSISTENCE');
+}
+
+// Media Cleanup
+$mc_val = (bool) get_option('yardlii_enable_media_cleanup', 0);
+$mc_locked = defined('YARDLII_ENABLE_MEDIA_CLEANUP');
+if ($mc_locked) {
+    $mc_val = (bool) constant('YARDLII_ENABLE_MEDIA_CLEANUP');
+}
 ?>
+
 <div class="form-config-content">
 
   <?php
@@ -38,21 +91,30 @@ if ($acf_sync_locked) {
     <h2 style="margin-top:0;"><?php esc_html_e('Debug Mode', 'yardlii-core'); ?></h2>
     <form method="post" action="options.php">
       <?php settings_fields($group_debug); ?>
-      <label>
-        <input type="hidden" name="yardlii_debug_mode" value="0" />
-        <input
-          type="checkbox"
-          name="yardlii_debug_mode"
-          value="1"
-          <?php checked((bool) get_option('yardlii_debug_mode', false)); ?>
-          <?php disabled(defined('YARDLII_DEBUG') && YARDLII_DEBUG); ?>
-        />
-        <?php esc_html_e('Enable Debug Mode (logging to debug.log)', 'yardlii-core'); ?>
-      </label>
-      <?php if (defined('YARDLII_DEBUG') && YARDLII_DEBUG) : ?>
-        <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
-      <?php endif; ?>
-      <?php submit_button(__('Save Debug Setting', 'yardlii-core')); ?>
+      
+      <div style="display:flex; align-items:center;">
+          <label class="yardlii-switch">
+            <input type="hidden" name="yardlii_debug_mode" value="0" />
+            <input
+              type="checkbox"
+              name="yardlii_debug_mode"
+              value="1"
+              <?php checked((bool) get_option('yardlii_debug_mode', false)); ?>
+              <?php disabled(defined('YARDLII_DEBUG') && YARDLII_DEBUG); ?>
+            />
+            <span class="slider round"></span>
+          </label>
+          
+          <span style="font-weight:600;"><?php esc_html_e('Enable Debug Mode (logging to debug.log)', 'yardlii-core'); ?></span>
+          
+          <?php if (defined('YARDLII_DEBUG') && YARDLII_DEBUG) : ?>
+            <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
+          <?php endif; ?>
+      </div>
+
+      <p style="margin-top:1rem;">
+        <?php submit_button(__('Save Debug Setting', 'yardlii-core'), 'secondary', 'submit', false); ?>
+      </p>
     </form>
   </div>
 
@@ -66,194 +128,125 @@ if ($acf_sync_locked) {
     <form method="post" action="options.php">
       <?php settings_fields($group_flags); ?>
 
-      
-	<div class="yardlii-checkbox-row">
-    <label for="yardlii_enable_media_cleanup">
-        <input name="yardlii_enable_media_cleanup" type="checkbox" id="yardlii_enable_media_cleanup" value="1"
-            <?php checked(1, get_option('yardlii_enable_media_cleanup', 0)); ?>
-            <?php disabled(defined('YARDLII_ENABLE_MEDIA_CLEANUP')); ?> 
-        />
-        <span class="yardlii-toggle-label">
-            <strong><?php esc_html_e('Enable Automated Media Cleanup', 'yardlii-core'); ?></strong>
-            <p class="description">
-                <?php esc_html_e('Danger Zone: Automatically permanently deletes attached images when a listing is deleted. Compatible with PixRefiner.', 'yardlii-core'); ?>
-            </p>
-        </span>
-    </label>
-</div>
+      <table class="form-table yardlii-flag-table" role="presentation" style="margin-top:0;">
+        <tbody>
+            
+            <tr class="yardlii-flag-category">
+                <th colspan="2" style="padding: 15px 0 10px; border-bottom: 2px solid #f0f0f1;">
+                    <h3 style="margin:0; color:#2271b1;">Role Control & Access</h3>
+                </th>
+            </tr>
+            <tr>
+                <th scope="row" style="padding-left:10px;">Role Control</th>
+                <td>
+                    <label class="yardlii-switch">
+                        <input type="hidden" name="yardlii_enable_role_control" value="0" />
+                        <input type="checkbox" name="yardlii_enable_role_control" value="1" <?php checked($rc_flag_value); ?> <?php disabled($rc_flag_locked); ?>>
+                        <span class="slider round"></span>
+                    </label>
+                    <?php if ($rc_flag_locked) : ?> <em style="opacity:.8;">Locked</em> <?php endif; ?>
+                    <p class="description">Master switch for Role Management features.</p>
+                </td>
+            </tr>
 
-      <div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
-        <input type="hidden" name="yardlii_enable_role_control" value="0" />
-        <input
-          type="checkbox"
-          id="yardlii_enable_role_control"
-          name="yardlii_enable_role_control"
-          value="1"
-          <?php checked($rc_flag_value); ?>
-          <?php disabled($rc_flag_locked); ?>
-        />
-        <strong><?php esc_html_e('Role Control', 'yardlii-core'); ?></strong>
-        <?php if ($rc_flag_locked) : ?>
-          <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
-        <?php endif; ?>
-      </div>
+            <tr class="yardlii-flag-category">
+                <th colspan="2" style="padding: 25px 0 10px; border-bottom: 2px solid #f0f0f1;">
+                    <h3 style="margin:0; color:#2271b1;">Geocoding & Maps</h3>
+                </th>
+            </tr>
+            <tr>
+                <th scope="row" style="padding-left:10px;">WPUF Privacy Geocoding</th>
+                <td>
+                    <label class="yardlii-switch">
+                        <input type="hidden" name="yardlii_enable_wpuf_geocoding" value="0" />
+                        <input type="checkbox" name="yardlii_enable_wpuf_geocoding" value="1" <?php checked($geo_val); ?> <?php disabled($geo_locked); ?>>
+                        <span class="slider round"></span>
+                    </label>
+                    <?php if ($geo_locked) : ?> <em style="opacity:.8;">Locked</em> <?php endif; ?>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row" style="padding-left:10px;">Universal Location Engine</th>
+                <td>
+                    <label class="yardlii-switch">
+                        <input type="hidden" name="yardlii_enable_wpuf_city_autocomplete" value="0" />
+                        <input type="checkbox" name="yardlii_enable_wpuf_city_autocomplete" value="1" <?php checked($loc_val); ?> <?php disabled($loc_locked); ?>>
+                        <span class="slider round"></span>
+                    </label>
+                    <p class="description">Enables Google Places Autocomplete (Cities Only) on forms.</p>
+                </td>
+            </tr>
 
-<div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
-    <?php
-        // Define variables for this scope
-        $geo_val = (bool) get_option('yardlii_enable_wpuf_geocoding', false);
-        $geo_locked = defined('YARDLII_ENABLE_WPUF_GEOCODING');
-        
-        if ($geo_locked) {
-             // FIX: Use constant() string access
-             $geo_val = (bool) constant('YARDLII_ENABLE_WPUF_GEOCODING');
-        }
-    ?>
-    <input type="hidden" name="yardlii_enable_wpuf_geocoding" value="0" />
-    <input
-        type="checkbox"
-        id="yardlii_enable_wpuf_geocoding"
-        name="yardlii_enable_wpuf_geocoding"
-        value="1"
-        <?php checked($geo_val); ?>
-        <?php disabled($geo_locked); ?>
-    />
-    <strong><?php esc_html_e('WPUF Privacy Geocoding', 'yardlii-core'); ?></strong>
-    <?php if ($geo_locked) : ?>
-        <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
-    <?php endif; ?>
-</div>
+            <tr class="yardlii-flag-category">
+                <th colspan="2" style="padding: 25px 0 10px; border-bottom: 2px solid #f0f0f1;">
+                    <h3 style="margin:0; color:#2271b1;">Elementor Integration</h3>
+                </th>
+            </tr>
+            <tr>
+                <th scope="row" style="padding-left:10px;">Elementor Query Utilities</th>
+                <td>
+                    <label class="yardlii-switch">
+                        <input type="hidden" name="yardlii_enable_elementor_query_mods" value="0" />
+                        <input type="checkbox" name="yardlii_enable_elementor_query_mods" value="1" <?php checked($el_val); ?> <?php disabled($el_locked); ?>>
+                        <span class="slider round"></span>
+                    </label>
+                    <p class="description">Enables custom query IDs like <code>yardlii_author_listings</code>.</p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row" style="padding-left:10px;">Custom Map Widget</th>
+                <td>
+                    <label class="yardlii-switch">
+                        <input type="hidden" name="yardlii_enable_custom_map_widget" value="0" />
+                        <input type="checkbox" name="yardlii_enable_custom_map_widget" value="1" <?php checked($cmw_val); ?> <?php disabled($cmw_locked); ?>>
+                        <span class="slider round"></span>
+                    </label>
+                    <p class="description">Enables <code>Custom Google Map</code> widget in Elementor.</p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row" style="padding-left:10px;">Dynamic Directory Shortcode</th>
+                <td>
+                    <label class="yardlii-switch">
+                        <input type="hidden" name="yardlii_enable_business_directory" value="0" />
+                        <input type="checkbox" name="yardlii_enable_business_directory" value="1" <?php checked($bd_val); ?> <?php disabled($bd_locked); ?>>
+                        <span class="slider round"></span>
+                    </label>
+                    <p class="description">Enables <code>[yardlii_directory]</code> shortcode.</p>
+                </td>
+            </tr>
 
-<div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
-    <?php
-    $bd_val = (bool) get_option('yardlii_enable_business_directory', false);
-    $bd_locked = defined('YARDLII_ENABLE_BUSINESS_DIRECTORY');
-    if ($bd_locked) {
-        $bd_val = (bool) constant('YARDLII_ENABLE_BUSINESS_DIRECTORY');
-    }
-    ?>
-    <input type="hidden" name="yardlii_enable_business_directory" value="0" />
-    <input
-        type="checkbox"
-        id="yardlii_enable_business_directory"
-        name="yardlii_enable_business_directory"
-        value="1"
-        <?php checked($bd_val); ?>
-        <?php disabled($bd_locked); ?>
-    />
-    <strong><?php esc_html_e('Dynamic Directory Shortcode', 'yardlii-core'); ?></strong>
-    <?php if ($bd_locked) : ?>
-        <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
-    <?php endif; ?>
-</div>
-<p class="description" style="margin-left: 24px; margin-top: 0; color: #666;">
-    Enables the <code>[yardlii_directory]</code> shortcode for listing users by role (e.g., businesses, contractors).
-</p>
+            <tr class="yardlii-flag-category">
+                <th colspan="2" style="padding: 25px 0 10px; border-bottom: 2px solid #f0f0f1;">
+                    <h3 style="margin:0; color:#2271b1;">System & PWA</h3>
+                </th>
+            </tr>
+            <tr>
+                <th scope="row" style="padding-left:10px;">Login Persistence (PWA)</th>
+                <td>
+                    <label class="yardlii-switch">
+                        <input type="hidden" name="yardlii_enable_login_persistence" value="0" />
+                        <input type="checkbox" name="yardlii_enable_login_persistence" value="1" <?php checked($lp_val); ?> <?php disabled($lp_locked); ?>>
+                        <span class="slider round"></span>
+                    </label>
+                    <p class="description">Forces user sessions to last 1 year.</p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row" style="padding-left:10px; color:#d63638;">Media Cleanup</th>
+                <td>
+                    <label class="yardlii-switch">
+                        <input type="hidden" name="yardlii_enable_media_cleanup" value="0" />
+                        <input type="checkbox" name="yardlii_enable_media_cleanup" value="1" <?php checked($mc_val); ?> <?php disabled($mc_locked); ?>>
+                        <span class="slider round"></span>
+                    </label>
+                    <p class="description"><strong>Danger:</strong> Deletes attached images when listing is deleted.</p>
+                </td>
+            </tr>
 
-<div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
-    <?php
-    $loc_val = (bool) get_option('yardlii_enable_wpuf_city_autocomplete', false);
-    $loc_locked = defined('YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE');
-    if ($loc_locked) {
-        $loc_val = (bool) constant('YARDLII_ENABLE_WPUF_CITY_AUTOCOMPLETE');
-    }
-    ?>
-    <input type="hidden" name="yardlii_enable_wpuf_city_autocomplete" value="0" />
-    <input
-        type="checkbox"
-        id="yardlii_enable_wpuf_city_autocomplete"
-        name="yardlii_enable_wpuf_city_autocomplete"
-        value="1"
-        <?php checked($loc_val); ?>
-        <?php disabled($loc_locked); ?>
-    />
-    <strong><?php esc_html_e('Universal Location Engine', 'yardlii-core'); ?></strong>
-    <?php if ($loc_locked) : ?>
-        <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
-    <?php endif; ?>
-</div>
-<p class="description" style="margin-left: 24px; margin-top: 0; color: #666;">
-    Enables Google Places Autocomplete (Cities Only) on all forms with the <code>yardlii-city-autocomplete</code> class.
-</p>
+        </tbody>
+      </table>
 
-<div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
-    <?php
-    $el_val = (bool) get_option('yardlii_enable_elementor_query_mods', false);
-    $el_locked = defined('YARDLII_ENABLE_ELEMENTOR_QUERY_MODS');
-    if ($el_locked) {
-        $el_val = (bool) constant('YARDLII_ENABLE_ELEMENTOR_QUERY_MODS');
-    }
-    ?>
-    <input type="hidden" name="yardlii_enable_elementor_query_mods" value="0" />
-    <input
-        type="checkbox"
-        id="yardlii_enable_elementor_query_mods"
-        name="yardlii_enable_elementor_query_mods"
-        value="1"
-        <?php checked($el_val); ?>
-        <?php disabled($el_locked); ?>
-    />
-    <strong><?php esc_html_e('Elementor Query Utilities', 'yardlii-core'); ?></strong>
-    <?php if ($el_locked) : ?>
-        <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
-    <?php endif; ?>
-</div>
-<p class="description" style="margin-left: 24px; margin-top: 0; color: #666;">
-    Enables custom query IDs like <code>yardlii_author_listings</code> for Elementor Loop Grids.
-</p>
-<div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
-    <?php
-    $cmw_val = (bool) get_option('yardlii_enable_custom_map_widget', false);
-    $cmw_locked = defined('YARDLII_ENABLE_CUSTOM_MAP_WIDGET');
-    if ($cmw_locked) {
-        $cmw_val = (bool) constant('YARDLII_ENABLE_CUSTOM_MAP_WIDGET');
-    }
-    ?>
-    <input type="hidden" name="yardlii_enable_custom_map_widget" value="0" />
-    <input
-        type="checkbox"
-        id="yardlii_enable_custom_map_widget"
-        name="yardlii_enable_custom_map_widget"
-        value="1"
-        <?php checked($cmw_val); ?>
-        <?php disabled($cmw_locked); ?>
-    />
-    <strong><?php esc_html_e('Elementor Custom Map Widget', 'yardlii-core'); ?></strong>
-    <?php if ($cmw_locked) : ?>
-        <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
-    <?php endif; ?>
-</div>
-<p class="description" style="margin-left: 24px; margin-top: 0; color: #666;">
-    Enables the <code>Custom Google Map</code> widget in Elementor. Requires Google Maps API Key to be configured in General Settings.
-</p>
-
-<div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
-    <?php
-    $lp_val = (bool) get_option('yardlii_enable_login_persistence', false);
-    $lp_locked = defined('YARDLII_ENABLE_LOGIN_PERSISTENCE');
-    if ($lp_locked) {
-        $lp_val = (bool) constant('YARDLII_ENABLE_LOGIN_PERSISTENCE');
-    }
-    ?>
-    <input type="hidden" name="yardlii_enable_login_persistence" value="0" />
-    <input
-        type="checkbox"
-        id="yardlii_enable_login_persistence"
-        name="yardlii_enable_login_persistence"
-        value="1"
-        <?php checked($lp_val); ?>
-        <?php disabled($lp_locked); ?>
-    />
-    <strong><?php esc_html_e('Always-On Login Persistence', 'yardlii-core'); ?></strong>
-    <?php if ($lp_locked) : ?>
-        <em style="opacity:.8;margin-left:.5rem;"><?php esc_html_e('Locked by code', 'yardlii-core'); ?></em>
-    <?php endif; ?>
-</div>
-<p class="description" style="margin-left: 24px; margin-top: 0; color: #666;">
-    Forces user sessions to last 1 year and hides the "Remember Me" checkbox. Replaces external code snippets.
-</p>
-
-      
       <p style="margin-top:1rem;">
         <button class="button button-primary" type="submit">
           <?php esc_html_e('Save Feature Flags', 'yardlii-core'); ?>

@@ -32,10 +32,10 @@ $all_role_choices = array_keys($editable_roles);     // used for the "Clone caps
       <tr>
         <th scope="row">Enable custom roles</th>
         <td>
-          <label class="yardlii-toggle">
+          <label class="yardlii-switch">
   <input type="hidden" name="yardlii_enable_custom_roles" value="0" />
   <input type="checkbox" name="yardlii_enable_custom_roles" value="1" <?php checked($enable_custom, true); ?> />
-  <span class="yardlii-toggle-slider"></span>
+  <span class="slider round"></span>
 </label>
           <p class="description">When disabled, roles you created remain in WordPress, but this plugin won’t try to sync them.</p>
         </td>
