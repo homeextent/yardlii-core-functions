@@ -235,14 +235,23 @@ function initWpufSubtabs() {
         const u = new URL(window.location.href);
         u.searchParams.set('tab', 'wpuf');
         u.searchParams.set('wsection', id);
-        // Note: updateUrlAndReferrers is local to the IIFE below, so we rely on this simple set or localStorage.
+        updateUrlAndReferrers(u);
     } catch (e) {}
   }
 
-  // Initial Load Logic
+  // --- START: CORRECTED RESTORE LOGIC ---
+  const urlSection = getUrlParam('wsection');
   const localSection = localStorage.getItem('yardlii_active_wsection');
-  const urlSection   = (new URL(window.location.href)).searchParams.get('wsection');
-  const initialId    = urlSection || localSection || buttons[0]?.dataset.wsection;
+
+  const initialId =
+      (urlSection && [...buttons].some(b => b.dataset.wsection === urlSection))
+      ? urlSection // Priority 1: URL
+      : (localSection && [...buttons].some(b => b.dataset.wsection === localSection))
+        ? localSection // Priority 2: LocalStorage
+        : wrap.querySelector('.yardlii-tab.active')?.dataset.wsection // Priority 3: HTML Default
+        || document.querySelector('#yardlii-tab-wpuf .yardlii-section[open]')?.dataset.wsection
+        || panels[0]?.dataset.wsection;
+  // --- END: CORRECTED RESTORE LOGIC ---
 
   if (initialId) activate(initialId);
 
