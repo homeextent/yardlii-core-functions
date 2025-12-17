@@ -132,6 +132,10 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+### 3.33.2 - 2025-12-17
+### 🐛 Fixes
+* **Fix:** Resolved a critical settings conflict in the **WPUF Customisations** tab. Split the settings registration into four isolated groups (Styling, Logic, Geocoding, Profile) to ensure that saving one panel does not reset the settings in others.
+
 ### 3.33.1 - 2025-12-17 
 ### 🐛 Fixes
 * **Fix:** Resolved JavaScript conflict preventing "General" and "WPUF Customisations" tabs from switching correctly.

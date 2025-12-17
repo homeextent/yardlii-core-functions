@@ -4,7 +4,7 @@
     <p class="description">Backend data handling and form switching logic.</p>
 
     <form method="post" action="options.php" class="yardlii-settings-form">
-        <?php settings_fields('yardlii_general_group'); ?>
+        <?php settings_fields('yardlii_wpuf_logic_group'); ?>
 
         <div class="yardlii-setting-row" style="margin-bottom: 20px;">
             <label class="yardlii-switch">

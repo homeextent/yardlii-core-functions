@@ -7,7 +7,7 @@
     </p>
 
     <form method="post" action="options.php" class="yardlii-settings-form">
-        <?php settings_fields('yardlii_general_group'); ?>
+        <?php settings_fields('yardlii_wpuf_profile_group'); ?>
 
         <?php 
         $map = get_option('yardlii_profile_form_map', []);

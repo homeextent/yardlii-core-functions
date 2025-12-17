@@ -40,72 +40,71 @@ final class SettingsPageTabs
         $this->register_google_map_settings();
         $this->register_featured_image_settings();
 
-        // WPUF General
-        // FIX: Removed 'sanitize_callback' => self::success_notifier(...)
-        // Replaced with standard sanitization or simple type casting.
-        register_setting(self::GROUP_GENERAL, 'yardlii_enable_wpuf_dropdown', [
+        // --- WPUF CUSTOMISATIONS: SPLIT GROUPS ---
+
+        // 1. Frontend Styling Tab
+        // Group: 'yardlii_wpuf_styling_group'
+        register_setting('yardlii_wpuf_styling_group', 'yardlii_enable_wpuf_dropdown', [
             'sanitize_callback' => 'rest_sanitize_boolean',
         ]);
-        register_setting(self::GROUP_GENERAL, 'yardlii_wpuf_target_pages', [
+        register_setting('yardlii_wpuf_styling_group', 'yardlii_wpuf_target_pages', [
             'sanitize_callback' => 'sanitize_text_field',
             'default'           => 'submit-a-post',
         ]);
-        register_setting(self::GROUP_GENERAL, 'yardlii_wpuf_card_layout', [
+        register_setting('yardlii_wpuf_styling_group', 'yardlii_wpuf_card_layout', [
             'sanitize_callback' => 'rest_sanitize_boolean',
             'default'           => false,
         ]);
-        register_setting(self::GROUP_GENERAL, 'yardlii_wpuf_modern_uploader', [
+        register_setting('yardlii_wpuf_styling_group', 'yardlii_wpuf_modern_uploader', [
             'sanitize_callback' => 'rest_sanitize_boolean',
             'default'           => false,
         ]);
-        register_setting(self::GROUP_GENERAL, 'yardlii_enable_featured_listings', [
+
+        // 2. Listing Logic Tab
+        // Group: 'yardlii_wpuf_logic_group'
+        register_setting('yardlii_wpuf_logic_group', 'yardlii_enable_featured_listings', [
             'sanitize_callback' => 'rest_sanitize_boolean',
             'default'           => false,
         ]);
-        register_setting(self::GROUP_GENERAL, 'yardlii_posting_logic_pro_form', [
+        register_setting('yardlii_wpuf_logic_group', 'yardlii_posting_logic_pro_form', [
             'sanitize_callback' => 'absint',
             'default'           => 0,
         ]);
-        register_setting(self::GROUP_GENERAL, 'yardlii_posting_logic_basic_form', [
+        register_setting('yardlii_wpuf_logic_group', 'yardlii_posting_logic_basic_form', [
             'sanitize_callback' => 'absint',
             'default'           => 0,
         ]);
         // Deprecated but kept for compatibility
-        register_setting(self::GROUP_GENERAL, 'yardlii_posting_logic_provisional_form', [
+        register_setting('yardlii_wpuf_logic_group', 'yardlii_posting_logic_provisional_form', [
             'sanitize_callback' => 'absint',
             'default'           => 0,
-        ]); 
+        ]);
+
+        // 3. Privacy Geocoding Tab
+        // Group: 'yardlii_wpuf_geo_group'
         register_setting(
-            self::GROUP_GENERAL,
+            'yardlii_wpuf_geo_group',
             'yardlii_wpuf_geo_mapping',
             ['sanitize_callback' => 'sanitize_textarea_field']
         );
         register_setting(
-            self::GROUP_GENERAL, 
+            'yardlii_wpuf_geo_group', 
             'yardlii_enable_wpuf_geocoding',
             ['sanitize_callback' => 'rest_sanitize_boolean']
         );
+        
+        // Note: This option is ALSO registered in the Feature Flags group (Advanced Tab).
+        // We keep this here so the toggle on the Advanced tab still works.
         register_setting(
             self::GROUP_FEATURE_FLAGS, 
             'yardlii_enable_wpuf_geocoding',
             ['sanitize_callback' => 'rest_sanitize_boolean']
         );
 
-        // === User Directory (Global Config) ===
+        // 4. Profile Mapping Tab
+        // Group: 'yardlii_wpuf_profile_group'
         register_setting(
-            self::GROUP_DIRECTORY, 
-            'yardlii_dir_default_trigger', 
-            ['sanitize_callback' => 'sanitize_key']
-        );
-        register_setting(
-            self::GROUP_DIRECTORY, 
-            'yardlii_dir_default_width', 
-            ['sanitize_callback' => 'absint']
-        );
-
-        // === Dynamic Profile Form Map (Repeater) ===
-        register_setting(
-            self::GROUP_GENERAL, 
+            'yardlii_wpuf_profile_group', 
             'yardlii_profile_form_map', 
             [
                 'sanitize_callback' => static function ($input) {
@@ -118,6 +117,19 @@ final class SettingsPageTabs
                     }, $input);
                 }
             ]
+        );
+
+        // === User Directory (Global Config) ===
+        // These remain in the directory group as they are on a different main tab
+        register_setting(
+            self::GROUP_DIRECTORY, 
+            'yardlii_dir_default_trigger', 
+            ['sanitize_callback' => 'sanitize_key']
+        );
+        register_setting(
+            self::GROUP_DIRECTORY, 
+            'yardlii_dir_default_width', 
+            ['sanitize_callback' => 'absint']
         );
 
         register_setting(
