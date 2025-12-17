@@ -132,7 +132,14 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
-## 📦 Changelog
+
+
+### 3.33.0 - 2025-12-17
+### 🚀 Features
+* **Login Persistence:** Added "Always-On" authentication.
+    * Users now remain logged in for 1 year by default.
+    * Automatically hides redundant "Remember Me" checkboxes on login forms.
+    * Replaces external Code Snippets and custom CSS.
 
 ### 3.32.0 - 2025-12-16
 ### 🚀 Features
