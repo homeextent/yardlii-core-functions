@@ -7,9 +7,9 @@
         <?php settings_fields('yardlii_general_group'); ?>
 
         <div class="yardlii-setting-row" style="margin-bottom: 20px;">
-            <label class="yardlii-toggle">
+            <label class="yardlii-switch">
                 <input type="checkbox" name="yardlii_enable_featured_listings" value="1" <?php checked((bool)get_option('yardlii_enable_featured_listings', false), true); ?> />
-                <span class="yardlii-toggle-slider"></span>
+                <span class="slider round"></span>
             </label>
             <div style="display:inline-block; vertical-align:top; margin-left: 10px;">
                 <strong>Enable Featured Listing Logic</strong>
@@ -64,14 +64,38 @@
         <?php submit_button('Save Logic Settings'); ?>
     </form>
     
-    <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
-        <h3>📘 Dashboard Shortcodes</h3>
-        <p>Use these shortcodes to build your custom Elementor Dashboard tabs.</p>
-        <ul style="list-style:disc; margin-left:20px; color:#555;">
-            <li><code>[yardlii_user_dashboard]</code> - My Listings Grid</li>
-            <li><code>[yardlii_submit_listing]</code> - Smart Submit Wrapper</li>
-            <li><code>[yardlii_edit_profile]</code> - Smart Profile Wrapper</li>
-            <li><code>[yardlii_logout]</code> - Secure Logout Button</li>
-        </ul>
-    </div>
+    <div class="yardlii-info-box" style="background:#fff; border:1px solid #ccd0d4; padding:20px; border-left:4px solid #2271b1;">
+    <h3 style="margin-top:0;">📘 Dashboard Shortcode Reference</h3>
+    <p>Use these shortcodes to build your custom Elementor Dashboard tabs.</p>
+
+    <hr>
+
+    <h4>1. My Listings Grid</h4>
+    <p>Displays the current user's listings as visual cards with Edit/Delete buttons (Replaces <code>[wpuf_dashboard]</code>).</p>
+    <code>[yardlii_user_dashboard]</code>
+
+    <h4>2. Dynamic Profile Form</h4>
+    <p>Automatically renders the correct "Edit Profile" form (Basic vs Pro) based on the user's role mapping.</p>
+    <code>[yardlii_edit_profile]</code>
+
+    <h4>3. Dynamic Submission</h4>
+    <p>Renders the correct "Submit Listing" form. (Basic users get restricted form, Pros get full form).</p>
+    <code>[yardlii_submit_listing]</code>
+
+    <h4>4. Secure Logout Button</h4>
+    <p>Generates a secure, nonce-protected logout button. Prevents "Link Expired" errors.</p>
+    <code>[yardlii_logout label="Log Out" redirect="/"]</code>
+    <p><em>Tip: Place this in a dedicated "Log Out" tab to prevent accidental clicks.</em></p>
+
+    <hr>
+
+    <h4>🔗 Deep Linking (Smart Navigation)</h4>
+    <p>You can link users directly to specific tabs on your custom dashboard using URL parameters.</p>
+    <p><strong>Requirement:</strong> The Elementor Tabs widget must have the CSS ID: <code>yardlii-dashboard-tabs</code>.</p>
+    <ul style="list-style:disc; margin-left:20px;">
+        <li>Link to Tab 1 (My Listings): <code>/dashboard/?tab=1</code></li>
+        <li>Link to Tab 2 (Edit Profile): <code>/dashboard/?tab=2</code></li>
+        <li>Link to Tab 3 (Submit Post): <code>/dashboard/?tab=3</code></li>
+    </ul>
+</div>
 </div>

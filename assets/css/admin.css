@@ -48,10 +48,6 @@
   pointer-events: none !important;
 }
 
-/* Keep the yellow notice usable (it's outside the fieldset) */
-
-
-
 /* Panels */
 .yardlii-tabpanel.hidden{ display:none; }
 
@@ -254,3 +250,47 @@ details.yardlii-subsection[open]{ background:#f9fafb; border-color:#c7c7c7; box-
     display: block;
 }
 
+/* =========================================
+   NEW: Toggle / Switch Styles (from section-flags.php)
+   ========================================= */
+.yardlii-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+.yardlii-switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+input:checked + .slider {
+  background-color: #2271b1;
+}
+input:focus + .slider {
+  box-shadow: 0 0 1px #2271b1;
+}
+input:checked + .slider:before {
+  transform: translateX(20px);
+}

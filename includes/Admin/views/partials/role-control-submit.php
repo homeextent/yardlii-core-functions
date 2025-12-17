@@ -32,9 +32,9 @@ $all_role_choices = array_keys($editable_roles); // for base clone list
       <tr>
         <th scope="row">Enable restriction</th>
         <td>
-          <label class="yardlii-toggle">
+          <label class="yardlii-switch">
             <input type="checkbox" name="yardlii_enable_role_control_submit" value="1" <?php checked((bool) get_option('yardlii_enable_role_control_submit', false)); ?> />
-            <span class="yardlii-toggle-slider"></span>
+            <span class="slider round"></span>
           </label>
           <p class="description">Only selected roles will be allowed to access the target page.</p>
         </td>
