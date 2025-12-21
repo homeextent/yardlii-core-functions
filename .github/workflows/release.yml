@@ -22,21 +22,26 @@ jobs:
         tools: composer
 
     - name: Install Production Dependencies
+      # Installs only the code needed for the plugin to run (removes dev tools)
       run: composer install --no-dev --optimize-autoloader
 
     - name: Create Zip File
       run: |
-        # Create a temporary directory for the build
-        mkdir build
+        # 1. Define the plugin slug (This will be the folder name inside the zip)
+        SLUG="yardlii-plugin-main"
         
-        # Copy everything to the build directory
-        rsync -r --exclude='.git' --exclude='.github' --exclude='build' . build/
+        # 2. Create the build directory with the slug folder
+        mkdir -p build/$SLUG
         
-        # Zip the build directory contents
+        # 3. Copy files into the slug folder
+        #    Excludes git data, github workflows, build folder itself, and dev config files
+        rsync -rc --exclude='.git' --exclude='.github' --exclude='build' --exclude='phpstan.neon' --exclude='phpstan-bootstrap.php' . build/$SLUG/
+        
+        # 4. Zip the folder (Ensures it unzips cleanly in WordPress)
         cd build
-        zip -r ../yardlii-plugin-production.zip .
+        zip -r ../$SLUG.zip $SLUG
 
     - name: Upload Release Asset
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
-        files: yardlii-plugin-production.zip
+        files: yardlii-plugin-main.zip
