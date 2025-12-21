@@ -22,26 +22,21 @@ jobs:
         tools: composer
 
     - name: Install Production Dependencies
-      # Installs only the code needed for the plugin to run (removes dev tools)
       run: composer install --no-dev --optimize-autoloader
 
     - name: Create Zip File
       run: |
-        # 1. Define the plugin slug (folder name)
-        SLUG="yardlii-trust-verification"
+        # Create a temporary directory for the build
+        mkdir build
         
-        # 2. Create the build directory with the slug folder
-        mkdir -p build/$SLUG
+        # Copy everything to the build directory
+        rsync -r --exclude='.git' --exclude='.github' --exclude='build' . build/
         
-        # 3. Copy files into the slug folder
-        #    Excludes git data, github workflows, build folder itself, and dev config files
-        rsync -rc --exclude='.git' --exclude='.github' --exclude='build' --exclude='phpstan.neon' --exclude='phpstan-bootstrap.php' . build/$SLUG/
-        
-        # 4. Zip the folder (Ensures it unzips cleanly in WordPress)
+        # Zip the build directory contents
         cd build
-        zip -r ../$SLUG.zip $SLUG
+        zip -r ../yardlii-plugin-production.zip .
 
     - name: Upload Release Asset
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v1
       with:
-        files: yardlii-trust-verification.zip
+        files: yardlii-plugin-production.zip
