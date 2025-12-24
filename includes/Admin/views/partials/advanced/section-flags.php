@@ -244,6 +244,21 @@ if ($mc_locked) {
                 </td>
             </tr>
 
+            <tr>
+                <th scope="row" style="padding-left:10px;">Media Lifecycle Management</th>
+                <td>
+                    <label class="yardlii-switch">
+                        <input type="hidden" name="yardlii_enable_media_management" value="0" />
+                        <input type="checkbox" name="yardlii_enable_media_management" value="1" 
+                            <?php checked((bool) get_option('yardlii_enable_media_management', false)); ?> 
+                            <?php disabled(defined('YARDLII_ENABLE_MEDIA_MANAGEMENT')); ?>
+                        >
+                        <span class="slider round"></span>
+                    </label>
+                    <p class="description">Handles Size Registration, Privacy Scrubbing (EXIF), and Bloat Prevention. <em>(Replaces PixRefiner)</em>.</p>
+                </td>
+            </tr>
+
         </tbody>
       </table>
 

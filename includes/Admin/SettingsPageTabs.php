@@ -173,6 +173,13 @@ final class SettingsPageTabs
             ['sanitize_callback' => 'rest_sanitize_boolean']
         );
 
+        // ...
+        register_setting(
+            self::GROUP_FEATURE_FLAGS,
+            'yardlii_enable_media_management',
+            ['sanitize_callback' => 'rest_sanitize_boolean']
+        );
+
         register_setting(
             self::GROUP_FEATURE_FLAGS,
             'yardlii_enable_login_persistence',

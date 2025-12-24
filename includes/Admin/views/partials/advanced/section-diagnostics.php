@@ -505,45 +505,58 @@ $hs_diag = [
 <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
 
 <div class="form-config-block">
-    <h2>🧹 Media Cleanup Diagnostics</h2>
-    <table class="widefat striped">
-        <thead>
-            <tr>
-                <th>Check</th>
-                <th>Status</th>
-                <th>Message</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php
-            // Check 1: Feature Flag Status
-            $cleanup_enabled = (bool) get_option('yardlii_enable_media_cleanup', false);
-            if (defined('YARDLII_ENABLE_MEDIA_CLEANUP')) {
-                $cleanup_enabled = (bool) YARDLII_ENABLE_MEDIA_CLEANUP;
-            }
-            yardlii_diag_flag_status_row('Master Flag', 'yardlii_enable_media_cleanup', 'YARDLII_ENABLE_MEDIA_CLEANUP');
+    <h2>🧹 Legacy Media Migration</h2>
+    <div class="yardlii-banner yardlii-banner--warning" style="background: #fff8e5; border-left: 4px solid #ffb900; padding: 10px; margin-bottom: 15px;">
+        <strong>⚠️ One-Time Action:</strong> Only run this AFTER you have successfully run "Regenerate Thumbnails" on all existing listings.
+    </div>
+    <p>This tool scans your upload folder and deletes old, non-standard image variants (e.g., <code>image-400.webp</code>) created by the legacy PixRefiner logic.</p>
+    
+    <button type="button" class="button button-secondary" id="yardlii-media-migrate-btn">
+        Purge Legacy Files
+    </button>
+    <span id="yardlii-media-migrate-status" style="margin-left:10px; font-weight:600;"></span>
 
-            // Check 2: Cron Schedule Status
-            $next_run = wp_next_scheduled('yardlii_daily_media_cleanup');
-            $cron_active = ($next_run !== false);
-            
-            // Logic: It is valid to be "Not Scheduled" if the feature is Disabled.
-            // It is a FAIL if feature is Enabled but no Cron is found.
-            $is_healthy = (!$cleanup_enabled) || $cron_active;
-            
-            $status_msg = $cron_active 
-                ? 'Scheduled. Next run: ' . get_date_from_gmt(date('Y-m-d H:i:s', $next_run), 'Y-m-d H:i:s')
-                : ($cleanup_enabled ? '❌ Error: Feature enabled but Cron missing.' : '⚪ Idle (Feature Disabled)');
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const btn = document.getElementById('yardlii-media-migrate-btn');
+        const status = document.getElementById('yardlii-media-migrate-status');
+        
+        if(btn) {
+            btn.addEventListener('click', function() {
+                if(!confirm('Have you run "Regenerate Thumbnails" first? This action is irreversible.')) return;
+                
+                status.innerText = 'Scanning & Purging...';
+                status.style.color = '#555';
+                
+                // Uses the global YARDLII_ADMIN object if available, or fallback
+                const nonce = window.YARDLII_ADMIN ? window.YARDLII_ADMIN.nonce : '<?php echo wp_create_nonce("yardlii_admin_nonce"); ?>';
 
-            yardlii_diag_check(
-                'Janitor Schedule',
-                $is_healthy,
-                $status_msg,
-                $status_msg
-            );
-            ?>
-        </tbody>
-    </table>
+                fetch(ajaxurl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: new URLSearchParams({
+                        'action': 'yardlii_media_migration',
+                        'nonce': nonce
+                    })
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if(d.success) {
+                        status.innerText = d.data.message;
+                        status.style.color = '#00a32a';
+                    } else {
+                        status.innerText = 'Error: ' + (d.data ? d.data.message : 'Unknown');
+                        status.style.color = '#d63638';
+                    }
+                })
+                .catch(err => {
+                    status.innerText = 'System Error';
+                    status.style.color = '#d63638';
+                });
+            });
+        }
+    });
+    </script>
 </div>
 
 
