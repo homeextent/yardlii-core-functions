@@ -7,7 +7,7 @@ use Yardlii\Core\Services\Logger;
 
 /**
  * Feature: Media Lifecycle Management
- * Handle Native Size Registration, Privacy Scrubbing, and Bloat Prevention.
+ * Handles Native Size Registration, Privacy Scrubbing, and Bloat Prevention.
  */
 class MediaManagement {
 
@@ -37,7 +37,8 @@ class MediaManagement {
 
     /**
      * Makes the custom sizes appear in Elementor and Media Library selectors.
-     * * @param array<string, string> $sizes
+     *
+     * @param array<string, string> $sizes
      * @return array<string, string>
      */
     public function add_custom_size_names(array $sizes): array {
