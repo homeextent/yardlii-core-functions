@@ -7,7 +7,7 @@ use Yardlii\Core\Services\Logger;
 
 /**
  * Feature: Media Lifecycle Management
- * Handles Native Size Registration, Privacy Scrubbing, and Bloat Prevention.
+ * Handle Native Size Registration, Privacy Scrubbing, and Bloat Prevention.
  */
 class MediaManagement {
 
