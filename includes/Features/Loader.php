@@ -108,6 +108,13 @@ final class Loader
             (new LoginPersistence())->register();
         }
 
+        // === Media Management (PixRefiner Core) ===
+        // [MODIFICATION] Absorbed from PixRefiner.
+        $media_mgmt_enabled = FeatureFlagManager::isEnabled('media_management');
+        if ($media_mgmt_enabled && class_exists(__NAMESPACE__ . '\\MediaManagement')) {
+            (new MediaManagement())->register();
+        }
+
         // === General Features ===
         if (class_exists(__NAMESPACE__ . '\\FeaturedImage')) {
             (new FeaturedImage())->register();

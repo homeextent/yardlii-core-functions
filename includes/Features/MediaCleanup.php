@@ -9,13 +9,18 @@ class MediaCleanup {
     private const TARGET_CPTS = ['listings']; 
     private const GALLERY_META_KEY = 'yardlii_listing_images'; 
     private const CRON_HOOK = 'yardlii_daily_media_cleanup';
-    private const PIXREFINER_WIDTHS = [1920, 1200, 768, 400];
+    
+    // LEGACY: Used strictly for the migration tool to identify old files.
+    private const LEGACY_WIDTHS = [1920, 1200, 768, 400];
 
     public function register(): void {
         add_action('before_delete_post', [$this, 'handle_post_deletion']);
         add_action('wpuf_update_post_after_submit', [$this, 'handle_wpuf_update'], 10, 4);
         add_action('admin_init', [$this, 'ensure_schedule']);
         add_action(self::CRON_HOOK, [$this, 'cleanup_ghost_files']);
+        
+        // NEW: One-Time Migration Tool Hook
+        add_action('wp_ajax_yardlii_media_migration', [$this, 'ajax_migration_cleanup']);
     }
 
     public function handle_post_deletion(int $post_id): void {
@@ -123,26 +128,56 @@ class MediaCleanup {
         return !empty($result);
     }
 
+    /**
+     * REFACTORED: Now uses standard WP deletion.
+     * We no longer hunt for 'secret' files because new uploads use native sizes.
+     */
     private function process_attachment_deletion(int $att_id): void {
-        $file_path = get_attached_file($att_id);
-        if ($file_path) {
-            $backup_path = $file_path . '.orig';
-            if (file_exists($backup_path)) { @unlink($backup_path); }
-            $this->cleanup_pixrefiner_variants($file_path);
-        }
         wp_delete_attachment($att_id, true);
     }
 
-    private function cleanup_pixrefiner_variants(string $main_file_path): void {
-        $path_info = pathinfo($main_file_path);
-        if (!isset($path_info['dirname'], $path_info['extension'])) return;
-        $dir = $path_info['dirname'];
-        $name = $path_info['filename'];
-        $ext = $path_info['extension'];
-        foreach (self::PIXREFINER_WIDTHS as $width) {
-            $variant_path = $dir . DIRECTORY_SEPARATOR . $name . '-' . $width . '.' . $ext;
-            if (file_exists($variant_path)) { @unlink($variant_path); }
+    /**
+     * MIGRATION TOOL: One-time run to clean old PixRefiner files.
+     * Triggers via Diagnostics Panel.
+     */
+    public function ajax_migration_cleanup(): void {
+        check_ajax_referer('yardlii_admin_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
+
+        $upload_dir = wp_upload_dir();
+        $basedir = $upload_dir['basedir'];
+        $count = 0;
+
+        // Recursive scan for files matching old pattern: *-400.webp, *-1200.jpg, etc.
+        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($basedir));
+        
+        foreach ($iterator as $file) {
+            if ($file->isFile()) {
+                $filename = $file->getFilename();
+                
+                // Pattern: Ends in -{width}.{ext} OR ends in .orig
+                foreach (self::LEGACY_WIDTHS as $width) {
+                    if (strpos($filename, "-{$width}.") !== false || strpos($filename, '.orig') !== false) {
+                        // Safety: Ensure it's not a standard WP size (which usually includes 'x' like -400x300)
+                        // Old PixRefiner files used exactly "-400."
+                        if (preg_match("/-{$width}\.(jpg|jpeg|png|webp|avif)$/i", $filename)) {
+                            @unlink($file->getPathname());
+                            $count++;
+                        }
+                        if (str_ends_with($filename, '.orig')) {
+                            @unlink($file->getPathname());
+                            $count++;
+                        }
+                    }
+                }
+            }
+        }
+
+        Logger::log("Migration Tool: Purged $count legacy files.", 'MEDIA');
+        wp_send_json_success(['message' => "Successfully purged $count legacy files."]);
     }
 
     public function ensure_schedule(): void {
