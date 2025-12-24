@@ -132,6 +132,24 @@ The Role Control tab remains visible but is locked (read-only). No Submit Access
 
 ## 📦 Changelog
 
+###v3.34.0 - 2025-12-23
+
+Feature: Introduced MediaManagement module to handle native image sizing and privacy.
+
+Absorbed logic from "PixRefiner" to register standard WordPress sizes (400px, 768px, 1200px, 1920px) for seamless Elementor compatibility.
+
+Added wp_handle_upload_prefilter hook to strip GPS/EXIF metadata from uploads using ImageMagick.
+
+Added intermediate_image_sizes_advanced filter to prevent generation of unused WordPress default sizes (1536x1536, 2048x2048).
+
+Refactor: Overhauled MediaCleanup ("The Janitor").
+
+Removed legacy "Pattern Matching" logic for custom file variants.
+
+Added Legacy Media Migration tool in the Diagnostics panel to purge old non-standard files after regeneration.
+
+Architecture: Deprecated the external "PixRefiner" plugin.
+
 ### 3.33.2 - 2025-12-17
 ### 🐛 Fixes
 * **Fix:** Resolved a critical settings conflict in the **WPUF Customisations** tab. Split the settings registration into four isolated groups (Styling, Logic, Geocoding, Profile) to ensure that saving one panel does not reset the settings in others.
